@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuestArena: Target Save the Partner</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header / HUD -->
+        <header id="game-hud" class="hidden">
+            <div class="hud-item">Level: <span id="level-display">0</span></div>
+            <div class="hud-item">Timer: <span id="timer-display">30:00</span></div>
+            <div class="hud-item">Score: <span id="score-display">0</span></div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- Login Screen -->
+            <section id="login-screen" class="active">
+                <h1>QUEST ARENA</h1>
+                <p>Target: Save the Partner</p>
+                <input type="text" id="team-name" placeholder="Enter Team Name">
+                <button onclick="startGame()">ENTER THE ARENA</button>
+            </section>
+
+            <!-- Story / Context Screen -->
+            <section id="story-screen" class="hidden">
+                <h2>Mission Briefing</h2>
+                <p id="story-text">
+                    Your partner has been captured by the System Admin. 
+                    You must hack through 5 security levels to save them.
+                    Time is running out.
+                </p>
+                <button onclick="startLevel(0)">START MISSION</button>
+            </section>
+
+            <!-- Level Selection / Path Choice -->
+            <section id="path-selection" class="hidden">
+                <h2 id="path-title">Choose Your Path</h2>
+                <div class="path-options">
+                    <button onclick="choosePath('easy')" class="path-btn easy">Easy Path</button>
+                    <button onclick="choosePath('hard')" class="path-btn hard">Hard Path</button>
+                    <!-- Hidden route logic will be handled in JS -->
+                    <button id="backlog-btn" onclick="choosePath('backlog_king')" class="path-btn hidden-btn" style="display:none;">???</button> 
+                </div>
+            </section>
+
+            <!-- Question Display -->
+            <section id="question-screen" class="hidden">
+                <h2 id="question-title">Level 0</h2>
+                <div id="question-container">
+                    <!-- Dynamic Question Content -->
+                </div>
+                <!-- Logic for Next / Submit -->
+                <button id="submit-answer-btn" onclick="submitAnswer()">Submit Answer</button>
+            </section>
+
+            <!-- Coding Challenge Screen (Level 5) -->
+            <section id="coding-screen" class="hidden">
+                <h2>FINAL BOSS: Coding Challenge</h2>
+                <p id="coding-problem-text"></p>
+                <textarea id="code-editor" rows="15" placeholder="# Write your Python code here..."></textarea>
+                <button onclick="submitCode()">COMPILE & EXECUTE</button>
+                <div id="code-result"></div>
+            </section>
+
+            <!-- Game Over / Victory Screen -->
+            <section id="end-screen" class="hidden">
+                <h1 id="end-title">MISSION ACCOMPLISHED</h1>
+                <p>Final Score: <span id="final-score">0</span></p>
+                <p id="end-message"></p>
+                <button onclick="location.reload()">RESTART</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

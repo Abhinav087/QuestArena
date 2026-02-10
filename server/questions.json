@@ -1,0 +1,154 @@
+{
+    "0": {
+        "title": "General Knowledge",
+        "questions": [
+            {
+                "id": "q0_1",
+                "text": "Level 0 - Question 1 Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            },
+            {
+                "id": "q0_2",
+                "text": "Level 0 - Question 2 Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            }
+        ]
+    },
+    "1": {
+        "title": "English",
+        "questions": [
+            {
+                "id": "q1_1",
+                "text": "Level 1 - Question 1 Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            },
+            {
+                "id": "q1_2",
+                "text": "Level 1 - Question 2 Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            }
+        ],
+        "hidden_route": {
+            "trigger": "backlog_king",
+            "questions": [
+                {
+                    "id": "q1_hidden",
+                    "text": "Hidden Route - Question Placeholder",
+                    "options": [
+                        "Option A",
+                        "Option B",
+                        "Option C",
+                        "Option D"
+                    ],
+                    "answer": "Option A"
+                }
+            ]
+        }
+    },
+    "2": {
+        "title": "Aptitude",
+        "easy": [
+            {
+                "id": "q2_e1",
+                "text": "Level 2 (Easy) - Question Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            }
+        ],
+        "hard": [
+            {
+                "id": "q2_h1",
+                "text": "Level 2 (Hard) - Question Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            }
+        ]
+    },
+    "3": {
+        "title": "Reasoning",
+        "easy": [
+            {
+                "id": "q3_e1",
+                "text": "Level 3 (Easy) - Question Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            }
+        ],
+        "hard": [
+            {
+                "id": "q3_h1",
+                "text": "Level 3 (Hard) - Question Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            }
+        ]
+    },
+    "4": {
+        "title": "Technical MCQs",
+        "questions": [
+            {
+                "id": "q4_1",
+                "text": "Level 4 - Question 1 Placeholder",
+                "options": [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D"
+                ],
+                "answer": "Option A"
+            }
+        ]
+    },
+    "5": {
+        "title": "Coding Challenge",
+        "question": {
+            "id": "q5_code",
+            "text": "Level 5 - Coding Challenge Placeholder",
+            "template": "def solve(a, b):\n    # Write your code here\n    pass"
+        }
+    }
+}
