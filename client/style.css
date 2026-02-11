@@ -137,3 +137,81 @@ footer {
     font-size: 0.8rem;
     color: #555;
 }
+
+/* =============================================
+   WAITING LOBBY STYLES
+   ============================================= */
+
+#waiting-screen {
+    position: relative;
+    overflow: hidden;
+}
+
+.waiting-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+.waiting-text {
+    font-size: 1.1rem;
+    color: #ccc;
+    margin-bottom: 8px;
+}
+
+.waiting-sub {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    margin-bottom: 20px;
+}
+
+.waiting-sub strong {
+    color: var(--secondary-color);
+}
+
+.waiting-players {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    margin-bottom: 24px;
+}
+
+.waiting-players span {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* Animated pulse bar */
+.waiting-pulse-bar {
+    width: 60%;
+    height: 4px;
+    margin: 0 auto 20px;
+    background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    border-radius: 2px;
+    animation: pulse-slide 2s ease-in-out infinite;
+}
+
+@keyframes pulse-slide {
+    0%   { opacity: 0.3; transform: scaleX(0.5); }
+    50%  { opacity: 1;   transform: scaleX(1); }
+    100% { opacity: 0.3; transform: scaleX(0.5); }
+}
+
+.waiting-hint {
+    font-size: 0.8rem;
+    color: #666;
+    font-style: italic;
+}
+
+/* =============================================
+   END SCREEN — GAME OVER (locked)
+   ============================================= */
+#end-screen h1 {
+    color: var(--secondary-color);
+    text-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
+}

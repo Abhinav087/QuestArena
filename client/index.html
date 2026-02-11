@@ -27,6 +27,19 @@
                 <button onclick="startGame()">ENTER THE ARENA</button>
             </section>
 
+            <!-- Waiting Lobby Screen (NEW) -->
+            <section id="waiting-screen" class="hidden">
+                <div class="waiting-icon">⏳</div>
+                <h2>WAITING FOR SERVER</h2>
+                <p class="waiting-text">The game master hasn't started the timer yet.</p>
+                <p class="waiting-sub">You are connected as: <strong id="waiting-team-name"></strong></p>
+                <div class="waiting-players">
+                    <span id="waiting-player-count">0</span> players connected
+                </div>
+                <div class="waiting-pulse-bar"></div>
+                <p class="waiting-hint">The game will begin automatically once the server admin starts the timer.</p>
+            </section>
+
             <!-- Story / Context Screen -->
             <section id="story-screen" class="hidden">
                 <h2>Mission Briefing</h2>
@@ -44,7 +57,6 @@
                 <div class="path-options">
                     <button onclick="choosePath('easy')" class="path-btn easy">Easy Path</button>
                     <button onclick="choosePath('hard')" class="path-btn hard">Hard Path</button>
-                    <!-- Hidden route logic will be handled in JS -->
                     <button id="backlog-btn" onclick="choosePath('backlog_king')" class="path-btn hidden-btn" style="display:none;">???</button> 
                 </div>
             </section>
@@ -55,7 +67,6 @@
                 <div id="question-container">
                     <!-- Dynamic Question Content -->
                 </div>
-                <!-- Logic for Next / Submit -->
                 <button id="submit-answer-btn" onclick="submitAnswer()">Submit Answer</button>
             </section>
 
@@ -73,7 +84,6 @@
                 <h1 id="end-title">MISSION ACCOMPLISHED</h1>
                 <p>Final Score: <span id="final-score">0</span></p>
                 <p id="end-message"></p>
-                <button onclick="location.reload()">RESTART</button>
             </section>
         </main>
     </div>

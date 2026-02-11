@@ -1,20 +1,26 @@
-const API_BASE_URL = (window.location.hostname === "localhost" || window.location.hostname === "") ? "http://localhost:8000" : `http://${window.location.hostname}:8000`;
+// --- Configuration ---
+// IMPORTANT: Change this to your server's IP address for LAN play.
+// If clients open the page via the server (http://server-ip:8000/), use "" for auto-detect.
+const SERVER_IP = "";  // Leave empty to auto-detect from current URL
+const API_BASE_URL = SERVER_IP ? `http://${SERVER_IP}:8000` : window.location.origin;
 
 let gameState = {
     playerId: null,
     teamName: "",
     level: 0,
     score: 0,
-    startTime: null,
     timerInterval: null,
+    statusPollInterval: null,
     currentQuestions: [],
     currentQuestionIndex: 0,
-    pathChoice: null
+    pathChoice: null,
+    gameActive: false,
 };
 
 // --- DOM Elements ---
 const screens = {
     login: document.getElementById('login-screen'),
+    waiting: document.getElementById('waiting-screen'),
     story: document.getElementById('story-screen'),
     path: document.getElementById('path-selection'),
     question: document.getElementById('question-screen'),
@@ -37,7 +43,69 @@ function showScreen(screenName) {
     screens[screenName].classList.add('active');
 }
 
-// --- Game Loop ---
+// ==============================================================
+// GAME STATUS POLLING
+// ==============================================================
+
+function startPolling(interval = 2000) {
+    stopPolling();
+    pollGameStatus(); // immediate first poll
+    gameState.statusPollInterval = setInterval(pollGameStatus, interval);
+}
+
+function stopPolling() {
+    if (gameState.statusPollInterval) {
+        clearInterval(gameState.statusPollInterval);
+        gameState.statusPollInterval = null;
+    }
+}
+
+async function pollGameStatus() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/game_status`);
+        const data = await res.json();
+
+        // Update player count on waiting screen
+        const countEl = document.getElementById('waiting-player-count');
+        if (countEl) countEl.textContent = data.player_count;
+
+        if (data.status === "active" && !gameState.gameActive) {
+            // Game just started — transition from waiting to playing
+            gameState.gameActive = true;
+            stopPolling();
+            hud.classList.remove('hidden');
+            updateTimerDisplay(data.remaining_seconds);
+            showScreen('story');
+            // Switch to slower polling during gameplay (for timer sync)
+            startPolling(10000);
+        } else if (data.status === "active" && gameState.gameActive) {
+            // Still active — sync the timer
+            updateTimerDisplay(data.remaining_seconds);
+
+            // If time ran out server-side
+            if (data.remaining_seconds <= 0) {
+                endGameAndReport("TIME UP — Game Over");
+            }
+        } else if (data.status === "finished" && gameState.gameActive) {
+            // Game finished by server
+            endGameAndReport("TIME UP — Game Over");
+        }
+    } catch (e) {
+        console.error("Poll error:", e);
+    }
+}
+
+function updateTimerDisplay(seconds) {
+    if (seconds < 0) seconds = 0;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    timerDisplay.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+// ==============================================================
+// REGISTRATION & GAME START
+// ==============================================================
+
 async function startGame() {
     const nameInput = document.getElementById('team-name');
     if (!nameInput.value.trim()) return alert("Enter team name!");
@@ -54,28 +122,63 @@ async function startGame() {
         gameState.playerId = data.player_id;
         gameState.teamName = nameInput.value.trim();
 
-        startTimer();
-        hud.classList.remove('hidden');
-        showScreen('story');
+        // Show team name on waiting screen
+        const waitingName = document.getElementById('waiting-team-name');
+        if (waitingName) waitingName.textContent = gameState.teamName;
+
+        if (data.game_status === "active") {
+            // Game already in progress — jump in
+            gameState.gameActive = true;
+            hud.classList.remove('hidden');
+            updateTimerDisplay(data.remaining_seconds);
+            showScreen('story');
+            startPolling(10000); // slow poll for timer sync
+        } else {
+            // Game hasn't started — go to waiting lobby
+            showScreen('waiting');
+            startPolling(2000); // fast poll waiting for game start
+        }
     } catch (e) {
         console.error(e);
-        alert("Server error. Check console.");
+        alert("Cannot connect to server. Make sure the server is running.");
     }
 }
 
-function startTimer() {
-    let timeLeft = 30 * 60;
-    gameState.timerInterval = setInterval(() => {
-        timeLeft--;
-        const m = Math.floor(timeLeft / 60);
-        const s = timeLeft % 60;
-        timerDisplay.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
-        if (timeLeft <= 0) endGame("TIME UP");
-    }, 1000);
+// ==============================================================
+// GAME END & REPORT
+// ==============================================================
+
+async function endGameAndReport(msg) {
+    gameState.gameActive = false;
+    stopPolling();
+
+    // Report final data to server
+    try {
+        await fetch(`${API_BASE_URL}/report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ player_id: gameState.playerId })
+        });
+    } catch (e) {
+        console.error("Report error:", e);
+    }
+
+    showScreen('end');
+    document.getElementById('end-message').textContent = msg;
+    document.getElementById('final-score').textContent = gameState.score;
+    hud.classList.add('hidden');
 }
 
-// --- Level Logic ---
+// ==============================================================
+// LEVEL LOGIC
+// ==============================================================
+
 async function loadLevel(level, path = null) {
+    if (!gameState.gameActive) {
+        alert("Game is not active!");
+        return;
+    }
+
     gameState.level = level;
     gameState.pathChoice = path;
     levelDisplay.textContent = level;
@@ -86,6 +189,12 @@ async function loadLevel(level, path = null) {
 
     try {
         const res = await fetch(url);
+
+        if (res.status === 403) {
+            alert("Game is not active yet. Please wait for the server admin to start.");
+            return;
+        }
+
         const data = await res.json();
 
         // Handle Path Selection (Levels 2, 3)
@@ -147,11 +256,14 @@ function selectOption(btn, ans) {
 }
 
 async function submitAnswer() {
+    if (!gameState.gameActive) {
+        alert("Game is over!");
+        return;
+    }
     if (!currentSelection) return alert("Select an option!");
 
     const q = gameState.currentQuestions[gameState.currentQuestionIndex];
 
-    // Optimistic UI update or wait? Let's wait.
     try {
         const res = await fetch(`${API_BASE_URL}/submit_answer`, {
             method: 'POST',
@@ -163,6 +275,11 @@ async function submitAnswer() {
                 answer: currentSelection
             })
         });
+
+        if (res.status === 403) {
+            endGameAndReport("TIME UP — Game Over");
+            return;
+        }
 
         const data = await res.json();
         if (data.status === 'correct') {
@@ -183,7 +300,7 @@ function nextQuestion() {
     } else {
         // Level Up
         if (gameState.level >= 5) {
-            endGame("MISSION COMPLETE");
+            endGameAndReport("MISSION COMPLETE — Partner Saved!");
         } else {
             loadLevel(gameState.level + 1);
         }
@@ -191,6 +308,11 @@ function nextQuestion() {
 }
 
 async function submitCode() {
+    if (!gameState.gameActive) {
+        alert("Game is over!");
+        return;
+    }
+
     const code = document.getElementById('code-editor').value;
     const btn = document.querySelector('#coding-screen button');
 
@@ -204,13 +326,18 @@ async function submitCode() {
             body: JSON.stringify({ player_id: gameState.playerId, code: code })
         });
 
-        const data = await res.json();
         btn.textContent = "COMPILE & EXECUTE";
         btn.disabled = false;
 
+        if (res.status === 403) {
+            endGameAndReport("TIME UP — Game Over");
+            return;
+        }
+
+        const data = await res.json();
         if (data.status === 'CORRECT') {
             gameState.score = data.new_score;
-            endGame("YOU SAVED THE PARTNER!");
+            endGameAndReport("YOU SAVED THE PARTNER!");
         } else {
             const resultDiv = document.getElementById('code-result');
             resultDiv.textContent = "OUTPUT: WRONG ANSWER";
@@ -226,13 +353,5 @@ function choosePath(path) {
     loadLevel(gameState.level, path);
 }
 
-function endGame(msg) {
-    clearInterval(gameState.timerInterval);
-    showScreen('end');
-    document.getElementById('end-message').textContent = msg;
-    document.getElementById('final-score').textContent = gameState.score;
-    hud.classList.add('hidden');
-}
-
 // Initial binding for Start Level 0 button (from Story screen)
-window.startLevel = loadLevel; 
+window.startLevel = loadLevel;

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuestArena — Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff00;
+            --accent: #ff00ff;
+            --danger: #ff3b3b;
+            --bg: #0a0a0a;
+            --card-bg: rgba(255,255,255,0.04);
+            --border: rgba(0,255,0,0.25);
+            --text: #e0e0e0;
+            --text-muted: #888;
+            --font-heading: 'Orbitron', sans-serif;
+            --font-body: 'Roboto', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-heading);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* ---- Header ---- */
+        .admin-header {
+            text-align: center;
+            padding: 24px 0 32px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 32px;
+        }
+        .admin-header h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(0,255,0,0.3);
+        }
+        .admin-header p { color: var(--text-muted); margin-top: 8px; }
+
+        /* ---- Status Banner ---- */
+        .status-banner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            padding: 20px 32px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+        .status-item { text-align: center; }
+        .status-item .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .status-item .value {
+            font-family: var(--font-heading);
+            font-size: 1.6rem;
+            margin-top: 4px;
+        }
+        .status-item .value.status-waiting { color: #ffaa00; }
+        .status-item .value.status-active  { color: var(--primary); }
+        .status-item .value.status-finished{ color: var(--danger); }
+
+        /* ---- Buttons ---- */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 12px 36px;
+            font-size: 1rem;
+            font-family: var(--font-heading);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            border-radius: 6px;
+        }
+        .btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0,255,0,0.4);
+        }
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .btn:disabled:hover {
+            background: transparent;
+            color: var(--primary);
+            box-shadow: none;
+        }
+        .btn-danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .btn-danger:hover {
+            background: var(--danger);
+            color: #000;
+            box-shadow: 0 0 15px rgba(255,59,59,0.4);
+        }
+
+        /* ---- Tables ---- */
+        .section-title {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+        .table-wrapper {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: rgba(0,255,0,0.08);
+            font-family: var(--font-heading);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--primary);
+            padding: 14px 16px;
+            text-align: left;
+        }
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.95rem;
+        }
+        tr:hover td { background: rgba(0,255,0,0.03); }
+        .rank-cell {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .empty-msg {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 640px) {
+            .status-banner { gap: 20px; padding: 16px; }
+            .status-item .value { font-size: 1.2rem; }
+            th, td { padding: 10px 8px; font-size: 0.8rem; }
+        }
+
+        /* ---- Pulse animation for timer ---- */
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 8px rgba(0,255,0,0.3); }
+            50% { text-shadow: 0 0 20px rgba(0,255,0,0.7); }
+        }
+        .timer-pulse { animation: pulse-glow 2s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <h1>⚔ QuestArena Admin</h1>
+        <p>Server Control Dashboard</p>
+    </header>
+
+    <!-- Status Banner -->
+    <div class="status-banner">
+        <div class="status-item">
+            <div class="label">Game Status</div>
+            <div class="value" id="status-text">WAITING</div>
+        </div>
+        <div class="status-item">
+            <div class="label">Time Remaining</div>
+            <div class="value timer-pulse" id="timer-text">30:00</div>
+        </div>
+        <div class="status-item">
+            <div class="label">Connected Players</div>
+            <div class="value" id="player-count">0</div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn" id="start-btn" onclick="startGame()">▶ Start Game</button>
+        <button class="btn btn-danger" id="reset-btn" onclick="resetGame()">⟲ Reset Game</button>
+    </div>
+
+    <!-- Players / Leaderboard Table -->
+    <h3 class="section-title">Players &amp; Leaderboard</h3>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Team Name</th>
+                    <th>Score</th>
+                    <th>Level</th>
+                    <th>Time Taken</th>
+                    <th>Questions</th>
+                    <th>Reported</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <tr><td colspan="7" class="empty-msg">No players connected yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+        let pollInterval = null;
+
+        // ---- Poll game status + leaderboard ----
+        async function poll() {
+            try {
+                const [statusRes, lbRes] = await Promise.all([
+                    fetch(`${API}/game_status`),
+                    fetch(`${API}/leaderboard`)
+                ]);
+                const status = await statusRes.json();
+                const leaderboard = await lbRes.json();
+
+                updateStatusUI(status);
+                updateLeaderboard(leaderboard);
+            } catch (e) {
+                console.error("Poll error:", e);
+            }
+        }
+
+        function updateStatusUI(data) {
+            const el = document.getElementById("status-text");
+            el.textContent = data.status.toUpperCase();
+            el.className = "value status-" + data.status;
+
+            // Timer
+            const mins = Math.floor(data.remaining_seconds / 60);
+            const secs = data.remaining_seconds % 60;
+            document.getElementById("timer-text").textContent =
+                `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+            document.getElementById("player-count").textContent = data.player_count;
+
+            // Button states
+            const startBtn = document.getElementById("start-btn");
+            startBtn.disabled = data.status === "active" || data.status === "finished";
+        }
+
+        function updateLeaderboard(players) {
+            const tbody = document.getElementById("leaderboard-body");
+            if (!players.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">No players connected yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = players.map((p, i) => {
+                const mins = Math.floor(p.time_taken / 60);
+                const secs = Math.floor(p.time_taken % 60);
+                const timeStr = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+                return `<tr>
+                    <td class="rank-cell">${i + 1}</td>
+                    <td>${escapeHtml(p.name)}</td>
+                    <td>${p.score}</td>
+                    <td>${p.level}</td>
+                    <td>${timeStr}</td>
+                    <td>${p.questions_cleared}</td>
+                    <td>${p.reported ? '✅' : '⏳'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ---- Actions ----
+        async function startGame() {
+            if (!confirm("Start the 30-minute game timer for all connected players?")) return;
+            try {
+                const res = await fetch(`${API}/start_game`, { method: 'POST' });
+                const data = await res.json();
+                console.log("Start game:", data);
+                poll();
+            } catch (e) {
+                alert("Failed to start game: " + e.message);
+            }
+        }
+
+        async function resetGame() {
+            if (!confirm("⚠ Reset the game? This will clear ALL players and scores!")) return;
+            try {
+                const res = await fetch(`${API}/reset_game`, { method: 'POST' });
+                const data = await res.json();
+                console.log("Reset:", data);
+                poll();
+            } catch (e) {
+                alert("Failed to reset: " + e.message);
+            }
+        }
+
+        // ---- Init ----
+        poll();
+        pollInterval = setInterval(poll, 2000);
+    </script>
+</body>
+</html>
