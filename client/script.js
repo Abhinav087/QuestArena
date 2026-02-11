@@ -62,7 +62,7 @@ function stopPolling() {
 
 async function pollGameStatus() {
     try {
-        const res = await fetch(`${API_BASE_URL}/game_status`);
+        const res = await fetch(`${API_BASE_URL}/api/game_status`);
         const data = await res.json();
 
         // Update player count on waiting screen
@@ -111,7 +111,7 @@ async function startGame() {
     if (!nameInput.value.trim()) return alert("Enter team name!");
 
     try {
-        const res = await fetch(`${API_BASE_URL}/register`, {
+        const res = await fetch(`${API_BASE_URL}/api/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ team_name: nameInput.value.trim() })
@@ -154,7 +154,7 @@ async function endGameAndReport(msg) {
 
     // Report final data to server
     try {
-        await fetch(`${API_BASE_URL}/report`, {
+        await fetch(`${API_BASE_URL}/api/report`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ player_id: gameState.playerId })
@@ -184,7 +184,7 @@ async function loadLevel(level, path = null) {
     levelDisplay.textContent = level;
     gameState.currentQuestionIndex = 0;
 
-    let url = `${API_BASE_URL}/questions/${level}`;
+    let url = `${API_BASE_URL}/api/questions/${level}`;
     if (path) url += `?path=${path}`;
 
     try {
@@ -265,7 +265,7 @@ async function submitAnswer() {
     const q = gameState.currentQuestions[gameState.currentQuestionIndex];
 
     try {
-        const res = await fetch(`${API_BASE_URL}/submit_answer`, {
+        const res = await fetch(`${API_BASE_URL}/api/submit_answer`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -320,7 +320,7 @@ async function submitCode() {
     btn.disabled = true;
 
     try {
-        const res = await fetch(`${API_BASE_URL}/submit_code`, {
+        const res = await fetch(`${API_BASE_URL}/api/submit_code`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ player_id: gameState.playerId, code: code })

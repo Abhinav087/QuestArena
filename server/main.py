@@ -1,9 +1,9 @@
 import time
 import uuid
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse  # noqa: F401
 from pydantic import BaseModel
 import json
 import os
@@ -15,6 +15,9 @@ app = FastAPI()
 # --- Configuration ---
 LLM_API_KEY = "YOUR_API_KEY_HERE"
 LLM_PROVIDER = "gemini"  # or "groq"
+
+# Admin password — change this before running!
+ADMIN_PASSWORD = "arena2026"
 
 # --- CORS for LAN ---
 app.add_middleware(
@@ -35,6 +38,7 @@ game_session = {
 # --- Data Storage (In-Memory) ---
 players = {}  # {player_id: {name, level, score, start_time, questions_cleared, last_checkpoint, reported}}
 questions_data = {}
+admin_tokens = set()  # valid admin session tokens
 
 # --- Load Questions ---
 questions_path = os.path.join(os.path.dirname(__file__), "questions.json")
@@ -64,6 +68,10 @@ class SubmitCodeModel(BaseModel):
 
 class ReportModel(BaseModel):
     player_id: str
+
+
+class AdminLoginModel(BaseModel):
+    password: str
 
 
 # --- Helper Functions ---
@@ -113,13 +121,37 @@ async def verify_with_llm(code: str):
 
 
 # ==============================================================
-# GAME SESSION ENDPOINTS (new)
+# ADMIN AUTH
 # ==============================================================
 
 
-@app.post("/start_game")
-async def start_game():
+def verify_admin(token: str):
+    """Check if the provided token is a valid admin session."""
+    if not token or token not in admin_tokens:
+        raise HTTPException(
+            status_code=401, detail="Unauthorized — invalid admin token"
+        )
+
+
+@app.post("/api/admin_login")
+async def admin_login(data: AdminLoginModel):
+    """Admin logs in with password, gets a session token."""
+    if data.password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Wrong password")
+    token = str(uuid.uuid4())
+    admin_tokens.add(token)
+    return {"token": token, "message": "Login successful"}
+
+
+# ==============================================================
+# GAME SESSION ENDPOINTS (admin-protected)
+# ==============================================================
+
+
+@app.post("/api/start_game")
+async def start_game(admin_token: str = Query(...)):
     """Admin starts the 30-minute game timer. All waiting clients will begin."""
+    verify_admin(admin_token)
     if game_session["status"] == "active":
         remaining = get_remaining_seconds()
         return {"message": "Game already active", "remaining_seconds": remaining}
@@ -139,7 +171,7 @@ async def start_game():
     }
 
 
-@app.get("/game_status")
+@app.get("/api/game_status")
 async def get_game_status():
     """Clients poll this to know if the game has started / is active / has finished."""
     remaining = get_remaining_seconds()
@@ -151,7 +183,7 @@ async def get_game_status():
     }
 
 
-@app.post("/report")
+@app.post("/api/report")
 async def report(data: ReportModel):
     """Client submits final data when the game ends."""
     pid = data.player_id
@@ -176,9 +208,10 @@ async def report(data: ReportModel):
     }
 
 
-@app.post("/reset_game")
-async def reset_game():
+@app.post("/api/reset_game")
+async def reset_game(admin_token: str = Query(...)):
     """Admin resets the game back to waiting state."""
+    verify_admin(admin_token)
     game_session["status"] = "waiting"
     game_session["start_time"] = None
     players.clear()
@@ -190,7 +223,7 @@ async def reset_game():
 # ==============================================================
 
 
-@app.post("/register")
+@app.post("/api/register")
 async def register(data: RegisterModel):
     player_id = str(uuid.uuid4())
     players[player_id] = {
@@ -213,7 +246,7 @@ async def register(data: RegisterModel):
     }
 
 
-@app.get("/questions/{level}")
+@app.get("/api/questions/{level}")
 async def get_questions(level: int, path: Optional[str] = None):
     # Block if game is not active
     if game_session["status"] != "active":
@@ -252,7 +285,7 @@ async def get_questions(level: int, path: Optional[str] = None):
     return data
 
 
-@app.post("/submit_answer")
+@app.post("/api/submit_answer")
 async def submit_answer(data: SubmitAnswerModel):
     if game_session["status"] != "active":
         raise HTTPException(status_code=403, detail="Game is not active")
@@ -279,7 +312,7 @@ async def submit_answer(data: SubmitAnswerModel):
         return {"status": "wrong", "new_score": players[pid]["score"]}
 
 
-@app.post("/submit_code")
+@app.post("/api/submit_code")
 async def submit_code(data: SubmitCodeModel):
     if game_session["status"] != "active":
         raise HTTPException(status_code=403, detail="Game is not active")
@@ -300,7 +333,7 @@ async def submit_code(data: SubmitCodeModel):
         return {"status": "WRONG"}
 
 
-@app.post("/update_level")
+@app.post("/api/update_level")
 async def update_level(player_id: str = Body(...), level: int = Body(...)):
     if player_id not in players:
         raise HTTPException(status_code=404, detail="Player not found")
@@ -308,7 +341,7 @@ async def update_level(player_id: str = Body(...), level: int = Body(...)):
     return {"status": "updated"}
 
 
-@app.get("/leaderboard")
+@app.get("/api/leaderboard")
 async def leaderboard():
     results = []
     for pid, p in players.items():
