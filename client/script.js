@@ -42,7 +42,8 @@ const levelDisplay = document.getElementById('level-display');
 const scoreDisplay = document.getElementById('score-display');
 const timerDisplay = document.getElementById('timer-display');
 
-function showScreen(screenName) {
+function showScreen(screenName, options = {}) {
+    const shouldPersist = options.persist !== false;
     Object.values(screens).forEach((section) => {
         section.classList.add('hidden');
         section.classList.remove('active');
@@ -50,7 +51,9 @@ function showScreen(screenName) {
     screens[screenName].classList.remove('hidden');
     screens[screenName].classList.add('active');
     gameState.currentScreen = screenName;
-    persistProgress();
+    if (shouldPersist) {
+        persistProgress();
+    }
 }
 
 function persistProgress() {
@@ -176,10 +179,15 @@ async function pollGameStatus() {
             if (!gameState.gameActive) {
                 gameState.gameActive = true;
                 hud.classList.remove('hidden');
-                showScreen('story');
+                await restorePlayerProgress('running');
             }
-        } else if (data.status === 'waiting' || data.status === 'paused') {
+        } else if (data.status === 'paused') {
             if (gameState.username) {
+                gameState.gameActive = false;
+                showScreen('waiting', { persist: false });
+            }
+        } else if (data.status === 'waiting') {
+            if (gameState.username && !gameState.gameActive) {
                 showScreen('waiting');
             }
         } else if (data.status === 'ended' && gameState.gameActive) {
@@ -206,7 +214,7 @@ function connectLiveSocket() {
         gameState.ws.send('subscribe');
     };
 
-    gameState.ws.onmessage = (event) => {
+    gameState.ws.onmessage = async (event) => {
         try {
             const data = JSON.parse(event.data);
             if (data.event === 'session_update') {
@@ -222,7 +230,11 @@ function connectLiveSocket() {
                 if (payload.status === 'running' && !gameState.gameActive && gameState.username) {
                     gameState.gameActive = true;
                     hud.classList.remove('hidden');
-                    showScreen('story');
+                    await restorePlayerProgress('running');
+                }
+                if (payload.status === 'paused' && gameState.username) {
+                    gameState.gameActive = false;
+                    showScreen('waiting', { persist: false });
                 }
                 if (payload.status === 'ended' && gameState.gameActive) {
                     endGame('Session ended');
@@ -308,6 +320,10 @@ async function restorePlayerProgress(sessionStatus) {
     }
 
     if (sessionStatus !== 'running') {
+        if (sessionStatus === 'paused') {
+            showScreen('waiting', { persist: false });
+            return;
+        }
         showScreen('waiting');
         return;
     }
@@ -332,6 +348,22 @@ async function restorePlayerProgress(sessionStatus) {
     }
 
     showScreen('story');
+}
+
+async function handleLockedSessionState() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/game_status`);
+        const data = await response.json();
+        if (data.status === 'paused') {
+            gameState.gameActive = false;
+            showScreen('waiting', { persist: false });
+            alert('Game is paused by admin. Your progress is saved.');
+            return;
+        }
+    } catch (err) {
+        console.error('Failed to verify session state:', err);
+    }
+    endGame('Session paused or ended');
 }
 
 async function startGame() {
@@ -498,7 +530,7 @@ async function submitAnswer() {
         });
 
         if (response.status === 403) {
-            endGame('Session paused or ended');
+            await handleLockedSessionState();
             return;
         }
         const data = await response.json();
@@ -555,7 +587,7 @@ async function submitCode() {
         button.disabled = false;
 
         if (response.status === 403) {
-            endGame('Session paused or ended');
+            await handleLockedSessionState();
             return;
         }
 
