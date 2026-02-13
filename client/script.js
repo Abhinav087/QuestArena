@@ -1,23 +1,32 @@
-// --- Configuration ---
-// IMPORTANT: Change this to your server's IP address for LAN play.
-// If clients open the page via the server (http://server-ip:8000/), use "" for auto-detect.
-const SERVER_IP = "";  // Leave empty to auto-detect from current URL
-const API_BASE_URL = SERVER_IP ? `http://${SERVER_IP}:8000` : window.location.origin;
+const API_BASE_URL = window.location.origin;
+
+const STORAGE = {
+    username: "qa_username",
+    token: "qa_token",
+    sessionId: "qa_session_id",
+    progress: "qa_progress",
+};
+
+const TAB_KEY = "qa_active_tab";
+const tabId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 let gameState = {
-    playerId: null,
-    teamName: "",
+    username: "",
+    token: "",
+    sessionId: null,
     level: 0,
     score: 0,
-    timerInterval: null,
     statusPollInterval: null,
+    heartbeatInterval: null,
     currentQuestions: [],
     currentQuestionIndex: 0,
     pathChoice: null,
     gameActive: false,
+    isCompleted: false,
+    ws: null,
+    currentScreen: 'login',
 };
 
-// --- DOM Elements ---
 const screens = {
     login: document.getElementById('login-screen'),
     waiting: document.getElementById('waiting-screen'),
@@ -33,23 +42,82 @@ const levelDisplay = document.getElementById('level-display');
 const scoreDisplay = document.getElementById('score-display');
 const timerDisplay = document.getElementById('timer-display');
 
-// --- Navigation ---
 function showScreen(screenName) {
-    Object.values(screens).forEach(s => {
-        s.classList.add('hidden');
-        s.classList.remove('active');
+    Object.values(screens).forEach((section) => {
+        section.classList.add('hidden');
+        section.classList.remove('active');
     });
     screens[screenName].classList.remove('hidden');
     screens[screenName].classList.add('active');
+    gameState.currentScreen = screenName;
+    persistProgress();
 }
 
-// ==============================================================
-// GAME STATUS POLLING
-// ==============================================================
+function persistProgress() {
+    if (!gameState.username || !gameState.sessionId) {
+        return;
+    }
+    const payload = {
+        username: gameState.username,
+        sessionId: gameState.sessionId,
+        level: gameState.level,
+        currentQuestionIndex: gameState.currentQuestionIndex,
+        pathChoice: gameState.pathChoice,
+        currentScreen: gameState.currentScreen,
+        isCompleted: gameState.isCompleted,
+        endMessage: document.getElementById('end-message')?.textContent || "",
+        codeDraft: document.getElementById('code-editor')?.value || "",
+        savedAt: Date.now(),
+    };
+    localStorage.setItem(STORAGE.progress, JSON.stringify(payload));
+}
 
-function startPolling(interval = 2000) {
+function getStoredProgress() {
+    const raw = localStorage.getItem(STORAGE.progress);
+    if (!raw) {
+        return null;
+    }
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+function clearProgress() {
+    localStorage.removeItem(STORAGE.progress);
+}
+
+function authHeaders() {
+    return {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${gameState.token}`,
+    };
+}
+
+function updateTimerDisplay(seconds) {
+    const value = Math.max(0, Number(seconds || 0));
+    const m = Math.floor(value / 60);
+    const s = value % 60;
+    timerDisplay.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+function persistAuth() {
+    localStorage.setItem(STORAGE.username, gameState.username);
+    localStorage.setItem(STORAGE.token, gameState.token);
+    localStorage.setItem(STORAGE.sessionId, String(gameState.sessionId || ""));
+}
+
+function clearAuth() {
+    localStorage.removeItem(STORAGE.username);
+    localStorage.removeItem(STORAGE.token);
+    localStorage.removeItem(STORAGE.sessionId);
+    clearProgress();
+}
+
+function startPolling(interval = 2500) {
     stopPolling();
-    pollGameStatus(); // immediate first poll
+    pollGameStatus();
     gameState.statusPollInterval = setInterval(pollGameStatus, interval);
 }
 
@@ -60,292 +128,445 @@ function stopPolling() {
     }
 }
 
-async function pollGameStatus() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/game_status`);
-        const data = await res.json();
-
-        // Update player count on waiting screen
-        const countEl = document.getElementById('waiting-player-count');
-        if (countEl) countEl.textContent = data.player_count;
-
-        if (data.status === "active" && !gameState.gameActive) {
-            // Game just started — transition from waiting to playing
-            gameState.gameActive = true;
-            stopPolling();
-            hud.classList.remove('hidden');
-            updateTimerDisplay(data.remaining_seconds);
-            showScreen('story');
-            // Switch to slower polling during gameplay (for timer sync)
-            startPolling(10000);
-        } else if (data.status === "active" && gameState.gameActive) {
-            // Still active — sync the timer
-            updateTimerDisplay(data.remaining_seconds);
-
-            // If time ran out server-side
-            if (data.remaining_seconds <= 0) {
-                endGameAndReport("TIME UP — Game Over");
-            }
-        } else if (data.status === "finished" && gameState.gameActive) {
-            // Game finished by server
-            endGameAndReport("TIME UP — Game Over");
+function startHeartbeat() {
+    stopHeartbeat();
+    gameState.heartbeatInterval = setInterval(async () => {
+        if (!gameState.token) return;
+        try {
+            await fetch(`${API_BASE_URL}/api/player/heartbeat`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${gameState.token}` }
+            });
+        } catch (err) {
+            console.error('Heartbeat failed:', err);
         }
-    } catch (e) {
-        console.error("Poll error:", e);
+    }, 60000);
+}
+
+function stopHeartbeat() {
+    if (gameState.heartbeatInterval) {
+        clearInterval(gameState.heartbeatInterval);
+        gameState.heartbeatInterval = null;
     }
 }
 
-function updateTimerDisplay(seconds) {
-    if (seconds < 0) seconds = 0;
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    timerDisplay.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+async function pollGameStatus() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/game_status`);
+        const data = await response.json();
+
+        const waitingCount = document.getElementById('waiting-player-count');
+        if (waitingCount) {
+            waitingCount.textContent = Number(data.player_count || 0);
+        }
+
+        if (data.session_id) {
+            gameState.sessionId = data.session_id;
+        }
+        updateTimerDisplay(data.remaining_seconds);
+
+        if (data.status === 'running') {
+            if (gameState.isCompleted) {
+                return;
+            }
+            if (!gameState.gameActive) {
+                gameState.gameActive = true;
+                hud.classList.remove('hidden');
+                showScreen('story');
+            }
+        } else if (data.status === 'waiting' || data.status === 'paused') {
+            if (gameState.username) {
+                showScreen('waiting');
+            }
+        } else if (data.status === 'ended' && gameState.gameActive) {
+            endGame('Session ended');
+        }
+    } catch (err) {
+        console.error('Status poll failed:', err);
+    }
 }
 
-// ==============================================================
-// REGISTRATION & GAME START
-// ==============================================================
+function connectLiveSocket() {
+    if (gameState.ws) {
+        try {
+            gameState.ws.close();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    gameState.ws = new WebSocket(`${protocol}://${window.location.host}/ws/live`);
+
+    gameState.ws.onopen = () => {
+        gameState.ws.send('subscribe');
+    };
+
+    gameState.ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.event === 'session_update') {
+                const payload = data.payload || {};
+                updateTimerDisplay(payload.remaining_seconds || 0);
+                if (gameState.isCompleted) {
+                    return;
+                }
+                if (payload.status === 'running' && !gameState.gameActive && gameState.username) {
+                    gameState.gameActive = true;
+                    hud.classList.remove('hidden');
+                    showScreen('story');
+                }
+                if (payload.status === 'ended' && gameState.gameActive) {
+                    endGame('Session ended');
+                }
+            }
+        } catch (err) {
+            console.error('WebSocket parse error:', err);
+        }
+    };
+
+    gameState.ws.onclose = () => {
+        setTimeout(connectLiveSocket, 2000);
+    };
+}
+
+async function validateStoredToken() {
+    const token = localStorage.getItem(STORAGE.token);
+    const username = localStorage.getItem(STORAGE.username);
+    const sessionId = localStorage.getItem(STORAGE.sessionId);
+
+    if (!token || !username || !sessionId) {
+        return false;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+        });
+
+        if (!response.ok) {
+            clearAuth();
+            return false;
+        }
+
+        const data = await response.json();
+        gameState.username = data.username;
+        gameState.token = token;
+        gameState.sessionId = data.session_id;
+        gameState.score = data.score || 0;
+        gameState.level = data.current_level || 0;
+        scoreDisplay.textContent = gameState.score;
+        levelDisplay.textContent = gameState.level;
+
+        const waitingName = document.getElementById('waiting-team-name');
+        if (waitingName) waitingName.textContent = gameState.username;
+        document.getElementById('team-name').value = gameState.username;
+
+        if (data.session_status === 'running') {
+            gameState.gameActive = true;
+            hud.classList.remove('hidden');
+        }
+        updateTimerDisplay(data.remaining_seconds);
+        await restorePlayerProgress(data.session_status);
+        return true;
+    } catch (err) {
+        console.error('Token validation failed:', err);
+        clearAuth();
+        return false;
+    }
+}
+
+async function restorePlayerProgress(sessionStatus) {
+    const progress = getStoredProgress();
+
+    if (
+        progress
+        && progress.username === gameState.username
+        && Number(progress.sessionId) === Number(gameState.sessionId)
+        && progress.isCompleted
+    ) {
+        gameState.isCompleted = true;
+        gameState.gameActive = false;
+        stopPolling();
+        stopHeartbeat();
+        hud.classList.add('hidden');
+        showScreen('end');
+        document.getElementById('final-score').textContent = gameState.score;
+        document.getElementById('end-message').textContent = progress.endMessage || 'MISSION COMPLETE';
+        persistProgress();
+        return;
+    }
+
+    if (sessionStatus !== 'running') {
+        showScreen('waiting');
+        return;
+    }
+
+    if (!progress || progress.username !== gameState.username || Number(progress.sessionId) !== Number(gameState.sessionId)) {
+        showScreen('story');
+        return;
+    }
+
+    gameState.level = Number(progress.level || gameState.level || 0);
+    gameState.pathChoice = progress.pathChoice || null;
+    gameState.currentQuestionIndex = Number(progress.currentQuestionIndex || 0);
+
+    const screen = progress.currentScreen || 'story';
+    if (screen === 'coding' || screen === 'question' || screen === 'path') {
+        await loadLevel(gameState.level, gameState.pathChoice, {
+            restoreQuestionIndex: gameState.currentQuestionIndex,
+            preferredScreen: screen,
+            codeDraft: progress.codeDraft || "",
+        });
+        return;
+    }
+
+    showScreen('story');
+}
 
 async function startGame() {
     const nameInput = document.getElementById('team-name');
-    if (!nameInput.value.trim()) return alert("Enter team name!");
+    const username = nameInput.value.trim();
+    if (!username) {
+        alert('Enter team name!');
+        return;
+    }
 
     try {
-        const res = await fetch(`${API_BASE_URL}/api/register`, {
+        const response = await fetch(`${API_BASE_URL}/api/player/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_name: nameInput.value.trim() })
+            body: JSON.stringify({ username }),
         });
-        if (!res.ok) throw new Error("Registration failed");
 
-        const data = await res.json();
-        gameState.playerId = data.player_id;
-        gameState.teamName = nameInput.value.trim();
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || 'Registration failed');
+        }
 
-        // Show team name on waiting screen
+        const data = await response.json();
+        gameState.username = data.username;
+        gameState.token = data.token;
+        gameState.sessionId = data.session_id;
+        gameState.score = data.score || 0;
+        gameState.level = data.current_level || 0;
+        gameState.isCompleted = false;
+        scoreDisplay.textContent = gameState.score;
+        levelDisplay.textContent = gameState.level;
+        persistAuth();
+
         const waitingName = document.getElementById('waiting-team-name');
-        if (waitingName) waitingName.textContent = gameState.teamName;
+        if (waitingName) waitingName.textContent = gameState.username;
 
-        if (data.game_status === "active") {
-            // Game already in progress — jump in
+        if (data.status === 'running') {
             gameState.gameActive = true;
             hud.classList.remove('hidden');
-            updateTimerDisplay(data.remaining_seconds);
-            showScreen('story');
-            startPolling(10000); // slow poll for timer sync
+            await restorePlayerProgress('running');
         } else {
-            // Game hasn't started — go to waiting lobby
             showScreen('waiting');
-            startPolling(2000); // fast poll waiting for game start
         }
-    } catch (e) {
-        console.error(e);
-        alert("Cannot connect to server. Make sure the server is running.");
+        updateTimerDisplay(data.remaining_seconds || 0);
+        persistProgress();
+    } catch (err) {
+        console.error(err);
+        alert(err.message || 'Cannot connect to server.');
     }
 }
 
-// ==============================================================
-// GAME END & REPORT
-// ==============================================================
-
-async function endGameAndReport(msg) {
+function endGame(message, lockCompleted = false) {
     gameState.gameActive = false;
-    stopPolling();
-
-    // Report final data to server
-    try {
-        await fetch(`${API_BASE_URL}/api/report`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ player_id: gameState.playerId })
-        });
-    } catch (e) {
-        console.error("Report error:", e);
+    if (lockCompleted) {
+        gameState.isCompleted = true;
     }
-
+    stopPolling();
+    stopHeartbeat();
     showScreen('end');
-    document.getElementById('end-message').textContent = msg;
+    document.getElementById('end-message').textContent = message;
     document.getElementById('final-score').textContent = gameState.score;
     hud.classList.add('hidden');
+    persistProgress();
 }
 
-// ==============================================================
-// LEVEL LOGIC
-// ==============================================================
-
-async function loadLevel(level, path = null) {
+async function loadLevel(level, path = null, restoreOptions = null) {
+    if (!gameState.token) {
+        alert('Please join first.');
+        return;
+    }
     if (!gameState.gameActive) {
-        alert("Game is not active!");
+        alert('Session is not running yet.');
         return;
     }
 
     gameState.level = level;
     gameState.pathChoice = path;
-    levelDisplay.textContent = level;
     gameState.currentQuestionIndex = 0;
+    levelDisplay.textContent = level;
 
     let url = `${API_BASE_URL}/api/questions/${level}`;
-    if (path) url += `?path=${path}`;
+    if (path) {
+        url += `?path=${encodeURIComponent(path)}`;
+    }
 
     try {
-        const res = await fetch(url);
-
-        if (res.status === 403) {
-            alert("Game is not active yet. Please wait for the server admin to start.");
-            return;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to load level');
         }
+        const data = await response.json();
 
-        const data = await res.json();
-
-        // Handle Path Selection (Levels 2, 3)
-        if (data.message === "Choose path") {
+        if (data.message === 'Choose path') {
             showScreen('path');
             document.getElementById('path-title').textContent = data.title;
+            persistProgress();
             return;
         }
 
-        // Handle Coding Challenge (Level 5)
         if (data.question) {
             showScreen('coding');
             document.getElementById('coding-problem-text').textContent = data.question.text;
-            document.getElementById('code-editor').value = data.question.template;
+            document.getElementById('code-editor').value = restoreOptions?.codeDraft || data.question.template;
+            persistProgress();
             return;
         }
 
-        // Handle standard questions
         if (data.questions) {
             gameState.currentQuestions = data.questions;
+            if (restoreOptions?.preferredScreen === 'question') {
+                gameState.currentQuestionIndex = Math.min(
+                    Math.max(0, Number(restoreOptions.restoreQuestionIndex || 0)),
+                    Math.max(0, gameState.currentQuestions.length - 1)
+                );
+            }
             showScreen('question');
             renderQuestion();
         }
-
-    } catch (e) {
-        console.error(e);
-        alert("Error loading level.");
+    } catch (err) {
+        console.error(err);
+        alert('Error loading level.');
     }
 }
 
 function renderQuestion() {
-    const q = gameState.currentQuestions[gameState.currentQuestionIndex];
+    const question = gameState.currentQuestions[gameState.currentQuestionIndex];
     document.getElementById('question-title').textContent = `Level ${gameState.level} - Q${gameState.currentQuestionIndex + 1}`;
 
     const container = document.getElementById('question-container');
     container.innerHTML = `
-        <h3>${q.text}</h3>
+        <h3>${question.text}</h3>
         <div class="options-container">
-             ${q.options.map(opt => `<button class="option-btn" onclick="selectOption(this, '${opt}')">${opt}</button>`).join('')}
+            ${question.options.map((option) => `<button class="option-btn" onclick="selectOption(this, '${option.replace(/'/g, "\\'")}')">${option}</button>`).join('')}
         </div>
     `;
-
-    // Level 1 Hidden Route Trigger
-    if (gameState.level === 1 && !gameState.pathChoice) {
-        const hiddenBtn = document.createElement('button');
-        hiddenBtn.innerText = "???";
-        hiddenBtn.className = "path-btn hidden-btn";
-        hiddenBtn.style = "position:absolute; top:10px; right:10px; opacity:0.1;";
-        hiddenBtn.onclick = () => loadLevel(1, 'backlog_king');
-        document.getElementById('question-screen').appendChild(hiddenBtn);
-    }
+    persistProgress();
 }
 
 let currentSelection = null;
-function selectOption(btn, ans) {
-    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    currentSelection = ans;
+
+function selectOption(button, answer) {
+    document.querySelectorAll('.option-btn').forEach((btn) => btn.classList.remove('selected'));
+    button.classList.add('selected');
+    currentSelection = answer;
+    persistProgress();
 }
 
 async function submitAnswer() {
-    if (!gameState.gameActive) {
-        alert("Game is over!");
+    if (!currentSelection) {
+        alert('Select an option!');
         return;
     }
-    if (!currentSelection) return alert("Select an option!");
 
-    const q = gameState.currentQuestions[gameState.currentQuestionIndex];
-
+    const question = gameState.currentQuestions[gameState.currentQuestionIndex];
     try {
-        const res = await fetch(`${API_BASE_URL}/api/submit_answer`, {
+        const response = await fetch(`${API_BASE_URL}/api/submit_answer`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify({
-                player_id: gameState.playerId,
                 level: gameState.level,
-                question_id: q.id,
-                answer: currentSelection
-            })
+                question_id: question.id,
+                answer: currentSelection,
+            }),
         });
 
-        if (res.status === 403) {
-            endGameAndReport("TIME UP — Game Over");
+        if (response.status === 403) {
+            endGame('Session paused or ended');
             return;
         }
-
-        const data = await res.json();
+        const data = await response.json();
+        if (data.status === 'already_answered') {
+            alert('You already solved this question. No extra points awarded.');
+            nextQuestion();
+            return;
+        }
         if (data.status === 'correct') {
             gameState.score = data.new_score;
             scoreDisplay.textContent = gameState.score;
+            persistProgress();
             nextQuestion();
-        } else {
-            alert("Incorrect! Try again.");
+            return;
         }
-    } catch (e) { console.error(e); }
+        alert('Incorrect! Try again.');
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 function nextQuestion() {
     currentSelection = null;
-    gameState.currentQuestionIndex++;
-    if (gameState.currentQuestionIndex < gameState.currentQuestions.length) {
-        renderQuestion();
-    } else {
-        // Level Up
-        if (gameState.level >= 5) {
-            endGameAndReport("MISSION COMPLETE — Partner Saved!");
-        } else {
-            loadLevel(gameState.level + 1);
-        }
-    }
-}
+    gameState.currentQuestionIndex += 1;
 
-async function submitCode() {
-    if (!gameState.gameActive) {
-        alert("Game is over!");
+    if (gameState.currentQuestionIndex < gameState.currentQuestions.length) {
+        persistProgress();
+        renderQuestion();
         return;
     }
 
-    const code = document.getElementById('code-editor').value;
-    const btn = document.querySelector('#coding-screen button');
+    if (gameState.level >= 5) {
+        endGame('Mission complete!', true);
+        return;
+    }
 
-    btn.textContent = "COMPILING...";
-    btn.disabled = true;
+    loadLevel(gameState.level + 1);
+}
+
+async function submitCode() {
+    const code = document.getElementById('code-editor').value;
+    const button = document.querySelector('#coding-screen button');
+    button.textContent = 'COMPILING...';
+    button.disabled = true;
 
     try {
-        const res = await fetch(`${API_BASE_URL}/api/submit_code`, {
+        const response = await fetch(`${API_BASE_URL}/api/submit_code`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ player_id: gameState.playerId, code: code })
+            headers: authHeaders(),
+            body: JSON.stringify({ code }),
         });
 
-        btn.textContent = "COMPILE & EXECUTE";
-        btn.disabled = false;
+        button.textContent = 'COMPILE & EXECUTE';
+        button.disabled = false;
 
-        if (res.status === 403) {
-            endGameAndReport("TIME UP — Game Over");
+        if (response.status === 403) {
+            endGame('Session paused or ended');
             return;
         }
 
-        const data = await res.json();
+        const data = await response.json();
         if (data.status === 'CORRECT') {
             gameState.score = data.new_score;
-            endGameAndReport("YOU SAVED THE PARTNER!");
-        } else {
-            const resultDiv = document.getElementById('code-result');
-            resultDiv.textContent = "OUTPUT: WRONG ANSWER";
-            resultDiv.style.color = "red";
+            scoreDisplay.textContent = gameState.score;
+            persistProgress();
+            endGame('YOU SAVED THE PARTNER!', true);
+            return;
         }
-    } catch (e) {
-        console.error(e);
-        btn.disabled = false;
+
+        const resultDiv = document.getElementById('code-result');
+        resultDiv.textContent = 'OUTPUT: WRONG ANSWER';
+        resultDiv.style.color = 'red';
+    } catch (err) {
+        console.error(err);
+        button.disabled = false;
+        button.textContent = 'COMPILE & EXECUTE';
     }
 }
 
@@ -353,5 +574,70 @@ function choosePath(path) {
     loadLevel(gameState.level, path);
 }
 
-// Initial binding for Start Level 0 button (from Story screen)
+function setupAntiCheat() {
+    const currentTab = localStorage.getItem(TAB_KEY);
+    if (currentTab && currentTab !== tabId) {
+        alert('Multiple tabs detected. Please use only one tab for the event.');
+        document.body.innerHTML = '<h2 style="color:#ff3b3b;text-align:center;padding-top:80px;">Multiple tabs are not allowed.</h2>';
+        throw new Error('Multiple tabs blocked');
+    }
+    localStorage.setItem(TAB_KEY, tabId);
+
+    window.addEventListener('beforeunload', () => {
+        if (localStorage.getItem(TAB_KEY) === tabId) {
+            localStorage.removeItem(TAB_KEY);
+        }
+    });
+
+    window.addEventListener('storage', (event) => {
+        if (event.key === TAB_KEY && event.newValue && event.newValue !== tabId) {
+            alert('Another active tab detected. This tab will stop.');
+            endGame('Blocked: multiple tabs detected');
+        }
+    });
+
+    document.addEventListener('contextmenu', (event) => event.preventDefault());
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'F12') event.preventDefault();
+        if (event.ctrlKey && event.shiftKey && ['I', 'J', 'C'].includes(event.key.toUpperCase())) {
+            event.preventDefault();
+        }
+    });
+
+    document.addEventListener('visibilitychange', async () => {
+        if (!gameState.token) return;
+        const details = document.hidden ? 'tab_hidden' : 'tab_visible';
+        try {
+            await fetch(`${API_BASE_URL}/api/player/activity`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ event_type: 'visibility', details }),
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    });
+}
+
+async function boot() {
+    setupAntiCheat();
+    const editor = document.getElementById('code-editor');
+    if (editor) {
+        editor.addEventListener('input', () => persistProgress());
+    }
+    connectLiveSocket();
+    const restored = await validateStoredToken();
+    if (!restored) {
+        showScreen('login');
+    }
+    startPolling(2500);
+    startHeartbeat();
+}
+
 window.startLevel = loadLevel;
+window.startGame = startGame;
+window.submitAnswer = submitAnswer;
+window.submitCode = submitCode;
+window.choosePath = choosePath;
+
+boot();

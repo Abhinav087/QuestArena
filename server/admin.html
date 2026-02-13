@@ -3,434 +3,498 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuestArena — Admin Dashboard</title>
+    <title>QuestArena v2 — Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00ff00;
             --accent: #ff00ff;
             --danger: #ff3b3b;
+            --warning: #ffaa00;
             --bg: #0a0a0a;
             --card-bg: rgba(255,255,255,0.04);
             --border: rgba(0,255,0,0.25);
             --text: #e0e0e0;
-            --text-muted: #888;
+            --muted: #888;
             --font-heading: 'Orbitron', sans-serif;
             --font-body: 'Roboto', sans-serif;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font-body);
-            min-height: 100vh;
-            padding: 24px;
-        }
-
-        h1, h2, h3 {
-            font-family: var(--font-heading);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* ---- Login Screen ---- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font-body); padding: 20px; }
+        h1, h2, h3 { font-family: var(--font-heading); text-transform: uppercase; letter-spacing: 1.5px; }
         .login-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
+            position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
+            background: var(--bg); z-index: 1000;
         }
         .login-overlay.hidden { display: none; }
         .login-box {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 48px 40px;
-            text-align: center;
-            max-width: 420px;
-            width: 90%;
+            width: 100%; max-width: 420px; padding: 32px; border-radius: 10px;
+            border: 1px solid var(--border); background: var(--card-bg);
         }
-        .login-box h2 {
-            color: var(--primary);
-            margin-bottom: 8px;
-            font-size: 1.4rem;
+        .login-box h2 { margin-bottom: 10px; color: var(--primary); }
+        .login-box p { margin-bottom: 16px; color: var(--muted); }
+        .login-box input {
+            width: 100%; margin-bottom: 10px; padding: 10px;
+            border: 1px solid var(--accent); border-radius: 6px;
+            background: #111; color: #fff;
         }
-        .login-box p {
-            color: var(--text-muted);
-            margin-bottom: 24px;
-            font-size: 0.9rem;
-        }
-        .login-box input[type="password"] {
-            width: 100%;
-            padding: 12px 16px;
-            background: #111;
-            border: 1px solid var(--accent);
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            font-size: 1rem;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            outline: none;
-        }
-        .login-box input[type="password"]:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 8px rgba(0,255,0,0.3);
-        }
-        .login-error {
-            color: var(--danger);
-            font-size: 0.85rem;
-            margin-bottom: 12px;
-            min-height: 20px;
-        }
-
-        /* ---- Header ---- */
-        .admin-header {
-            text-align: center;
-            padding: 24px 0 32px;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 32px;
-        }
-        .admin-header h1 {
-            font-size: 1.8rem;
-            color: var(--primary);
-            text-shadow: 0 0 20px rgba(0,255,0,0.3);
-        }
-        .admin-header p { color: var(--text-muted); margin-top: 8px; }
-
-        /* ---- Status Banner ---- */
-        .status-banner {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 40px;
-            padding: 20px 32px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            margin-bottom: 28px;
-            flex-wrap: wrap;
-        }
-        .status-item { text-align: center; }
-        .status-item .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .status-item .value {
-            font-family: var(--font-heading);
-            font-size: 1.6rem;
-            margin-top: 4px;
-        }
-        .status-item .value.status-waiting { color: #ffaa00; }
-        .status-item .value.status-active  { color: var(--primary); }
-        .status-item .value.status-finished{ color: var(--danger); }
-
-        /* ---- Buttons ---- */
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-        }
+        .error { color: var(--danger); min-height: 20px; font-size: 0.9rem; margin-bottom: 8px; }
         .btn {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-            padding: 12px 36px;
-            font-size: 1rem;
-            font-family: var(--font-heading);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            border-radius: 6px;
+            background: transparent; border: 1px solid var(--primary); color: var(--primary);
+            padding: 8px 12px; border-radius: 6px; cursor: pointer; font-family: var(--font-heading);
+            font-size: 0.75rem; text-transform: uppercase;
         }
-        .btn:hover {
-            background: var(--primary);
-            color: #000;
-            box-shadow: 0 0 15px rgba(0,255,0,0.4);
-        }
-        .btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-        .btn:disabled:hover {
-            background: transparent;
-            color: var(--primary);
-            box-shadow: none;
-        }
-        .btn-danger {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-        .btn-danger:hover {
-            background: var(--danger);
-            color: #000;
-            box-shadow: 0 0 15px rgba(255,59,59,0.4);
-        }
-
-        /* ---- Tables ---- */
-        .section-title {
-            font-size: 1rem;
-            color: var(--primary);
-            margin-bottom: 12px;
-            padding-left: 4px;
-        }
-        .table-wrapper {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 32px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th {
-            background: rgba(0,255,0,0.08);
-            font-family: var(--font-heading);
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--primary);
-            padding: 14px 16px;
-            text-align: left;
-        }
-        td {
-            padding: 12px 16px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.95rem;
-        }
-        tr:hover td { background: rgba(0,255,0,0.03); }
-        .rank-cell {
-            font-family: var(--font-heading);
-            font-weight: 700;
-            color: var(--accent);
-        }
-        .empty-msg {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* ---- Responsive ---- */
-        @media (max-width: 640px) {
-            .status-banner { gap: 20px; padding: 16px; }
-            .status-item .value { font-size: 1.2rem; }
-            th, td { padding: 10px 8px; font-size: 0.8rem; }
-        }
-
-        /* ---- Pulse animation for timer ---- */
-        @keyframes pulse-glow {
-            0%, 100% { text-shadow: 0 0 8px rgba(0,255,0,0.3); }
-            50% { text-shadow: 0 0 20px rgba(0,255,0,0.7); }
-        }
-        .timer-pulse { animation: pulse-glow 2s ease-in-out infinite; }
-
-        /* ---- Dashboard hidden until login ---- */
+        .btn:hover { background: var(--primary); color: #000; }
+        .btn-danger { border-color: var(--danger); color: var(--danger); }
+        .btn-danger:hover { background: var(--danger); color: #000; }
+        .btn-warning { border-color: var(--warning); color: var(--warning); }
+        .btn-warning:hover { background: var(--warning); color: #000; }
         .dashboard { display: none; }
         .dashboard.visible { display: block; }
+        .header { margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .header h1 { color: var(--primary); font-size: 1.5rem; }
+        .row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-bottom: 16px; }
+        .card {
+            border: 1px solid var(--border); border-radius: 10px;
+            background: var(--card-bg); padding: 14px;
+        }
+        .card h3 { font-size: 0.95rem; margin-bottom: 10px; color: var(--primary); }
+        .meta { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 0.9rem; }
+        .meta strong { color: var(--text); }
+        .inline { display: flex; gap: 8px; flex-wrap: wrap; }
+        input, select {
+            width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);
+            background: #111; color: var(--text);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 8px; border-top: 1px solid rgba(255,255,255,0.06); text-align: left; }
+        th { color: var(--primary); font-size: 0.7rem; text-transform: uppercase; }
+        tr { transition: transform 0.2s ease; }
+        tr.rank-bump { transform: translateY(-2px); }
+        .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .small { font-size: 0.8rem; color: var(--muted); }
+        pre { white-space: pre-wrap; font-size: 0.8rem; color: var(--text); }
     </style>
 </head>
 <body>
-
-    <!-- ========== LOGIN OVERLAY ========== -->
     <div class="login-overlay" id="login-overlay">
         <div class="login-box">
-            <h2>🔒 Admin Login</h2>
-            <p>Enter the admin password to access the dashboard</p>
-            <input type="password" id="admin-password" placeholder="Password" autofocus
-                   onkeydown="if(event.key==='Enter') adminLogin()">
-            <div class="login-error" id="login-error"></div>
+            <h2>Admin Login</h2>
+            <p>Authenticate to manage the event session.</p>
+            <input type="password" id="admin-password" placeholder="Password" onkeydown="if(event.key==='Enter') adminLogin()">
+            <div class="error" id="login-error"></div>
             <button class="btn" onclick="adminLogin()">Authenticate</button>
         </div>
     </div>
 
-    <!-- ========== DASHBOARD (hidden until auth) ========== -->
     <div class="dashboard" id="dashboard">
-        <header class="admin-header">
-            <h1>⚔ QuestArena Admin</h1>
-            <p>Server Control Dashboard</p>
-        </header>
+        <div class="header">
+            <h1>QuestArena v2 Admin</h1>
+            <div class="small">Single active session architecture</div>
+        </div>
 
-        <!-- Status Banner -->
-        <div class="status-banner">
-            <div class="status-item">
-                <div class="label">Game Status</div>
-                <div class="value" id="status-text">WAITING</div>
+        <div class="row">
+            <div class="card">
+                <h3>Session Status</h3>
+                <div class="meta"><span>Name</span><strong id="session-name">-</strong></div>
+                <div class="meta"><span>Status</span><strong id="session-status">waiting</strong></div>
+                <div class="meta"><span>Time Remaining</span><strong id="timer">00:00</strong></div>
+                <div class="meta"><span>Leaderboard Frozen</span><strong id="freeze-state">No</strong></div>
             </div>
-            <div class="status-item">
-                <div class="label">Time Remaining</div>
-                <div class="value timer-pulse" id="timer-text">30:00</div>
+
+            <div class="card">
+                <h3>Create Session</h3>
+                <input id="new-session-name" placeholder="Session Name" value="Fest Round 1">
+                <input id="new-session-duration" type="number" min="5" max="240" value="30" style="margin-top:8px;">
+                <div class="inline" style="margin-top:10px;">
+                    <button class="btn" onclick="createSession()">Create New Session</button>
+                    <button class="btn btn-warning" onclick="fetchSessions()">Refresh History</button>
+                </div>
             </div>
-            <div class="status-item">
-                <div class="label">Connected Players</div>
-                <div class="value" id="player-count">0</div>
+
+            <div class="card">
+                <h3>Timer Controls</h3>
+                <div class="inline">
+                    <button class="btn" onclick="adminPost('/api/admin/session/start')">Start</button>
+                    <button class="btn btn-warning" onclick="adminPost('/api/admin/session/pause')">Pause</button>
+                    <button class="btn" onclick="adminPost('/api/admin/session/resume')">Resume</button>
+                    <button class="btn btn-danger" onclick="adminPost('/api/admin/session/end')">Force End</button>
+                </div>
+                <div class="inline" style="margin-top:10px;">
+                    <button class="btn" onclick="adjustTime('/api/admin/session/add_time', 5)">+5 Min</button>
+                    <button class="btn btn-warning" onclick="adjustTime('/api/admin/session/subtract_time', 5)">-5 Min</button>
+                    <button class="btn" onclick="toggleFreeze()">Toggle Freeze</button>
+                </div>
             </div>
         </div>
 
-        <!-- Controls -->
-        <div class="controls">
-            <button class="btn" id="start-btn" onclick="startGame()">▶ Start Game</button>
-            <button class="btn btn-danger" id="reset-btn" onclick="resetGame()">⟲ Reset Game</button>
+        <div class="row">
+            <div class="card">
+                <h3>Live Players</h3>
+                <div class="inline" style="margin-bottom:10px;">
+                    <select id="player-sort-key" onchange="applyPlayerSort()">
+                        <option value="score" selected>Sort: Score</option>
+                        <option value="username">Sort: Name</option>
+                        <option value="current_level">Sort: Level</option>
+                        <option value="live_time_seconds">Sort: Live Time</option>
+                        <option value="time_taken_seconds">Sort: Time Taken</option>
+                        <option value="join_time">Sort: Join Time</option>
+                        <option value="last_active">Sort: Last Active</option>
+                    </select>
+                    <select id="player-sort-dir" onchange="applyPlayerSort()">
+                        <option value="desc" selected>Order: Desc</option>
+                        <option value="asc">Order: Asc</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th><th>Score</th><th>Lvl</th><th>Live</th><th>Taken</th><th>Join</th><th>Last Active</th><th>IP</th><th>State</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="players-body">
+                        <tr><td colspan="10" class="small">No players yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Leaderboard</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th><th>User</th><th>Score</th><th>Level</th><th>Completion (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <tr><td colspan="5" class="small">No rankings yet.</td></tr>
+                    </tbody>
+                </table>
+                <div class="inline" style="margin-top:10px;">
+                    <button class="btn" onclick="exportCurrentSession()">Export CSV</button>
+                </div>
+            </div>
         </div>
 
-        <!-- Players / Leaderboard Table -->
-        <h3 class="section-title">Players &amp; Leaderboard</h3>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Team Name</th>
-                        <th>Score</th>
-                        <th>Level</th>
-                        <th>Time Taken</th>
-                        <th>Questions</th>
-                        <th>Reported</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboard-body">
-                    <tr><td colspan="7" class="empty-msg">No players connected yet.</td></tr>
-                </tbody>
-            </table>
+        <div class="row">
+            <div class="card">
+                <h3>Session History</h3>
+                <table>
+                    <thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody id="sessions-body"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Analytics</h3>
+                <pre id="analytics">Select or run a session to view analytics.</pre>
+            </div>
         </div>
     </div>
 
     <script>
         const API = window.location.origin;
         let adminToken = null;
-        let pollInterval = null;
+        let currentSessionId = null;
+        let currentFrozen = false;
+        let currentPlayers = [];
+        let playerSortKey = 'score';
+        let playerSortDirection = 'desc';
 
-        // ---- Admin Login ----
-        async function adminLogin() {
-            const pwd = document.getElementById("admin-password").value;
-            const errEl = document.getElementById("login-error");
-            errEl.textContent = "";
+        function authHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${adminToken}`,
+            };
+        }
 
-            if (!pwd.trim()) {
-                errEl.textContent = "Enter a password";
-                return;
+        function toTimer(seconds) {
+            const v = Math.max(0, Number(seconds || 0));
+            const m = Math.floor(v / 60);
+            const s = v % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function toClock(value) {
+            if (!value) return '-';
+            try {
+                return new Date(value).toLocaleTimeString();
+            } catch {
+                return '-';
             }
+        }
+
+        function toDuration(seconds) {
+            if (seconds === null || seconds === undefined) return '-';
+            const total = Math.max(0, Number(seconds));
+            const h = Math.floor(total / 3600);
+            const m = Math.floor((total % 3600) / 60);
+            const s = total % 60;
+            if (h > 0) return `${h}h ${m}m ${s}s`;
+            if (m > 0) return `${m}m ${s}s`;
+            return `${s}s`;
+        }
+
+        async function adminLogin() {
+            const pwd = document.getElementById('admin-password').value;
+            const errEl = document.getElementById('login-error');
+            errEl.textContent = '';
+            if (!pwd.trim()) { errEl.textContent = 'Enter password'; return; }
 
             try {
                 const res = await fetch(`${API}/api/admin_login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ password: pwd })
                 });
-
-                if (res.status === 401) {
-                    errEl.textContent = "Wrong password. Try again.";
-                    return;
-                }
-
+                if (!res.ok) { errEl.textContent = 'Wrong password'; return; }
                 const data = await res.json();
                 adminToken = data.token;
-
-                // Hide login, show dashboard
-                document.getElementById("login-overlay").classList.add("hidden");
-                document.getElementById("dashboard").classList.add("visible");
-
-                // Start polling
-                poll();
-                pollInterval = setInterval(poll, 2000);
-            } catch (e) {
-                errEl.textContent = "Cannot connect to server.";
-                console.error(e);
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('dashboard').classList.add('visible');
+                await refreshAll();
+                connectSocket();
+                setInterval(refreshAll, 3000);
+            } catch (err) {
+                errEl.textContent = 'Server not reachable';
             }
         }
 
-        // ---- Poll game status + leaderboard ----
-        async function poll() {
-            try {
-                const [statusRes, lbRes] = await Promise.all([
-                    fetch(`${API}/api/game_status`),
-                    fetch(`${API}/api/leaderboard`)
-                ]);
-                const status = await statusRes.json();
-                const leaderboard = await lbRes.json();
-
-                updateStatusUI(status);
-                updateLeaderboard(leaderboard);
-            } catch (e) {
-                console.error("Poll error:", e);
+        async function adminPost(url, payload = null) {
+            const res = await fetch(`${API}${url}`, {
+                method: 'POST', headers: authHeaders(), body: payload ? JSON.stringify(payload) : null
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.detail || 'Operation failed');
+                return null;
             }
+            await refreshAll();
+            return res.json().catch(() => ({}));
         }
 
-        function updateStatusUI(data) {
-            const el = document.getElementById("status-text");
-            el.textContent = data.status.toUpperCase();
-            el.className = "value status-" + data.status;
-
-            const mins = Math.floor(data.remaining_seconds / 60);
-            const secs = data.remaining_seconds % 60;
-            document.getElementById("timer-text").textContent =
-                `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-
-            document.getElementById("player-count").textContent = data.player_count;
-
-            const startBtn = document.getElementById("start-btn");
-            startBtn.disabled = data.status === "active" || data.status === "finished";
+        async function createSession() {
+            const name = document.getElementById('new-session-name').value.trim();
+            const duration = Number(document.getElementById('new-session-duration').value || 30);
+            if (!name) { alert('Session name required'); return; }
+            await adminPost('/api/admin/session/create', { name, duration_minutes: duration });
         }
 
-        function updateLeaderboard(players) {
-            const tbody = document.getElementById("leaderboard-body");
-            if (!players.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">No players connected yet.</td></tr>';
+        async function adjustTime(url, minutes) {
+            await adminPost(url, { minutes });
+        }
+
+        async function toggleFreeze() {
+            await adminPost('/api/admin/leaderboard/freeze', { frozen: !currentFrozen });
+        }
+
+        async function fetchStatus() {
+            const res = await fetch(`${API}/api/game_status`);
+            const data = await res.json();
+            currentSessionId = data.session_id;
+            document.getElementById('session-name').textContent = data.name || '-';
+            document.getElementById('session-status').textContent = data.status || 'waiting';
+            document.getElementById('timer').textContent = toTimer(data.remaining_seconds || 0);
+        }
+
+        async function fetchLeaderboard() {
+            const res = await fetch(`${API}/api/leaderboard`);
+            const rows = await res.json();
+            const body = document.getElementById('leaderboard-body');
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="5" class="small">No rankings yet.</td></tr>';
                 return;
             }
-            tbody.innerHTML = players.map((p, i) => {
-                const mins = Math.floor(p.time_taken / 60);
-                const secs = Math.floor(p.time_taken % 60);
-                const timeStr = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
-                return `<tr>
-                    <td class="rank-cell">${i + 1}</td>
-                    <td>${escapeHtml(p.name)}</td>
+            body.innerHTML = rows.map((r, i) => `
+                <tr class="rank-bump">
+                    <td>${i + 1}</td>
+                    <td>${escapeHtml(r.username)}</td>
+                    <td>${r.score}</td>
+                    <td>${r.current_level}</td>
+                    <td>${r.completion_seconds ?? '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function fetchPlayers() {
+            const res = await fetch(`${API}/api/admin/players/live`, { headers: authHeaders() });
+            if (!res.ok) return;
+            const players = await res.json();
+            currentPlayers = Array.isArray(players) ? players : [];
+            renderPlayers();
+            document.getElementById('freeze-state').textContent = currentPlayers.length ? document.getElementById('freeze-state').textContent : 'No';
+        }
+
+        function sortPlayers(rows) {
+            const direction = playerSortDirection === 'asc' ? 1 : -1;
+            return [...rows].sort((a, b) => {
+                let va;
+                let vb;
+
+                if (playerSortKey === 'username') {
+                    va = String(a.username || '').toLowerCase();
+                    vb = String(b.username || '').toLowerCase();
+                } else if (playerSortKey === 'join_time' || playerSortKey === 'last_active') {
+                    va = a[playerSortKey] ? new Date(a[playerSortKey]).getTime() : 0;
+                    vb = b[playerSortKey] ? new Date(b[playerSortKey]).getTime() : 0;
+                } else {
+                    va = Number(a[playerSortKey] ?? -1);
+                    vb = Number(b[playerSortKey] ?? -1);
+                }
+
+                if (va < vb) return -1 * direction;
+                if (va > vb) return 1 * direction;
+                return 0;
+            });
+        }
+
+        function renderPlayers() {
+            const body = document.getElementById('players-body');
+            if (!currentPlayers.length) {
+                body.innerHTML = '<tr><td colspan="10" class="small">No players yet.</td></tr>';
+                return;
+            }
+
+            const sorted = sortPlayers(currentPlayers);
+            body.innerHTML = sorted.map((p) => `
+                <tr>
+                    <td>${escapeHtml(p.username)}</td>
                     <td>${p.score}</td>
-                    <td>${p.level}</td>
-                    <td>${timeStr}</td>
-                    <td>${p.questions_cleared}</td>
-                    <td>${p.reported ? '✅' : '⏳'}</td>
-                </tr>`;
-            }).join('');
+                    <td>${p.current_level}</td>
+                    <td>${toDuration(p.live_time_seconds)}</td>
+                    <td>${toDuration(p.time_taken_seconds)}</td>
+                    <td>${toClock(p.join_time)}</td>
+                    <td>${toClock(p.last_active)}</td>
+                    <td>${escapeHtml(p.ip_address || '-')} ${p.duplicate_ip ? '⚠' : ''}</td>
+                    <td>${p.is_banned ? 'Banned' : (p.is_active ? 'Active' : 'Inactive')}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-warning" onclick="moveLevel(${p.id})">Move</button>
+                            <button class="btn" onclick="adjustScore(${p.id})">Score</button>
+                            <button class="btn" onclick="postPlayerAction(${p.id}, 'reset')">Reset</button>
+                            <button class="btn btn-warning" onclick="postPlayerAction(${p.id}, 'kick')">Kick</button>
+                            <button class="btn btn-danger" onclick="postPlayerAction(${p.id}, 'ban')">Ban</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function applyPlayerSort() {
+            const keyEl = document.getElementById('player-sort-key');
+            const dirEl = document.getElementById('player-sort-dir');
+            playerSortKey = keyEl?.value || 'score';
+            playerSortDirection = dirEl?.value || 'desc';
+            renderPlayers();
+        }
+
+        async function postPlayerAction(playerId, action) {
+            await adminPost(`/api/admin/player/${playerId}/${action}`);
+        }
+
+        async function moveLevel(playerId) {
+            const level = prompt('Move player to level:', '0');
+            if (level === null) return;
+            await adminPost(`/api/admin/player/${playerId}/move-level`, { level: Number(level) });
+        }
+
+        async function adjustScore(playerId) {
+            const delta = prompt('Score delta (e.g. 10 or -5):', '10');
+            if (delta === null) return;
+            await adminPost(`/api/admin/player/${playerId}/adjust-score`, { delta: Number(delta) });
+        }
+
+        async function fetchSessions() {
+            const res = await fetch(`${API}/api/admin/sessions`, { headers: authHeaders() });
+            if (!res.ok) return;
+            const sessions = await res.json();
+            const body = document.getElementById('sessions-body');
+            if (!sessions.length) {
+                body.innerHTML = '<tr><td colspan="4" class="small">No sessions found.</td></tr>';
+                return;
+            }
+            body.innerHTML = sessions.map((s) => `
+                <tr>
+                    <td>${s.id}</td>
+                    <td>${escapeHtml(s.name)}</td>
+                    <td>${s.status}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn" onclick="viewAnalytics(${s.id})">Analytics</button>
+                            <button class="btn" onclick="exportBySession(${s.id})">Export</button>
+                            ${s.status === 'ended' ? `<button class='btn btn-danger' onclick='deleteSession(${s.id})'>Delete</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function deleteSession(id) {
+            if (!confirm('Delete this ended session and all related data?')) return;
+            const res = await fetch(`${API}/api/admin/sessions/${id}`, { method: 'DELETE', headers: authHeaders() });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.detail || 'Delete failed');
+            }
+            await refreshAll();
+        }
+
+        async function viewAnalytics(sessionId) {
+            const res = await fetch(`${API}/api/admin/analytics/${sessionId}`, { headers: authHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+            document.getElementById('analytics').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function exportBySession(sessionId) {
+            window.open(`${API}/api/admin/export/${sessionId}`, '_blank');
+        }
+
+        function exportCurrentSession() {
+            if (!currentSessionId) {
+                alert('No session to export');
+                return;
+            }
+            exportBySession(currentSessionId);
+        }
+
+        async function refreshAll() {
+            await fetchStatus();
+            await fetchLeaderboard();
+            await fetchPlayers();
+            await fetchSessions();
+            if (currentSessionId) {
+                await viewAnalytics(currentSessionId);
+            }
+        }
+
+        function connectSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const ws = new WebSocket(`${protocol}://${window.location.host}/ws/live`);
+            ws.onopen = () => ws.send('admin-subscribe');
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    if (message.event === 'session_update') {
+                        const payload = message.payload || {};
+                        document.getElementById('session-status').textContent = payload.status || 'waiting';
+                        document.getElementById('timer').textContent = toTimer(payload.remaining_seconds || 0);
+                    }
+                    if (message.event === 'leaderboard_update') {
+                        currentFrozen = !!(message.payload && message.payload.frozen);
+                        document.getElementById('freeze-state').textContent = currentFrozen ? 'Yes' : 'No';
+                        fetchLeaderboard();
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            };
+            ws.onclose = () => setTimeout(connectSocket, 2000);
         }
 
         function escapeHtml(str) {
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
-        }
-
-        // ---- Actions (pass admin_token as query param) ----
-        async function startGame() {
-            if (!confirm("Start the 30-minute game timer for all connected players?")) return;
-            try {
-                const res = await fetch(`${API}/api/start_game?admin_token=${adminToken}`, { method: 'POST' });
-                if (res.status === 401) { alert("Session expired. Reload page."); return; }
-                const data = await res.json();
-                console.log("Start game:", data);
-                poll();
-            } catch (e) {
-                alert("Failed to start game: " + e.message);
-            }
-        }
-
-        async function resetGame() {
-            if (!confirm("⚠ Reset the game? This will clear ALL players and scores!")) return;
-            try {
-                const res = await fetch(`${API}/api/reset_game?admin_token=${adminToken}`, { method: 'POST' });
-                if (res.status === 401) { alert("Session expired. Reload page."); return; }
-                const data = await res.json();
-                console.log("Reset:", data);
-                poll();
-            } catch (e) {
-                alert("Failed to reset: " + e.message);
-            }
         }
     </script>
 </body>
