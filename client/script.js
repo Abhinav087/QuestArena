@@ -169,6 +169,10 @@ async function pollGameStatus() {
             if (gameState.isCompleted) {
                 return;
             }
+            if (!gameState.username || !gameState.token) {
+                showScreen('login');
+                return;
+            }
             if (!gameState.gameActive) {
                 gameState.gameActive = true;
                 hud.classList.remove('hidden');
@@ -209,6 +213,10 @@ function connectLiveSocket() {
                 const payload = data.payload || {};
                 updateTimerDisplay(payload.remaining_seconds || 0);
                 if (gameState.isCompleted) {
+                    return;
+                }
+                if (!gameState.username || !gameState.token) {
+                    showScreen('login');
                     return;
                 }
                 if (payload.status === 'running' && !gameState.gameActive && gameState.username) {

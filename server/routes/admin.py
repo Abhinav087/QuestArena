@@ -318,24 +318,21 @@ async def live_players(
     players = db.query(Player).filter(Player.session_id == session.id).all()
     dup_map = duplicate_ip_map(players)
     now = datetime.utcnow()
+
+    def compute_time_taken_seconds(player: Player) -> int:
+        if not session.start_time:
+            return 0
+        end_time = player.completed_at if player.completed_at else now
+        return max(0, int((end_time - session.start_time).total_seconds()))
+
     return [
         {
             "id": player.id,
             "username": player.username,
             "score": player.score,
             "current_level": player.current_level,
-            "join_time": player.join_time.isoformat() if player.join_time else None,
-            "last_active": player.last_active.isoformat() if player.last_active else None,
-            "live_time_seconds": (
-                max(0, int((now - player.join_time).total_seconds()))
-                if player.join_time
-                else 0
-            ),
-            "time_taken_seconds": (
-                max(0, int((player.completed_at - player.join_time).total_seconds()))
-                if player.completed_at and player.join_time
-                else None
-            ),
+            "time_taken_seconds": compute_time_taken_seconds(player),
+            "is_completed": bool(player.completed_at),
             "last_active_seconds_ago": (
                 max(0, int((now - player.last_active).total_seconds()))
                 if player.last_active
@@ -497,7 +494,7 @@ async def export_csv(
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["rank", "username", "score", "current_level", "completion_seconds", "is_active"])
+    writer.writerow(["rank", "username", "score", "current_level", "time_taken_seconds"])
     for index, row in enumerate(rows, start=1):
         writer.writerow(
             [
@@ -505,8 +502,7 @@ async def export_csv(
                 row["username"],
                 row["score"],
                 row["current_level"],
-                row.get("completion_seconds"),
-                row["is_active"],
+                row.get("time_taken_seconds"),
             ]
         )
 

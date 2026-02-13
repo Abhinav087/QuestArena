@@ -136,10 +136,7 @@
                         <option value="score" selected>Sort: Score</option>
                         <option value="username">Sort: Name</option>
                         <option value="current_level">Sort: Level</option>
-                        <option value="live_time_seconds">Sort: Live Time</option>
                         <option value="time_taken_seconds">Sort: Time Taken</option>
-                        <option value="join_time">Sort: Join Time</option>
-                        <option value="last_active">Sort: Last Active</option>
                     </select>
                     <select id="player-sort-dir" onchange="applyPlayerSort()">
                         <option value="desc" selected>Order: Desc</option>
@@ -149,21 +146,33 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>User</th><th>Score</th><th>Lvl</th><th>Live</th><th>Taken</th><th>Join</th><th>Last Active</th><th>IP</th><th>State</th><th>Actions</th>
+                            <th>User</th><th>Score</th><th>Lvl</th><th>Time Taken</th><th>IP</th><th>State</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="players-body">
-                        <tr><td colspan="10" class="small">No players yet.</td></tr>
+                        <tr><td colspan="8" class="small">No players yet.</td></tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="card">
                 <h3>Leaderboard</h3>
+                <div class="inline" style="margin-bottom:10px;">
+                    <select id="leaderboard-sort-key" onchange="applyLeaderboardSort()">
+                        <option value="score" selected>Sort: Score</option>
+                        <option value="username">Sort: Name</option>
+                        <option value="current_level">Sort: Level</option>
+                        <option value="time_taken_seconds">Sort: Time Taken</option>
+                    </select>
+                    <select id="leaderboard-sort-dir" onchange="applyLeaderboardSort()">
+                        <option value="desc" selected>Order: Desc</option>
+                        <option value="asc">Order: Asc</option>
+                    </select>
+                </div>
                 <table>
                     <thead>
                         <tr>
-                            <th>#</th><th>User</th><th>Score</th><th>Level</th><th>Completion (s)</th>
+                            <th>#</th><th>User</th><th>Score</th><th>Level</th><th>Time Taken</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-body">
@@ -198,8 +207,11 @@
         let currentSessionId = null;
         let currentFrozen = false;
         let currentPlayers = [];
+        let currentLeaderboard = [];
         let playerSortKey = 'score';
         let playerSortDirection = 'desc';
+        let leaderboardSortKey = 'score';
+        let leaderboardSortDirection = 'desc';
 
         function authHeaders() {
             return {
@@ -299,18 +311,45 @@
         async function fetchLeaderboard() {
             const res = await fetch(`${API}/api/leaderboard`);
             const rows = await res.json();
+            currentLeaderboard = Array.isArray(rows) ? rows : [];
+            renderLeaderboard();
+        }
+
+        function sortLeaderboard(rows) {
+            const direction = leaderboardSortDirection === 'asc' ? 1 : -1;
+            return [...rows].sort((a, b) => {
+                let va;
+                let vb;
+
+                if (leaderboardSortKey === 'username') {
+                    va = String(a.username || '').toLowerCase();
+                    vb = String(b.username || '').toLowerCase();
+                } else {
+                    va = Number(a[leaderboardSortKey] ?? 0);
+                    vb = Number(b[leaderboardSortKey] ?? 0);
+                }
+
+                if (va < vb) return -1 * direction;
+                if (va > vb) return 1 * direction;
+                return 0;
+            });
+        }
+
+        function renderLeaderboard() {
             const body = document.getElementById('leaderboard-body');
-            if (!rows.length) {
+            if (!currentLeaderboard.length) {
                 body.innerHTML = '<tr><td colspan="5" class="small">No rankings yet.</td></tr>';
                 return;
             }
-            body.innerHTML = rows.map((r, i) => `
+
+            const sorted = sortLeaderboard(currentLeaderboard);
+            body.innerHTML = sorted.map((r, i) => `
                 <tr class="rank-bump">
                     <td>${i + 1}</td>
                     <td>${escapeHtml(r.username)}</td>
                     <td>${r.score}</td>
                     <td>${r.current_level}</td>
-                    <td>${r.completion_seconds ?? '-'}</td>
+                    <td>${toDuration(r.time_taken_seconds)}</td>
                 </tr>
             `).join('');
         }
@@ -333,9 +372,6 @@
                 if (playerSortKey === 'username') {
                     va = String(a.username || '').toLowerCase();
                     vb = String(b.username || '').toLowerCase();
-                } else if (playerSortKey === 'join_time' || playerSortKey === 'last_active') {
-                    va = a[playerSortKey] ? new Date(a[playerSortKey]).getTime() : 0;
-                    vb = b[playerSortKey] ? new Date(b[playerSortKey]).getTime() : 0;
                 } else {
                     va = Number(a[playerSortKey] ?? -1);
                     vb = Number(b[playerSortKey] ?? -1);
@@ -350,7 +386,7 @@
         function renderPlayers() {
             const body = document.getElementById('players-body');
             if (!currentPlayers.length) {
-                body.innerHTML = '<tr><td colspan="10" class="small">No players yet.</td></tr>';
+                body.innerHTML = '<tr><td colspan="8" class="small">No players yet.</td></tr>';
                 return;
             }
 
@@ -360,10 +396,7 @@
                     <td>${escapeHtml(p.username)}</td>
                     <td>${p.score}</td>
                     <td>${p.current_level}</td>
-                    <td>${toDuration(p.live_time_seconds)}</td>
                     <td>${toDuration(p.time_taken_seconds)}</td>
-                    <td>${toClock(p.join_time)}</td>
-                    <td>${toClock(p.last_active)}</td>
                     <td>${escapeHtml(p.ip_address || '-')} ${p.duplicate_ip ? '⚠' : ''}</td>
                     <td>${p.is_banned ? 'Banned' : (p.is_active ? 'Active' : 'Inactive')}</td>
                     <td>
@@ -385,6 +418,14 @@
             playerSortKey = keyEl?.value || 'score';
             playerSortDirection = dirEl?.value || 'desc';
             renderPlayers();
+        }
+
+        function applyLeaderboardSort() {
+            const keyEl = document.getElementById('leaderboard-sort-key');
+            const dirEl = document.getElementById('leaderboard-sort-dir');
+            leaderboardSortKey = keyEl?.value || 'score';
+            leaderboardSortDirection = dirEl?.value || 'desc';
+            renderLeaderboard();
         }
 
         async function postPlayerAction(playerId, action) {
@@ -442,7 +483,23 @@
             const res = await fetch(`${API}/api/admin/analytics/${sessionId}`, { headers: authHeaders() });
             if (!res.ok) return;
             const data = await res.json();
-            document.getElementById('analytics').textContent = JSON.stringify(data, null, 2);
+            const top = data.top_player;
+            const lines = [
+                `Session Name: ${data.session_name || '-'}`,
+                `Total Participants: ${data.total_participants ?? 0}`,
+            ];
+
+            if (top) {
+                lines.push(`Top Player: ${top.username}`);
+                lines.push(`Top Score: ${top.score}`);
+                lines.push(`Time Taken: ${toDuration(top.time_taken_seconds)}`);
+            } else {
+                lines.push('Top Player: -');
+                lines.push('Top Score: -');
+                lines.push('Time Taken: -');
+            }
+
+            document.getElementById('analytics').textContent = lines.join('\n');
         }
 
         function exportBySession(sessionId) {
