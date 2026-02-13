@@ -29,6 +29,24 @@ A robust, lightweight LAN-based multiplayer game designed for college fests and 
 - **Frontend**: HTML5, CSS3 (Glassmorphism), Vanilla JavaScript
 - **Auth/Realtime**: JWT, WebSockets
 
+## ✅ Requirements
+
+### System Requirements
+- Python **3.10+**
+- `pip` (latest recommended)
+- A modern browser (Chrome/Edge/Firefox)
+- LAN/Wi-Fi network access for multiplayer devices
+
+### Python Dependencies
+These are required by the backend (`server/requirements.txt`):
+
+- `fastapi`
+- `uvicorn`
+- `requests`
+- `python-multipart`
+- `sqlalchemy`
+- `PyJWT`
+
 ## 📥 Installation
 
 1.  **Clone the repository**:
