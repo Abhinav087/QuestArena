@@ -1,6 +1,6 @@
 # User requested
-QUESTARENA.pdf
-
+_QUESTARENA (1).pdf
+plan.md
 # Python
 __pycache__/
 *.pyc
@@ -27,3 +27,6 @@ coverage.xml
 # IDEs
 .vscode/
 .idea/
+
+#FOLDERS
+app/
