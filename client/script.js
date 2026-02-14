@@ -9,6 +9,9 @@ const STORAGE = {
 
 const TAB_KEY = "qa_active_tab";
 const tabId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const TAB_HEARTBEAT_MS = 2000;
+const TAB_STALE_MS = 15000;
+const TAB_HANDOFF_WAIT_MS = 1200;
 
 let gameState = {
     username: "",
@@ -614,23 +617,69 @@ function choosePath(path) {
     loadLevel(gameState.level, path);
 }
 
-function setupAntiCheat() {
-    const currentTab = localStorage.getItem(TAB_KEY);
-    if (currentTab && currentTab !== tabId) {
-        alert('Multiple tabs detected. Please use only one tab for the event.');
-        document.body.innerHTML = '<h2 style="color:#ff3b3b;text-align:center;padding-top:80px;">Multiple tabs are not allowed.</h2>';
-        throw new Error('Multiple tabs blocked');
+function parseTabLock(rawValue) {
+    if (!rawValue) return null;
+    try {
+        const parsed = JSON.parse(rawValue);
+        if (parsed && parsed.id) {
+            return {
+                id: String(parsed.id),
+                ts: Number(parsed.ts || 0),
+            };
+        }
+        return null;
+    } catch {
+        return {
+            id: String(rawValue),
+            ts: 0,
+        };
     }
-    localStorage.setItem(TAB_KEY, tabId);
+}
+
+function writeTabLock() {
+    localStorage.setItem(TAB_KEY, JSON.stringify({ id: tabId, ts: Date.now() }));
+}
+
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function setupAntiCheat() {
+    const existing = parseTabLock(localStorage.getItem(TAB_KEY));
+    const now = Date.now();
+    const isExistingActive = existing && (now - existing.ts) < TAB_STALE_MS;
+
+    if (isExistingActive && existing.id !== tabId) {
+        await sleep(TAB_HANDOFF_WAIT_MS);
+        const lockAfterWait = parseTabLock(localStorage.getItem(TAB_KEY));
+        const stillOtherActive = lockAfterWait && lockAfterWait.id !== tabId && (Date.now() - lockAfterWait.ts) < TAB_STALE_MS;
+
+        if (stillOtherActive) {
+            alert('Multiple tabs detected. Please use only one tab for the event.');
+            document.body.innerHTML = '<h2 style="color:#ff3b3b;text-align:center;padding-top:80px;">Multiple tabs are not allowed.</h2>';
+            throw new Error('Multiple tabs blocked');
+        }
+    }
+
+    writeTabLock();
+    const tabHeartbeat = setInterval(writeTabLock, TAB_HEARTBEAT_MS);
 
     window.addEventListener('beforeunload', () => {
-        if (localStorage.getItem(TAB_KEY) === tabId) {
+        clearInterval(tabHeartbeat);
+        const lock = parseTabLock(localStorage.getItem(TAB_KEY));
+        if (lock && lock.id === tabId) {
             localStorage.removeItem(TAB_KEY);
         }
     });
 
     window.addEventListener('storage', (event) => {
-        if (event.key === TAB_KEY && event.newValue && event.newValue !== tabId) {
+        if (event.key !== TAB_KEY || !event.newValue) return;
+
+        const lock = parseTabLock(event.newValue);
+        if (!lock) return;
+
+        const isOtherActive = lock.id !== tabId && (Date.now() - lock.ts) < TAB_STALE_MS;
+        if (isOtherActive) {
             alert('Another active tab detected. This tab will stop.');
             endGame('Blocked: multiple tabs detected');
         }
@@ -660,7 +709,7 @@ function setupAntiCheat() {
 }
 
 async function boot() {
-    setupAntiCheat();
+    await setupAntiCheat();
     const editor = document.getElementById('code-editor');
     if (editor) {
         editor.addEventListener('input', () => persistProgress());
