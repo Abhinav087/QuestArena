@@ -280,8 +280,8 @@ footer {
 
 #arena-level-title {
     position: fixed;
-    top: 16px;
-    left: 50%;
+    top: 32px;
+    left: 10%;
     transform: translateX(-50%);
     margin: 0;
     padding: 6px 10px;
