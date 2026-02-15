@@ -1,106 +1,71 @@
-# QuestArena v2: Target Save the Partner
+# QuestArena
 
-A robust, lightweight LAN-based multiplayer game designed for college fests and competitions. Built with FastAPI and Vanilla JS.
+QuestArena is a LAN-ready multiplayer challenge game with a FastAPI backend and a fullscreen vanilla JS runtime client.
 
-## ✅ v2 Architecture Highlights
+## Runtime highlights
 
-- Single active session model (only one live session at a time).
-- Persistent storage with SQLite + SQLAlchemy.
-- JWT-based player/admin authentication.
-- Player state persistence via browser localStorage.
-- Backend-controlled timer with pause/resume and time adjustments.
-- Real-time session + leaderboard updates through WebSockets.
-- Admin controls for kick/ban/reset/move-level/score-adjust.
-- Action logging and session analytics.
+- Fullscreen overworld canvas that covers the entire webpage.
+- Fixed arena render resolution: `1920 x 1080`.
+- Tile scale: `64 x 64`.
+- Character scale: `32 x 32`.
+- Camera follow with smoothing, slight zoom-in, center follow, and world-border clamping.
+- Large exploration-focused maps with NPC interactions, challenge modals, and portal transitions.
 
-## 🚀 Key Features
+## Gameplay loop
 
-- **Single Live Session**: One active event at a time; old sessions are retained as history.
-- **Session Lifecycle Controls**: Create/start/pause/resume/end with +5/-5 minute adjustments.
-- **Persistent Players**: Unique usernames, progress persistence, rejoin via token validation.
-- **Leaderboard Freeze + CSV Export**: Admin can freeze ranking and export session results.
-- **Anti-Cheat Basics**: Duplicate IP checks, multi-device login rejection, tab visibility logging.
-- **Analytics**: Average score, fastest player, completion rate, and failed-level insights.
-- **Dynamic Content**: 6 levels including technical MCQs and coding challenge.
+1. Join game as player.
+2. Wait until admin starts the session.
+3. Enter mission and explore overworld.
+4. Talk to NPC (`E` / `Enter`) to open challenge.
+5. Clear challenge to unlock portal and progress.
 
-## 🛠 Tech Stack
+## Controls
 
-- **Backend**: FastAPI (Python), SQLAlchemy, SQLite
-- **Frontend**: HTML5, CSS3 (Glassmorphism), Vanilla JavaScript
-- **Auth/Realtime**: JWT, WebSockets
+- Move: `WASD` or arrow keys
+- Interact / Continue dialogue: `E` or `Enter`
+- Submit MCQ: `Enter` (while question modal is active)
 
-## ✅ Requirements
+## Tech stack
 
-### System Requirements
-- Python **3.10+**
-- `pip` (latest recommended)
-- A modern browser (Chrome/Edge/Firefox)
-- LAN/Wi-Fi network access for multiplayer devices
+- Backend: FastAPI, SQLAlchemy, SQLite
+- Frontend: HTML, CSS, vanilla JavaScript
+- Realtime/Auth: WebSocket + JWT
 
-### Python Dependencies
-These are required by the backend (`server/requirements.txt`):
+## Setup
 
-- `fastapi`
-- `uvicorn`
-- `requests`
-- `python-multipart`
-- `sqlalchemy`
-- `PyJWT`
+1. Install dependencies:
 
-## 📥 Installation
+```bash
+pip install -r server/requirements.txt
+```
 
-1.  **Clone the repository**:
-    ```bash
-    git clone <repo-url>
-    cd QuestArena
-    ```
+2. (Optional) Regenerate runtime assets (64px tiles / 32px sprites):
 
-2.  **Install Dependencies**:
-    ```bash
-    pip install -r server/requirements.txt
-    ```
+```bash
+python tools/generate_assets.py
+```
 
-## 🎮 How to Run (LAN Setup)
+3. Start backend:
 
-### 1. Identify Server IP
-Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux) and find your **IPv4 Address** (e.g., `192.168.29.67`).
-
-### 2. Start the Server
-Run the batch file or use uvicorn directly:
 ```bash
 python server/main.py
 ```
-The server will start on port `8000` and host both the API and the game files.
 
-### 3. Admin Access
-Open the dashboard on the server machine or any device on the network:
-- **URL**: `http://<your-ip>:8000/admin`
-- **Password**: `arena2026` (Default)
+## Run URLs
 
-### 4. v2 Admin Flow
+- Player: `http://localhost:8000/`
+- Admin: `http://localhost:8000/admin`
 
-1. Login to `/admin`
-2. Create a session (name + duration)
-3. Start session when all teams join
-4. Use pause/resume/add/subtract/force-end as needed
-5. Monitor live players + leaderboard
-6. Export results CSV and review analytics
+For LAN play, replace `localhost` with the host machine IPv4 address.
 
-### 5. Player Access
-Players connect by browsing to your server IP:
-- **URL**: `http://<your-ip>:8000/`
-- Players enter team name once.
-- Token + username are persisted locally.
-- On refresh, the client validates token and restores score/level/session automatically.
+## Configuration points
 
-## ⚙️ Configuration
+- Questions and level content: `server/questions.json`
+- Admin password: `server/routes/auth.py` (`ADMIN_PASSWORD`)
+- JWT secret: environment variable `QUESTARENA_JWT_SECRET`
 
-- **Questions**: Modify `server/questions.json`.
-- **Admin Password**: Change `ADMIN_PASSWORD` in `server/routes/auth.py`.
-- **JWT Secret**: Set env var `QUESTARENA_JWT_SECRET`.
-- **Inactivity Timeout**: Tune timeout in `server/services/anti_cheat.py`.
+## Project folders
 
-## 📂 Project Structure
-- `/client`: Frontend assets (served automatically by the backend).
-- `/server`: FastAPI backend, questions, and admin panel logic.
-- `run_server.bat`: Quick-start script for Windows.
+- `client/` — runtime player client and generated assets
+- `server/` — backend API, auth, session, admin, realtime services
+- `tools/` — utility scripts such as asset generation

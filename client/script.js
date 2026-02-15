@@ -13,6 +13,307 @@ const TAB_HEARTBEAT_MS = 2000;
 const TAB_STALE_MS = 15000;
 const TAB_HANDOFF_WAIT_MS = 1200;
 
+const LEVEL_INTROS = {
+    0: {
+        title: 'Level 0 — College Gate',
+        dialogue: 'Security: "Where is your ID card? No ID, no entry." Clear the General Knowledge questions to enter the campus.'
+    },
+    1: {
+        title: 'Level 1 — Lobby',
+        dialogue: 'Reception Aunty: "Why are you roaming during class hours?" Prove yourself with English questions.'
+    },
+    2: {
+        title: 'Level 2 — Classroom',
+        dialogue: 'Teacher: "Girlfriend, ah? First answer these Aptitude questions and show me your focus."'
+    },
+    3: {
+        title: 'Level 3 — Lab',
+        dialogue: 'Lab Incharge: "You skipped lab from day one! Solve reasoning questions or forget externals."'
+    },
+    4: {
+        title: 'Level 4 — Server Room',
+        dialogue: 'System Admin: "Students are not allowed to touch admin systems. Let us see your technical strength."'
+    },
+    5: {
+        title: 'Level 5 — Top Floor',
+        dialogue: 'Principal: "One final coding question. Clear it, and both of you walk free."'
+    },
+};
+
+const ARENA_WIDTH = 1920;
+const ARENA_HEIGHT = 1080;
+const ARENA_TILE = 64;
+const CHARACTER_SIZE = 32;
+const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
+const CAMERA_ZOOM = 1.2;
+const PLAYER_SPEED = 4.2;
+const PLAYER_ANIM_MS = 150;
+
+function getArenaViewportSize() {
+    return {
+        width: ARENA_WIDTH,
+        height: ARENA_HEIGHT,
+    };
+}
+
+function createEmptyMap(width, height) {
+    return Array.from({ length: height }, () => Array(width).fill('0'));
+}
+
+function addBorderWalls(map, width, height) {
+    for (let x = 0; x < width; x++) {
+        map[0][x] = '1';
+        map[height - 1][x] = '1';
+    }
+    for (let y = 0; y < height; y++) {
+        map[y][0] = '1';
+        map[y][width - 1] = '1';
+    }
+}
+
+function finalizeCollisions(level, solidTiles) {
+    level.collisions = Array.from({ length: level.height }, () => Array(level.width).fill(false));
+    for (let y = 0; y < level.height; y++) {
+        for (let x = 0; x < level.width; x++) {
+            level.collisions[y][x] = solidTiles.has(level.tiles[y][x]);
+        }
+    }
+}
+
+function getTileImageName(tileType, visualLevel) {
+    const tileMap = {
+        '0': `floor_l${visualLevel}.png`,
+        '1': `wall_l${visualLevel}.png`,
+        '2': 'door_l1.png',
+        '3': 'portal_l1.png',
+        '4': 'desk_l1.png',
+        '5': 'computer_l1.png',
+        '6': 'plant_l1.png',
+        '7': 'bookshelf_l1.png',
+        '8': 'lab_table_l2.png',
+        '9': 'server_rack_l3.png',
+        '10': 'chair_l4.png',
+        '11': 'water_tank_l2.png',
+        '12': 'caution_sign_l5.png',
+        '13': 'stairs_up_l1.png',
+    };
+    return tileMap[tileType] || `floor_l${visualLevel}.png`;
+}
+
+const ARENA_LEVELS = [
+    {
+        id: 0,
+        name: 'College Gate',
+        width: 15,
+        height: 12,
+        tiles: createEmptyMap(15, 12),
+        npc: { spriteId: 1, x: 7, y: 5, name: 'Security', questionLevel: 0 },
+        portal: { x: 7, y: 1, targetLevel: 1 },
+        playerStart: { x: 7, y: 9 },
+    },
+    {
+        id: 1,
+        name: 'Lobby',
+        width: 18,
+        height: 14,
+        tiles: createEmptyMap(18, 14),
+        npc: { spriteId: 2, x: 9, y: 4, name: 'Reception Aunty', questionLevel: 1 },
+        portal: { x: 9, y: 1, targetLevel: 2 },
+        playerStart: { x: 9, y: 11 },
+    },
+    {
+        id: 2,
+        name: 'Classroom',
+        width: 16,
+        height: 12,
+        tiles: createEmptyMap(16, 12),
+        npc: { spriteId: 3, x: 8, y: 5, name: 'Teacher', questionLevel: 2 },
+        portal: { x: 8, y: 1, targetLevel: 3 },
+        playerStart: { x: 8, y: 9 },
+    },
+    {
+        id: 3,
+        name: 'Lab',
+        width: 18,
+        height: 14,
+        tiles: createEmptyMap(18, 14),
+        npc: { spriteId: 4, x: 9, y: 4, name: 'Lab Incharge', questionLevel: 3 },
+        portal: { x: 9, y: 1, targetLevel: 4 },
+        playerStart: { x: 9, y: 11 },
+    },
+    {
+        id: 4,
+        name: 'Server Room',
+        width: 16,
+        height: 12,
+        tiles: createEmptyMap(16, 12),
+        npc: { spriteId: 5, x: 8, y: 5, name: 'System Admin', questionLevel: 4 },
+        portal: { x: 8, y: 3, targetLevel: 5 },
+        playerStart: { x: 8, y: 9 },
+    },
+    {
+        id: 5,
+        name: 'Top Floor',
+        width: 16,
+        height: 12,
+        tiles: createEmptyMap(16, 12),
+        npc: { spriteId: 5, x: 8, y: 5, name: 'Principal', questionLevel: 5 },
+        portal: { x: 8, y: 3, targetLevel: null },
+        playerStart: { x: 8, y: 9 },
+    },
+];
+
+addBorderWalls(ARENA_LEVELS[0].tiles, 15, 12);
+ARENA_LEVELS[0].tiles[2][2] = '6';
+ARENA_LEVELS[0].tiles[2][12] = '6';
+ARENA_LEVELS[0].tiles[5][1] = '7';
+ARENA_LEVELS[0].tiles[6][1] = '7';
+ARENA_LEVELS[0].tiles[5][6] = '4';
+ARENA_LEVELS[0].tiles[5][7] = '4';
+ARENA_LEVELS[0].tiles[5][8] = '4';
+ARENA_LEVELS[0].tiles[1][7] = '2';
+finalizeCollisions(ARENA_LEVELS[0], new Set(['1', '7', '4', '6']));
+
+addBorderWalls(ARENA_LEVELS[1].tiles, 18, 14);
+ARENA_LEVELS[1].tiles[6][3] = '8';
+ARENA_LEVELS[1].tiles[6][4] = '8';
+ARENA_LEVELS[1].tiles[6][5] = '8';
+ARENA_LEVELS[1].tiles[6][12] = '8';
+ARENA_LEVELS[1].tiles[6][13] = '8';
+ARENA_LEVELS[1].tiles[6][14] = '8';
+ARENA_LEVELS[1].tiles[8][2] = '11';
+ARENA_LEVELS[1].tiles[8][15] = '11';
+ARENA_LEVELS[1].tiles[9][1] = '12';
+ARENA_LEVELS[1].tiles[9][16] = '12';
+ARENA_LEVELS[1].tiles[1][9] = '13';
+finalizeCollisions(ARENA_LEVELS[1], new Set(['1', '8', '11']));
+
+addBorderWalls(ARENA_LEVELS[2].tiles, 16, 12);
+for (let y = 3; y <= 8; y++) {
+    ARENA_LEVELS[2].tiles[y][2] = '9';
+    ARENA_LEVELS[2].tiles[y][4] = '9';
+    ARENA_LEVELS[2].tiles[y][11] = '9';
+    ARENA_LEVELS[2].tiles[y][13] = '9';
+}
+ARENA_LEVELS[2].tiles[7][7] = '5';
+ARENA_LEVELS[2].tiles[7][8] = '5';
+ARENA_LEVELS[2].tiles[1][8] = '2';
+finalizeCollisions(ARENA_LEVELS[2], new Set(['1', '9']));
+
+addBorderWalls(ARENA_LEVELS[3].tiles, 18, 14);
+ARENA_LEVELS[3].tiles[6][3] = '4';
+ARENA_LEVELS[3].tiles[6][4] = '4';
+ARENA_LEVELS[3].tiles[6][5] = '4';
+ARENA_LEVELS[3].tiles[6][12] = '4';
+ARENA_LEVELS[3].tiles[6][13] = '4';
+ARENA_LEVELS[3].tiles[6][14] = '4';
+ARENA_LEVELS[3].tiles[5][4] = '5';
+ARENA_LEVELS[3].tiles[5][13] = '5';
+ARENA_LEVELS[3].tiles[7][4] = '10';
+ARENA_LEVELS[3].tiles[7][13] = '10';
+ARENA_LEVELS[3].tiles[2][2] = '6';
+ARENA_LEVELS[3].tiles[2][15] = '6';
+ARENA_LEVELS[3].tiles[1][9] = '13';
+finalizeCollisions(ARENA_LEVELS[3], new Set(['1', '4', '6']));
+
+function decorateRooftop(level) {
+    addBorderWalls(level.tiles, 16, 12);
+    level.tiles[2][2] = '12';
+    level.tiles[2][13] = '12';
+    for (let x = 6; x <= 10; x++) {
+        for (let y = 4; y <= 6; y++) {
+            if (x === 6 || x === 10 || y === 4 || y === 6) {
+                level.tiles[y][x] = '1';
+            }
+        }
+    }
+    level.tiles[3][8] = '3';
+    finalizeCollisions(level, new Set(['1']));
+}
+
+decorateRooftop(ARENA_LEVELS[4]);
+decorateRooftop(ARENA_LEVELS[5]);
+
+function applyLargeWorldLayout(level, targetWidth, targetHeight) {
+    const oldTiles = level.tiles;
+    const oldWidth = level.width;
+    const oldHeight = level.height;
+    const offsetX = Math.floor((targetWidth - oldWidth) / 2);
+    const offsetY = Math.floor((targetHeight - oldHeight) / 2);
+
+    const expanded = createEmptyMap(targetWidth, targetHeight);
+    addBorderWalls(expanded, targetWidth, targetHeight);
+
+    for (let y = 0; y < oldHeight; y++) {
+        for (let x = 0; x < oldWidth; x++) {
+            expanded[y + offsetY][x + offsetX] = oldTiles[y][x];
+        }
+    }
+
+    const laneX1 = Math.floor(targetWidth * 0.28);
+    const laneX2 = Math.floor(targetWidth * 0.68);
+    const gapY = Math.floor(targetHeight * 0.54);
+    for (let y = 2; y < targetHeight - 2; y++) {
+        if (Math.abs(y - gapY) <= 1) continue;
+        expanded[y][laneX1] = '1';
+        expanded[y][laneX2] = '1';
+    }
+
+    for (let x = 3; x < targetWidth - 3; x += 7) {
+        for (let y = 3; y < targetHeight - 3; y += 6) {
+            if ((x + y + level.id) % 3 === 0) expanded[y][x] = '6';
+            else if ((x + y + level.id) % 3 === 1) expanded[y][x] = '12';
+        }
+    }
+
+    level.width = targetWidth;
+    level.height = targetHeight;
+    level.tiles = expanded;
+
+    level.npc.x += offsetX;
+    level.npc.y += offsetY;
+    level.portal.x += offsetX;
+    level.portal.y += offsetY;
+    level.playerStart.x += offsetX;
+    level.playerStart.y += offsetY;
+
+    const protectedPoints = [
+        level.npc,
+        level.portal,
+        level.playerStart,
+    ];
+
+    protectedPoints.forEach((point) => {
+        for (let py = point.y - 1; py <= point.y + 1; py++) {
+            for (let px = point.x - 1; px <= point.x + 1; px++) {
+                if (py <= 0 || px <= 0 || py >= level.height - 1 || px >= level.width - 1) continue;
+                if (level.tiles[py][px] === '1' || level.tiles[py][px] === '6' || level.tiles[py][px] === '12') {
+                    level.tiles[py][px] = '0';
+                }
+            }
+        }
+    });
+
+    if (level.id === 0) level.tiles[level.portal.y][level.portal.x] = '2';
+    if (level.id === 4 || level.id === 5) level.tiles[level.portal.y][level.portal.x] = '3';
+
+    finalizeCollisions(level, new Set(['1', '4', '6', '7', '8', '9', '11']));
+}
+
+const LARGE_WORLD_SIZES = [
+    { width: 86, height: 58 },
+    { width: 92, height: 62 },
+    { width: 88, height: 60 },
+    { width: 96, height: 64 },
+    { width: 84, height: 56 },
+    { width: 84, height: 56 },
+];
+
+ARENA_LEVELS.forEach((level, index) => {
+    const size = LARGE_WORLD_SIZES[index];
+    applyLargeWorldLayout(level, size.width, size.height);
+});
+
 let gameState = {
     username: "",
     token: "",
@@ -28,35 +329,132 @@ let gameState = {
     isCompleted: false,
     ws: null,
     currentScreen: 'login',
+    pendingAfterIntro: null,
+    shownLevelIntros: {},
+    hiddenRouteAttempted: false,
+    hiddenRouteActive: false,
+    arena: {
+        currentLevel: 0,
+        playerX: 0,
+        playerY: 0,
+        facing: 'down',
+        frame: 0,
+        isMoving: false,
+        lastFrameAt: 0,
+        keys: new Set(),
+        images: new Map(),
+        imagesLoaded: false,
+        cameraX: 0,
+        cameraY: 0,
+        targetCameraX: 0,
+        targetCameraY: 0,
+        activeModal: null,
+        transitioning: false,
+        challengeCleared: {},
+        dialogue: {
+            open: false,
+            speaker: '',
+            lines: [],
+            index: 0,
+            onComplete: null,
+        },
+        loopId: null,
+        portalOverride: {},
+    },
 };
 
 const screens = {
     login: document.getElementById('login-screen'),
     waiting: document.getElementById('waiting-screen'),
     story: document.getElementById('story-screen'),
+    levelIntro: document.getElementById('level-intro-screen'),
+    hiddenRoute: document.getElementById('hidden-route-screen'),
+    arena: document.getElementById('arena-screen'),
     path: document.getElementById('path-selection'),
     question: document.getElementById('question-screen'),
     coding: document.getElementById('coding-screen'),
     end: document.getElementById('end-screen')
 };
 
+function getAvailableScreens() {
+    return Object.values(screens).filter(Boolean);
+}
+
 const hud = document.getElementById('game-hud');
 const levelDisplay = document.getElementById('level-display');
 const scoreDisplay = document.getElementById('score-display');
 const timerDisplay = document.getElementById('timer-display');
+const hudStatus = document.getElementById('hud-status');
+const modalBackdrop = document.getElementById('modal-backdrop');
+const fadeOverlay = document.getElementById('fade-overlay');
+
+const arenaModals = {
+    path: document.getElementById('path-selection'),
+    question: document.getElementById('question-screen'),
+    coding: document.getElementById('coding-screen'),
+};
 
 function showScreen(screenName, options = {}) {
     const shouldPersist = options.persist !== false;
-    Object.values(screens).forEach((section) => {
+    const availableScreens = getAvailableScreens();
+    availableScreens.forEach((section) => {
         section.classList.add('hidden');
         section.classList.remove('active');
     });
-    screens[screenName].classList.remove('hidden');
-    screens[screenName].classList.add('active');
-    gameState.currentScreen = screenName;
+
+    const target = screens[screenName] || screens.login || availableScreens[0] || null;
+    if (!target) {
+        console.error('No screen nodes available to render');
+        return;
+    }
+
+    target.classList.remove('hidden');
+    target.classList.add('active');
+    gameState.currentScreen = screenName in screens && screens[screenName] ? screenName : 'login';
+    if (gameState.currentScreen !== 'arena') {
+        closeArenaModals();
+    }
     if (shouldPersist) {
         persistProgress();
     }
+}
+
+function setHudStatus(text) {
+    if (hudStatus) {
+        hudStatus.textContent = text;
+    }
+}
+
+function closeArenaModals() {
+    Object.values(arenaModals).forEach((modal) => {
+        if (modal) modal.classList.add('hidden');
+    });
+    if (modalBackdrop) modalBackdrop.classList.add('hidden');
+    gameState.arena.activeModal = null;
+}
+
+function openArenaModal(type) {
+    closeArenaModals();
+    const modal = arenaModals[type];
+    if (modal) {
+        modal.classList.remove('hidden');
+        if (modalBackdrop) modalBackdrop.classList.remove('hidden');
+        gameState.arena.activeModal = type;
+    }
+}
+
+function isArenaModalOpen() {
+    return gameState.arena.activeModal !== null;
+}
+
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fadeTo(opacity) {
+    if (!fadeOverlay) return;
+    fadeOverlay.style.opacity = String(opacity);
+    await sleep(340);
 }
 
 function persistProgress() {
@@ -70,12 +468,510 @@ function persistProgress() {
         currentQuestionIndex: gameState.currentQuestionIndex,
         pathChoice: gameState.pathChoice,
         currentScreen: gameState.currentScreen,
+        hiddenRouteAttempted: gameState.hiddenRouteAttempted,
+        hiddenRouteActive: gameState.hiddenRouteActive,
+        shownLevelIntros: gameState.shownLevelIntros,
+        arenaChallengeCleared: gameState.arena.challengeCleared,
+        arenaPortalOverride: gameState.arena.portalOverride,
+        arenaModal: gameState.arena.activeModal,
         isCompleted: gameState.isCompleted,
         endMessage: document.getElementById('end-message')?.textContent || "",
         codeDraft: document.getElementById('code-editor')?.value || "",
         savedAt: Date.now(),
     };
     localStorage.setItem(STORAGE.progress, JSON.stringify(payload));
+}
+
+function showLevelIntro(level) {
+    const intro = LEVEL_INTROS[level];
+    if (!intro) {
+        return false;
+    }
+    if (gameState.shownLevelIntros[String(level)]) {
+        return false;
+    }
+
+    gameState.shownLevelIntros[String(level)] = true;
+    const titleNode = document.getElementById('level-intro-title');
+    const dialogueNode = document.getElementById('level-intro-dialogue');
+    if (!titleNode || !dialogueNode) {
+        console.error('Level intro nodes missing in DOM');
+        return false;
+    }
+
+    titleNode.textContent = intro.title;
+    dialogueNode.textContent = intro.dialogue;
+    showScreen('levelIntro');
+    persistProgress();
+    return true;
+}
+
+function continueLevelIntro() {
+    const next = gameState.pendingAfterIntro;
+    if (!next) {
+        showScreen('story');
+        return;
+    }
+
+    if (next.screen === 'question') {
+        showScreen('question');
+        renderQuestion();
+        return;
+    }
+
+    if (next.screen === 'coding') {
+        showScreen('coding');
+        persistProgress();
+        return;
+    }
+
+    if (next.screen === 'path') {
+        showScreen('path');
+        persistProgress();
+        return;
+    }
+
+    showScreen('story');
+}
+
+function startMission() {
+    gameState.pendingAfterIntro = null;
+    enterArenaLevel(gameState.level || 0);
+}
+
+function handleHiddenRoute(choice) {
+    if (choice === 'investigate') {
+        gameState.hiddenRouteAttempted = true;
+        gameState.hiddenRouteActive = true;
+        loadLevel(1, 'backlog_king', null, { skipIntro: true });
+        return;
+    }
+
+    gameState.hiddenRouteAttempted = true;
+    gameState.hiddenRouteActive = false;
+    enterArenaLevel(1);
+}
+
+function currentArenaLevel() {
+    return ARENA_LEVELS[gameState.arena.currentLevel];
+}
+
+function updateArenaLevelTitle() {
+    const level = currentArenaLevel();
+    const titleNode = document.getElementById('arena-level-title');
+    if (level && titleNode) {
+        titleNode.textContent = `Level ${level.id} — ${level.name}`;
+    }
+}
+
+function placePlayerAtStart(levelIndex) {
+    const level = ARENA_LEVELS[levelIndex];
+    gameState.arena.playerX = level.playerStart.x * ARENA_TILE + CHARACTER_TILE_OFFSET;
+    gameState.arena.playerY = level.playerStart.y * ARENA_TILE + CHARACTER_TILE_OFFSET;
+    gameState.arena.facing = 'down';
+    gameState.arena.frame = 0;
+}
+
+function hideArenaDialogue() {
+    gameState.arena.dialogue.open = false;
+    gameState.arena.dialogue.lines = [];
+    gameState.arena.dialogue.index = 0;
+    gameState.arena.dialogue.onComplete = null;
+    const dialogueBox = document.getElementById('arena-dialogue');
+    if (dialogueBox) dialogueBox.classList.add('hidden');
+}
+
+function openArenaDialogue(speaker, lines, onComplete = null) {
+    closeArenaModals();
+    const dialogueBox = document.getElementById('arena-dialogue');
+    const speakerNode = document.getElementById('arena-dialogue-speaker');
+    const textNode = document.getElementById('arena-dialogue-text');
+    if (!dialogueBox || !speakerNode || !textNode) return;
+
+    gameState.arena.dialogue.open = true;
+    gameState.arena.dialogue.speaker = speaker;
+    gameState.arena.dialogue.lines = lines;
+    gameState.arena.dialogue.index = 0;
+    gameState.arena.dialogue.onComplete = onComplete;
+
+    speakerNode.textContent = speaker;
+    textNode.textContent = lines[0] || '';
+    setHudStatus(`Dialogue: ${speaker}`);
+    dialogueBox.classList.remove('hidden');
+}
+
+function continueArenaDialogue() {
+    if (!gameState.arena.dialogue.open) return;
+    const textNode = document.getElementById('arena-dialogue-text');
+    const state = gameState.arena.dialogue;
+
+    if (state.index < state.lines.length - 1) {
+        state.index += 1;
+        if (textNode) textNode.textContent = state.lines[state.index];
+        return;
+    }
+
+    const onComplete = state.onComplete;
+    hideArenaDialogue();
+    setHudStatus('Explore the area and interact.');
+    if (typeof onComplete === 'function') {
+        onComplete();
+    }
+}
+
+async function loadArenaAssets() {
+    const spriteUrls = [];
+    ['down', 'up', 'left', 'right'].forEach((direction) => {
+        [0, 1, 2].forEach((frame) => {
+            spriteUrls.push(`/assets/sprites/player_${direction}_${frame}.png`);
+        });
+    });
+    for (let i = 1; i <= 5; i++) {
+        spriteUrls.push(`/assets/sprites/npc_${i}.png`);
+    }
+
+    const tileNames = [
+        'floor', 'wall', 'door', 'portal', 'stairs_up', 'desk',
+        'computer', 'plant', 'bookshelf', 'lab_table', 'server_rack',
+        'chair', 'water_tank', 'caution_sign'
+    ];
+    const tileUrls = [];
+    tileNames.forEach((name) => {
+        for (let level = 1; level <= 5; level++) {
+            tileUrls.push(`/assets/tiles/${name}_l${level}.png`);
+        }
+    });
+
+    const allUrls = [...new Set([...spriteUrls, ...tileUrls])];
+
+    await Promise.all(allUrls.map((url) => new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            gameState.arena.images.set(url, img);
+            resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = url;
+    })));
+
+    gameState.arena.imagesLoaded = true;
+}
+
+function isBlocked(level, x, y) {
+    const collisionPadding = 4;
+    const corners = [
+        { x: x + collisionPadding, y: y + collisionPadding },
+        { x: x + CHARACTER_SIZE - collisionPadding, y: y + collisionPadding },
+        { x: x + collisionPadding, y: y + CHARACTER_SIZE - collisionPadding },
+        { x: x + CHARACTER_SIZE - collisionPadding, y: y + CHARACTER_SIZE - collisionPadding },
+    ];
+
+    for (const point of corners) {
+        const tx = Math.floor(point.x / ARENA_TILE);
+        const ty = Math.floor(point.y / ARENA_TILE);
+        if (tx < 0 || ty < 0 || tx >= level.width || ty >= level.height) return true;
+        if (level.collisions[ty][tx]) return true;
+    }
+    return false;
+}
+
+function distanceToTile(x, y, tileX, tileY) {
+    const cx = x + CHARACTER_SIZE / 2;
+    const cy = y + CHARACTER_SIZE / 2;
+    const tx = tileX * ARENA_TILE + ARENA_TILE / 2;
+    const ty = tileY * ARENA_TILE + ARENA_TILE / 2;
+    return Math.hypot(cx - tx, cy - ty);
+}
+
+function getCameraTarget(level, canvas) {
+    const cameraViewWidth = canvas.width / CAMERA_ZOOM;
+    const cameraViewHeight = canvas.height / CAMERA_ZOOM;
+    const worldWidth = level.width * ARENA_TILE;
+    const worldHeight = level.height * ARENA_TILE;
+    let targetX = gameState.arena.playerX + CHARACTER_SIZE / 2 - cameraViewWidth / 2;
+    let targetY = gameState.arena.playerY + CHARACTER_SIZE / 2 - cameraViewHeight / 2;
+
+    if (worldWidth <= cameraViewWidth) {
+        targetX = -(cameraViewWidth - worldWidth) / 2;
+    } else {
+        targetX = Math.max(0, Math.min(targetX, worldWidth - cameraViewWidth));
+    }
+
+    if (worldHeight <= cameraViewHeight) {
+        targetY = -(cameraViewHeight - worldHeight) / 2;
+    } else {
+        targetY = Math.max(0, Math.min(targetY, worldHeight - cameraViewHeight));
+    }
+
+    return { targetX, targetY };
+}
+
+function resetCameraToPlayer() {
+    const canvas = document.getElementById('arena-canvas');
+    if (!(canvas instanceof HTMLCanvasElement)) return;
+    const level = currentArenaLevel();
+    const { targetX, targetY } = getCameraTarget(level, canvas);
+    gameState.arena.cameraX = targetX;
+    gameState.arena.cameraY = targetY;
+    gameState.arena.targetCameraX = targetX;
+    gameState.arena.targetCameraY = targetY;
+}
+
+function interactInArena() {
+    if (gameState.currentScreen !== 'arena') return;
+    if (gameState.arena.dialogue.open) {
+        continueArenaDialogue();
+        return;
+    }
+
+    const level = currentArenaLevel();
+    const npcDistance = distanceToTile(gameState.arena.playerX, gameState.arena.playerY, level.npc.x, level.npc.y);
+    if (npcDistance < ARENA_TILE * 1.2 && isFacingTarget(level.npc.x, level.npc.y)) {
+        if (gameState.arena.challengeCleared[level.npc.questionLevel]) {
+            openArenaDialogue(level.npc.name, ['You already cleared this floor. The portal is active.']);
+            setHudStatus('Portal unlocked. Find and enter the portal tile.');
+            return;
+        }
+
+        openArenaDialogue(level.npc.name, [
+            `You reached ${level.name}.`,
+            'Clear my challenge to unlock the portal.'
+        ], () => {
+            loadLevel(level.npc.questionLevel, null, null, { skipIntro: true });
+        });
+        return;
+    }
+
+    if (npcDistance < ARENA_TILE * 1.2 && !isFacingTarget(level.npc.x, level.npc.y)) {
+        setHudStatus('Face the NPC and press E / Enter to interact.');
+    }
+}
+
+function isFacingTarget(tileX, tileY) {
+    const playerCx = gameState.arena.playerX + CHARACTER_SIZE / 2;
+    const playerCy = gameState.arena.playerY + CHARACTER_SIZE / 2;
+    const targetCx = tileX * ARENA_TILE + ARENA_TILE / 2;
+    const targetCy = tileY * ARENA_TILE + ARENA_TILE / 2;
+    const dx = targetCx - playerCx;
+    const dy = targetCy - playerCy;
+
+    if (gameState.arena.facing === 'up') return dy < 0 && Math.abs(dy) >= Math.abs(dx) - 4;
+    if (gameState.arena.facing === 'down') return dy > 0 && Math.abs(dy) >= Math.abs(dx) - 4;
+    if (gameState.arena.facing === 'left') return dx < 0 && Math.abs(dx) >= Math.abs(dy) - 4;
+    return dx > 0 && Math.abs(dx) >= Math.abs(dy) - 4;
+}
+
+async function transitionToLevel(targetLevel) {
+    if (gameState.arena.transitioning) return;
+    gameState.arena.transitioning = true;
+    await fadeTo(1);
+
+    if (targetLevel === null || targetLevel === undefined) {
+        await fadeTo(0);
+        gameState.arena.transitioning = false;
+        endGame('YOU SAVED THE PARTNER!', true);
+        return;
+    }
+
+    enterArenaLevel(targetLevel);
+    await fadeTo(0);
+    gameState.arena.transitioning = false;
+}
+
+async function checkPortalTrigger() {
+    const level = currentArenaLevel();
+    const portalDistance = distanceToTile(gameState.arena.playerX, gameState.arena.playerY, level.portal.x, level.portal.y);
+    if (portalDistance >= ARENA_TILE * 0.5) return;
+
+    if (!gameState.arena.challengeCleared[level.npc.questionLevel]) {
+        setHudStatus('Portal locked. Clear this floor challenge first.');
+        return;
+    }
+
+    const forcedTarget = gameState.arena.portalOverride[level.id];
+    const target = forcedTarget ?? level.portal.targetLevel;
+    await transitionToLevel(target);
+}
+
+function drawArena() {
+    const canvas = document.getElementById('arena-canvas');
+    if (!(canvas instanceof HTMLCanvasElement)) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const level = currentArenaLevel();
+    const visualLevel = Math.min(level.id + 1, 5);
+    const cameraX = gameState.arena.cameraX;
+    const cameraY = gameState.arena.cameraY;
+    const cameraViewWidth = canvas.width / CAMERA_ZOOM;
+    const cameraViewHeight = canvas.height / CAMERA_ZOOM;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(CAMERA_ZOOM, 0, 0, CAMERA_ZOOM, 0, 0);
+
+    const startX = Math.max(0, Math.floor(cameraX / ARENA_TILE) - 1);
+    const startY = Math.max(0, Math.floor(cameraY / ARENA_TILE) - 1);
+    const endX = Math.min(level.width - 1, Math.ceil((cameraX + cameraViewWidth) / ARENA_TILE) + 1);
+    const endY = Math.min(level.height - 1, Math.ceil((cameraY + cameraViewHeight) / ARENA_TILE) + 1);
+
+    for (let y = startY; y <= endY; y++) {
+        for (let x = startX; x <= endX; x++) {
+            const px = x * ARENA_TILE;
+            const py = y * ARENA_TILE;
+            const screenX = px - cameraX;
+            const screenY = py - cameraY;
+            const tileType = level.tiles[y][x];
+            const tileName = getTileImageName(tileType, visualLevel);
+            const tileImage = gameState.arena.images.get(`/assets/tiles/${tileName}`);
+            if (tileImage) {
+                ctx.drawImage(tileImage, screenX, screenY, ARENA_TILE, ARENA_TILE);
+            } else {
+                ctx.fillStyle = level.collisions[y][x] ? '#2d233d' : '#14181f';
+                ctx.fillRect(screenX, screenY, ARENA_TILE, ARENA_TILE);
+            }
+        }
+    }
+
+    const portalUnlocked = Boolean(gameState.arena.challengeCleared[level.npc.questionLevel]);
+    const portalImage = gameState.arena.images.get('/assets/tiles/portal_l1.png');
+    const portalX = level.portal.x * ARENA_TILE - cameraX;
+    const portalY = level.portal.y * ARENA_TILE - cameraY;
+    if (portalUnlocked && portalImage) {
+        ctx.drawImage(portalImage, portalX, portalY, ARENA_TILE, ARENA_TILE);
+    } else if (portalUnlocked) {
+        ctx.fillStyle = '#00d4ff';
+        ctx.fillRect(portalX + 8, portalY + 8, ARENA_TILE - 16, ARENA_TILE - 16);
+    }
+
+    const npcImage = gameState.arena.images.get(`/assets/sprites/npc_${level.npc.spriteId}.png`);
+    const npcX = level.npc.x * ARENA_TILE + CHARACTER_TILE_OFFSET - cameraX;
+    const npcY = level.npc.y * ARENA_TILE + CHARACTER_TILE_OFFSET - cameraY;
+    if (npcImage) {
+        ctx.drawImage(npcImage, npcX, npcY, CHARACTER_SIZE, CHARACTER_SIZE);
+    } else {
+        ctx.fillStyle = '#ff5ea8';
+        ctx.fillRect(npcX + 8, npcY + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
+    }
+
+    const playerImage = gameState.arena.images.get(
+        `/assets/sprites/player_${gameState.arena.facing}_${gameState.arena.frame}.png`
+    );
+    const playerScreenX = gameState.arena.playerX - cameraX;
+    const playerScreenY = gameState.arena.playerY - cameraY;
+    if (playerImage) {
+        ctx.drawImage(playerImage, playerScreenX, playerScreenY, CHARACTER_SIZE, CHARACTER_SIZE);
+    } else {
+        ctx.fillStyle = '#00ff88';
+        ctx.fillRect(playerScreenX + 8, playerScreenY + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
+    }
+
+    ctx.fillStyle = '#f2f2f2';
+    ctx.font = '14px Arial';
+    if (npcX > -80 && npcX < cameraViewWidth + 20 && npcY > -40 && npcY < cameraViewHeight + 20) {
+        ctx.fillText(level.npc.name, npcX - 16, npcY - 6);
+    }
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function resizeArenaCanvas() {
+    const canvas = document.getElementById('arena-canvas');
+    if (!(canvas instanceof HTMLCanvasElement)) return;
+    const { width, height } = getArenaViewportSize();
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+}
+
+function tickArena() {
+    if (gameState.currentScreen !== 'arena') {
+        gameState.arena.loopId = null;
+        return;
+    }
+
+    if (!gameState.arena.dialogue.open && !isArenaModalOpen() && !gameState.arena.transitioning) {
+        const level = currentArenaLevel();
+        let dx = 0;
+        let dy = 0;
+        let moving = false;
+
+        if (gameState.arena.keys.has('ArrowUp') || gameState.arena.keys.has('w') || gameState.arena.keys.has('W')) {
+            dy -= PLAYER_SPEED;
+            gameState.arena.facing = 'up';
+            moving = true;
+        }
+        if (gameState.arena.keys.has('ArrowDown') || gameState.arena.keys.has('s') || gameState.arena.keys.has('S')) {
+            dy += PLAYER_SPEED;
+            gameState.arena.facing = 'down';
+            moving = true;
+        }
+        if (gameState.arena.keys.has('ArrowLeft') || gameState.arena.keys.has('a') || gameState.arena.keys.has('A')) {
+            dx -= PLAYER_SPEED;
+            gameState.arena.facing = 'left';
+            moving = true;
+        }
+        if (gameState.arena.keys.has('ArrowRight') || gameState.arena.keys.has('d') || gameState.arena.keys.has('D')) {
+            dx += PLAYER_SPEED;
+            gameState.arena.facing = 'right';
+            moving = true;
+        }
+
+        const nextX = gameState.arena.playerX + dx;
+        const nextY = gameState.arena.playerY + dy;
+
+        if (!isBlocked(level, nextX, gameState.arena.playerY)) gameState.arena.playerX = nextX;
+        if (!isBlocked(level, gameState.arena.playerX, nextY)) gameState.arena.playerY = nextY;
+
+        if (moving) {
+            const now = performance.now();
+            if (now - gameState.arena.lastFrameAt > PLAYER_ANIM_MS) {
+                gameState.arena.frame = (gameState.arena.frame + 1) % 3;
+                gameState.arena.lastFrameAt = now;
+            }
+        } else {
+            gameState.arena.frame = 0;
+        }
+
+        const canvas = document.getElementById('arena-canvas');
+        if (canvas instanceof HTMLCanvasElement) {
+            const { targetX, targetY } = getCameraTarget(level, canvas);
+            gameState.arena.targetCameraX = targetX;
+            gameState.arena.targetCameraY = targetY;
+        }
+    }
+
+    if (!gameState.arena.dialogue.open && !isArenaModalOpen() && !gameState.arena.transitioning) {
+        gameState.arena.cameraX += (gameState.arena.targetCameraX - gameState.arena.cameraX) * 0.18;
+        gameState.arena.cameraY += (gameState.arena.targetCameraY - gameState.arena.cameraY) * 0.18;
+    }
+
+    if (!gameState.arena.transitioning && !gameState.arena.dialogue.open && !isArenaModalOpen()) {
+        void checkPortalTrigger();
+    }
+
+    drawArena();
+    gameState.arena.loopId = requestAnimationFrame(tickArena);
+}
+
+function startArenaLoop() {
+    if (gameState.arena.loopId) cancelAnimationFrame(gameState.arena.loopId);
+    gameState.arena.loopId = requestAnimationFrame(tickArena);
+}
+
+function enterArenaLevel(levelIndex) {
+    if (!ARENA_LEVELS[levelIndex]) return;
+    gameState.arena.currentLevel = levelIndex;
+    gameState.level = levelIndex;
+    levelDisplay.textContent = levelIndex;
+    resizeArenaCanvas();
+    placePlayerAtStart(levelIndex);
+    closeArenaModals();
+    resetCameraToPlayer();
+    updateArenaLevelTitle();
+    hideArenaDialogue();
+    setHudStatus(`Talk to ${ARENA_LEVELS[levelIndex].npc.name}`);
+    showScreen('arena');
+    startArenaLoop();
 }
 
 function getStoredProgress() {
@@ -336,9 +1232,17 @@ async function restorePlayerProgress(sessionStatus) {
         return;
     }
 
+    if (!Object.prototype.hasOwnProperty.call(progress, 'arenaChallengeCleared')) {
+        showScreen('story');
+        return;
+    }
+
     gameState.level = Number(progress.level || gameState.level || 0);
     gameState.pathChoice = progress.pathChoice || null;
     gameState.currentQuestionIndex = Number(progress.currentQuestionIndex || 0);
+    gameState.hiddenRouteAttempted = Boolean(progress.hiddenRouteAttempted);
+    gameState.hiddenRouteActive = Boolean(progress.hiddenRouteActive);
+    gameState.shownLevelIntros = progress.shownLevelIntros || {};
 
     const screen = progress.currentScreen || 'story';
     if (screen === 'coding' || screen === 'question' || screen === 'path') {
@@ -347,6 +1251,26 @@ async function restorePlayerProgress(sessionStatus) {
             preferredScreen: screen,
             codeDraft: progress.codeDraft || "",
         });
+        return;
+    }
+
+    if (screen === 'arena') {
+        gameState.arena.challengeCleared = progress.arenaChallengeCleared || {};
+        gameState.arena.portalOverride = progress.arenaPortalOverride || {};
+        enterArenaLevel(gameState.level || 0);
+        if (progress.arenaModal && ['path', 'question', 'coding'].includes(progress.arenaModal)) {
+            openArenaModal(progress.arenaModal);
+        }
+        return;
+    }
+
+    if (screen === 'hiddenRoute') {
+        showScreen('hiddenRoute');
+        return;
+    }
+
+    if (screen === 'levelIntro') {
+        showScreen('story');
         return;
     }
 
@@ -432,7 +1356,7 @@ function endGame(message, lockCompleted = false) {
     persistProgress();
 }
 
-async function loadLevel(level, path = null, restoreOptions = null) {
+async function loadLevel(level, path = null, restoreOptions = null, options = {}) {
     if (!gameState.token) {
         alert('Please join first.');
         return;
@@ -445,6 +1369,7 @@ async function loadLevel(level, path = null, restoreOptions = null) {
     gameState.level = level;
     gameState.pathChoice = path;
     gameState.currentQuestionIndex = 0;
+    gameState.pendingAfterIntro = null;
     levelDisplay.textContent = level;
 
     let url = `${API_BASE_URL}/api/questions/${level}`;
@@ -460,16 +1385,20 @@ async function loadLevel(level, path = null, restoreOptions = null) {
         const data = await response.json();
 
         if (data.message === 'Choose path') {
-            showScreen('path');
+            gameState.pendingAfterIntro = { screen: 'path' };
             document.getElementById('path-title').textContent = data.title;
+            openArenaModal('path');
+            setHudStatus('Choose your path.');
             persistProgress();
             return;
         }
 
         if (data.question) {
-            showScreen('coding');
+            gameState.pendingAfterIntro = { screen: 'coding' };
             document.getElementById('coding-problem-text').textContent = data.question.text;
             document.getElementById('code-editor').value = restoreOptions?.codeDraft || data.question.template;
+            openArenaModal('coding');
+            setHudStatus('Boss challenge active.');
             persistProgress();
             return;
         }
@@ -482,7 +1411,9 @@ async function loadLevel(level, path = null, restoreOptions = null) {
                     Math.max(0, gameState.currentQuestions.length - 1)
                 );
             }
-            showScreen('question');
+            gameState.pendingAfterIntro = { screen: 'question' };
+            openArenaModal('question');
+            setHudStatus(`Answer ${currentArenaLevel().npc.name}'s challenge.`);
             renderQuestion();
         }
     } catch (err) {
@@ -549,6 +1480,9 @@ async function submitAnswer() {
             nextQuestion();
             return;
         }
+        gameState.score = Math.max(0, gameState.score - 5);
+        scoreDisplay.textContent = gameState.score;
+        setHudStatus('Wrong answer. -5 score.');
         alert('Incorrect! Try again.');
     } catch (err) {
         console.error(err);
@@ -565,12 +1499,32 @@ function nextQuestion() {
         return;
     }
 
+    closeArenaModals();
+
+    if (gameState.hiddenRouteActive && gameState.level === 1) {
+        gameState.hiddenRouteActive = false;
+        gameState.arena.challengeCleared[1] = true;
+        gameState.arena.challengeCleared[2] = true;
+        gameState.arena.portalOverride[1] = 3;
+        setHudStatus('BackLog route unlocked. Portal skips to Level 3.');
+        enterArenaLevel(1);
+        return;
+    }
+
+    if (!gameState.hiddenRouteAttempted && gameState.level === 1) {
+        showScreen('hiddenRoute');
+        persistProgress();
+        return;
+    }
+
     if (gameState.level >= 5) {
         endGame('Mission complete!', true);
         return;
     }
 
-    loadLevel(gameState.level + 1);
+    gameState.arena.challengeCleared[gameState.level] = true;
+    setHudStatus('Challenge cleared. Portal unlocked.');
+    enterArenaLevel(gameState.level);
 }
 
 async function submitCode() {
@@ -599,13 +1553,18 @@ async function submitCode() {
             gameState.score = data.new_score;
             scoreDisplay.textContent = gameState.score;
             persistProgress();
-            endGame('YOU SAVED THE PARTNER!', true);
+            closeArenaModals();
+            gameState.arena.challengeCleared[5] = true;
+            setHudStatus('Final challenge cleared. Enter portal to finish.');
             return;
         }
 
         const resultDiv = document.getElementById('code-result');
         resultDiv.textContent = 'OUTPUT: WRONG ANSWER';
         resultDiv.style.color = 'red';
+        gameState.score = Math.max(0, gameState.score - 10);
+        scoreDisplay.textContent = gameState.score;
+        setHudStatus('Wrong code. -10 score.');
     } catch (err) {
         console.error(err);
         button.disabled = false;
@@ -614,7 +1573,8 @@ async function submitCode() {
 }
 
 function choosePath(path) {
-    loadLevel(gameState.level, path);
+    closeArenaModals();
+    loadLevel(gameState.level, path, null, { skipIntro: true });
 }
 
 function parseTabLock(rawValue) {
@@ -638,10 +1598,6 @@ function parseTabLock(rawValue) {
 
 function writeTabLock() {
     localStorage.setItem(TAB_KEY, JSON.stringify({ id: tabId, ts: Date.now() }));
-}
-
-function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function setupAntiCheat() {
@@ -710,6 +1666,7 @@ async function setupAntiCheat() {
 
 async function boot() {
     await setupAntiCheat();
+    await loadArenaAssets();
     const editor = document.getElementById('code-editor');
     if (editor) {
         editor.addEventListener('input', () => persistProgress());
@@ -719,14 +1676,73 @@ async function boot() {
     if (!restored) {
         showScreen('login');
     }
+
+    window.addEventListener('keydown', (event) => {
+        const targetTag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : '';
+        const typingInInput = targetTag === 'input' || targetTag === 'textarea';
+
+        if (gameState.currentScreen !== 'arena') {
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            if (gameState.arena.dialogue.open) {
+                event.preventDefault();
+                continueArenaDialogue();
+                return;
+            }
+
+            if (gameState.arena.activeModal === 'question' && !typingInInput) {
+                event.preventDefault();
+                submitAnswer();
+                return;
+            }
+
+            if (!isArenaModalOpen()) {
+                event.preventDefault();
+                interactInArena();
+                return;
+            }
+        }
+
+        if (event.key === 'e' || event.key === 'E') {
+            if (!isArenaModalOpen()) {
+                event.preventDefault();
+                interactInArena();
+            }
+            return;
+        }
+
+        if (!typingInInput && !isArenaModalOpen()) {
+            gameState.arena.keys.add(event.key);
+        }
+    });
+
+    window.addEventListener('keyup', (event) => {
+        if (gameState.currentScreen === 'arena') {
+            gameState.arena.keys.delete(event.key);
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (gameState.currentScreen === 'arena') {
+            resizeArenaCanvas();
+            resetCameraToPlayer();
+        }
+    });
+
     startPolling(2500);
     startHeartbeat();
 }
 
 window.startLevel = loadLevel;
+window.startMission = startMission;
+window.continueLevelIntro = continueLevelIntro;
 window.startGame = startGame;
 window.submitAnswer = submitAnswer;
 window.submitCode = submitCode;
 window.choosePath = choosePath;
+window.handleHiddenRoute = handleHiddenRoute;
+window.continueArenaDialogue = continueArenaDialogue;
 
 boot();

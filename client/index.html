@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuestArena: Target Save the Partner</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -15,6 +15,7 @@
             <div class="hud-item">Level: <span id="level-display">0</span></div>
             <div class="hud-item">Timer: <span id="timer-display">30:00</span></div>
             <div class="hud-item">Score: <span id="score-display">0</span></div>
+            <div class="hud-item">Status: <span id="hud-status">Talk to the NPC</span></div>
         </header>
 
         <!-- Main Content Area -->
@@ -44,12 +45,42 @@
             <section id="story-screen" class="hidden">
                 <h2>Mission Briefing</h2>
                 <p id="story-text">
-                    Your partner has been captured by the System Admin. 
-                    You must hack through 5 security levels to save them.
-                    Time is running out.
+                    The Principal captured your partner inside the college building.
+                    Defeat each floor boss by clearing their challenge and reach the top floor.
+                    You only have one shot to save your love story.
                 </p>
-                <button onclick="startLevel(0)">START MISSION</button>
+                <button onclick="startMission()">START MISSION</button>
             </section>
+
+            <section id="level-intro-screen" class="hidden">
+                <h2 id="level-intro-title">Level Intro</h2>
+                <p id="level-intro-dialogue"></p>
+                <button onclick="continueLevelIntro()">CONTINUE</button>
+            </section>
+
+            <section id="hidden-route-screen" class="hidden">
+                <h2>Unknown Voice</h2>
+                <p id="hidden-route-text">
+                    "Are you looking for your Mithrabindha?" — a voice echoes near the stairs.
+                </p>
+                <div class="path-options">
+                    <button onclick="handleHiddenRoute('investigate')" class="path-btn hard">Investigate Voice</button>
+                    <button onclick="handleHiddenRoute('ignore')" class="path-btn easy">Ignore and Continue</button>
+                </div>
+            </section>
+
+            <section id="arena-screen" class="hidden">
+                <h2 id="arena-level-title">Level 0 — College Gate</h2>
+                <canvas id="arena-canvas" width="1920" height="1080"></canvas>
+                <p id="arena-hint">WASD / Arrow Keys to move. Press E/Enter near NPCs.</p>
+                <div id="arena-dialogue" class="hidden">
+                    <h3 id="arena-dialogue-speaker">NPC</h3>
+                    <p id="arena-dialogue-text"></p>
+                    <button onclick="continueArenaDialogue()">Continue</button>
+                </div>
+            </section>
+
+            <div id="modal-backdrop" class="hidden"></div>
 
             <!-- Level Selection / Path Choice -->
             <section id="path-selection" class="hidden">
@@ -87,6 +118,8 @@
             </section>
         </main>
     </div>
+
+    <div id="fade-overlay"></div>
 
     <script src="script.js"></script>
 </body>
