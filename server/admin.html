@@ -208,6 +208,7 @@
         let currentFrozen = false;
         let currentPlayers = [];
         let currentLeaderboard = [];
+        let selectedAnalyticsSessionId = null;
         let playerSortKey = 'score';
         let playerSortDirection = 'desc';
         let leaderboardSortKey = 'score';
@@ -480,10 +481,30 @@
         }
 
         async function viewAnalytics(sessionId) {
+            selectedAnalyticsSessionId = sessionId;
             const res = await fetch(`${API}/api/admin/analytics/${sessionId}`, { headers: authHeaders() });
             if (!res.ok) return;
             const data = await res.json();
             const top = data.top_player;
+            const rows = Array.isArray(data.leaderboard) ? data.leaderboard : [];
+
+            const indexHeader = 'S.No';
+            const nameHeader = 'Name';
+            const scoreHeader = 'Score';
+            const timeHeader = 'Time';
+
+            const indexWidth = Math.max(indexHeader.length, String(rows.length || 1).length) + 2;
+            const nameWidth = Math.max(
+                nameHeader.length,
+                ...rows.map((item) => String(item.username || '').length),
+                10
+            ) + 2;
+            const scoreWidth = Math.max(
+                scoreHeader.length,
+                ...rows.map((item) => String(item.score ?? 0).length),
+                6
+            ) + 2;
+
             const lines = [
                 `Session Name: ${data.session_name || '-'}`,
                 `Total Participants: ${data.total_participants ?? 0}`,
@@ -497,6 +518,22 @@
                 lines.push('Top Player: -');
                 lines.push('Top Score: -');
                 lines.push('Time Taken: -');
+            }
+
+            lines.push('');
+            lines.push('-----------------------------------');
+            lines.push(
+                `${indexHeader.padEnd(indexWidth)}${nameHeader.padEnd(nameWidth)}${scoreHeader.padEnd(scoreWidth)}${timeHeader}`
+            );
+
+            if (!rows.length) {
+                lines.push('No players found.');
+            } else {
+                rows.forEach((item, idx) => {
+                    lines.push(
+                        `${String(idx + 1).padEnd(indexWidth)}${String(item.username || '-').padEnd(nameWidth)}${String(item.score ?? 0).padEnd(scoreWidth)}${toDuration(item.time_taken_seconds)}`
+                    );
+                });
             }
 
             document.getElementById('analytics').textContent = lines.join('\n');
@@ -519,8 +556,9 @@
             await fetchLeaderboard();
             await fetchPlayers();
             await fetchSessions();
-            if (currentSessionId) {
-                await viewAnalytics(currentSessionId);
+            const analyticsSessionId = selectedAnalyticsSessionId || currentSessionId;
+            if (analyticsSessionId) {
+                await viewAnalytics(analyticsSessionId);
             }
         }
 

@@ -58,6 +58,7 @@ def analytics_for_session(session: SessionModel) -> dict:
             "session_name": session.name,
             "total_participants": 0,
             "top_player": None,
+            "leaderboard": [],
             "generated_at": datetime.utcnow().isoformat(),
         }
 
@@ -76,5 +77,6 @@ def analytics_for_session(session: SessionModel) -> dict:
         "session_name": session.name,
         "total_participants": len(players),
         "top_player": top,
+        "leaderboard": ranked,
         "generated_at": datetime.utcnow().isoformat(),
     }

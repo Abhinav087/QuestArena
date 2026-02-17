@@ -83,6 +83,16 @@ def make_stairs(base: str, line: str):
     return img
 
 
+def make_lift(base: str, accent: str):
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba(base))
+    d = ImageDraw.Draw(img)
+    d.rectangle([3, 3, BASE_TILE - 4, BASE_TILE - 4], outline=rgba(accent, 190), width=2)
+    d.rectangle([7, 6, BASE_TILE - 8, BASE_TILE - 7], fill=rgba("#1a2233", 220), outline=rgba(accent, 140), width=1)
+    d.rectangle([13, 11, 18, 16], fill=rgba(accent, 210))
+    d.polygon([(16, 20), (11, 25), (14, 25), (14, 29), (18, 29), (18, 25), (21, 25)], fill=rgba("#7de3ff"))
+    return img
+
+
 def make_prop(base: str, accent: str, kind: str):
     img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -195,6 +205,7 @@ def generate_tiles():
         save(upscale_tile(make_door("#6b7a36", "#2f3c16")), TILES_DIR / f"door_open_l{lvl}.png")
         save(upscale_tile(make_portal("#1f2a40", accent)), TILES_DIR / f"portal_l{lvl}.png")
         save(upscale_tile(make_stairs("#2b313f", accent)), TILES_DIR / f"stairs_up_l{lvl}.png")
+        save(upscale_tile(make_lift("#1f2838", accent)), TILES_DIR / f"lift_l{lvl}.png")
 
         save(upscale_tile(make_prop("#6e4e32", "#9a734e", "desk")), TILES_DIR / f"desk_l{lvl}.png")
         save(upscale_tile(make_prop("#37404f", "#58d3ff", "computer")), TILES_DIR / f"computer_l{lvl}.png")

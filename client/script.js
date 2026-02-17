@@ -96,6 +96,7 @@ function getTileImageName(tileType, visualLevel) {
         '11': 'water_tank_l2.png',
         '12': 'caution_sign_l5.png',
         '13': 'stairs_up_l1.png',
+        '14': 'lift_l1.png',
     };
     return tileMap[tileType] || `floor_l${visualLevel}.png`;
 }
@@ -119,6 +120,7 @@ const ARENA_LEVELS = [
         tiles: createEmptyMap(18, 14),
         npc: { spriteId: 2, x: 9, y: 4, name: 'Reception Aunty', questionLevel: 1 },
         portal: { x: 9, y: 1, targetLevel: 2 },
+        hiddenLift: { x: 14, y: 10, targetLevel: 3 },
         playerStart: { x: 9, y: 11 },
     },
     {
@@ -139,6 +141,7 @@ const ARENA_LEVELS = [
         tiles: createEmptyMap(18, 14),
         npc: { spriteId: 4, x: 9, y: 4, name: 'Lab Incharge', questionLevel: 3 },
         portal: { x: 9, y: 1, targetLevel: 4 },
+        hiddenLift: { x: 3, y: 11, targetLevel: null },
         playerStart: { x: 9, y: 11 },
     },
     {
@@ -186,6 +189,7 @@ ARENA_LEVELS[1].tiles[8][15] = '11';
 ARENA_LEVELS[1].tiles[9][1] = '12';
 ARENA_LEVELS[1].tiles[9][16] = '12';
 ARENA_LEVELS[1].tiles[1][9] = '13';
+ARENA_LEVELS[1].tiles[10][14] = '14';
 finalizeCollisions(ARENA_LEVELS[1], new Set(['1', '8', '11']));
 
 addBorderWalls(ARENA_LEVELS[2].tiles, 16, 12);
@@ -214,6 +218,7 @@ ARENA_LEVELS[3].tiles[7][13] = '10';
 ARENA_LEVELS[3].tiles[2][2] = '6';
 ARENA_LEVELS[3].tiles[2][15] = '6';
 ARENA_LEVELS[3].tiles[1][9] = '13';
+ARENA_LEVELS[3].tiles[11][3] = '14';
 finalizeCollisions(ARENA_LEVELS[3], new Set(['1', '4', '6']));
 
 function decorateRooftop(level) {
@@ -274,6 +279,10 @@ function applyLargeWorldLayout(level, targetWidth, targetHeight) {
     level.npc.y += offsetY;
     level.portal.x += offsetX;
     level.portal.y += offsetY;
+    if (level.hiddenLift) {
+        level.hiddenLift.x += offsetX;
+        level.hiddenLift.y += offsetY;
+    }
     level.playerStart.x += offsetX;
     level.playerStart.y += offsetY;
 
@@ -282,6 +291,10 @@ function applyLargeWorldLayout(level, targetWidth, targetHeight) {
         level.portal,
         level.playerStart,
     ];
+
+    if (level.hiddenLift) {
+        protectedPoints.push(level.hiddenLift);
+    }
 
     protectedPoints.forEach((point) => {
         for (let py = point.y - 1; py <= point.y + 1; py++) {
@@ -296,6 +309,7 @@ function applyLargeWorldLayout(level, targetWidth, targetHeight) {
 
     if (level.id === 0) level.tiles[level.portal.y][level.portal.x] = '2';
     if (level.id === 4 || level.id === 5) level.tiles[level.portal.y][level.portal.x] = '3';
+    if (level.hiddenLift) level.tiles[level.hiddenLift.y][level.hiddenLift.x] = '14';
 
     finalizeCollisions(level, new Set(['1', '4', '6', '7', '8', '9', '11']));
 }
@@ -333,6 +347,7 @@ let gameState = {
     shownLevelIntros: {},
     hiddenRouteAttempted: false,
     hiddenRouteActive: false,
+    hiddenRouteLiftReady: false,
     arena: {
         currentLevel: 0,
         playerX: 0,
@@ -358,6 +373,7 @@ let gameState = {
             index: 0,
             onComplete: null,
         },
+        currentPrompt: null,
         loopId: null,
         portalOverride: {},
     },
@@ -470,6 +486,7 @@ function persistProgress() {
         currentScreen: gameState.currentScreen,
         hiddenRouteAttempted: gameState.hiddenRouteAttempted,
         hiddenRouteActive: gameState.hiddenRouteActive,
+        hiddenRouteLiftReady: gameState.hiddenRouteLiftReady,
         shownLevelIntros: gameState.shownLevelIntros,
         arenaChallengeCleared: gameState.arena.challengeCleared,
         arenaPortalOverride: gameState.arena.portalOverride,
@@ -543,13 +560,15 @@ function handleHiddenRoute(choice) {
     if (choice === 'investigate') {
         gameState.hiddenRouteAttempted = true;
         gameState.hiddenRouteActive = true;
+        gameState.hiddenRouteLiftReady = false;
         loadLevel(1, 'backlog_king', null, { skipIntro: true });
         return;
     }
 
     gameState.hiddenRouteAttempted = true;
     gameState.hiddenRouteActive = false;
-    enterArenaLevel(1);
+    gameState.hiddenRouteLiftReady = false;
+    enterArenaLevel(1, { preservePlayerPosition: true });
 }
 
 function currentArenaLevel() {
@@ -569,6 +588,12 @@ function placePlayerAtStart(levelIndex) {
     gameState.arena.playerX = level.playerStart.x * ARENA_TILE + CHARACTER_TILE_OFFSET;
     gameState.arena.playerY = level.playerStart.y * ARENA_TILE + CHARACTER_TILE_OFFSET;
     gameState.arena.facing = 'down';
+    gameState.arena.frame = 0;
+}
+
+function placePlayerAtTile(tileX, tileY) {
+    gameState.arena.playerX = tileX * ARENA_TILE + CHARACTER_TILE_OFFSET;
+    gameState.arena.playerY = tileY * ARENA_TILE + CHARACTER_TILE_OFFSET;
     gameState.arena.frame = 0;
 }
 
@@ -632,7 +657,7 @@ async function loadArenaAssets() {
 
     const tileNames = [
         'floor', 'wall', 'door', 'portal', 'stairs_up', 'desk',
-        'computer', 'plant', 'bookshelf', 'lab_table', 'server_rack',
+        'computer', 'plant', 'bookshelf', 'lab_table', 'server_rack', 'lift',
         'chair', 'water_tank', 'caution_sign'
     ];
     const tileUrls = [];
@@ -683,6 +708,86 @@ function distanceToTile(x, y, tileX, tileY) {
     return Math.hypot(cx - tx, cy - ty);
 }
 
+function getInteractionTarget() {
+    const level = currentArenaLevel();
+    const playerX = gameState.arena.playerX;
+    const playerY = gameState.arena.playerY;
+
+    const targetLimit = ARENA_TILE * 1.28;
+    const npcDistance = distanceToTile(playerX, playerY, level.npc.x, level.npc.y);
+    const portalDistance = distanceToTile(playerX, playerY, level.portal.x, level.portal.y);
+    const liftDistance = level.hiddenLift
+        ? distanceToTile(playerX, playerY, level.hiddenLift.x, level.hiddenLift.y)
+        : Number.POSITIVE_INFINITY;
+
+    const candidates = [];
+
+    if (npcDistance < targetLimit) {
+        candidates.push({
+            type: 'npc',
+            distance: npcDistance,
+            tileX: level.npc.x,
+            tileY: level.npc.y,
+            prompt: `Press E to talk to ${level.npc.name}`,
+        });
+    }
+
+    if (portalDistance < targetLimit) {
+        const portalUnlocked = Boolean(gameState.arena.challengeCleared[level.npc.questionLevel]);
+        candidates.push({
+            type: 'portal',
+            distance: portalDistance,
+            tileX: level.portal.x,
+            tileY: level.portal.y,
+            prompt: portalUnlocked ? 'Press E to enter portal' : 'Portal locked. Clear challenge first',
+        });
+    }
+
+    if (level.hiddenLift && liftDistance < targetLimit) {
+        const liftActive = level.id === 1 ? gameState.hiddenRouteLiftReady : level.id === 3;
+        candidates.push({
+            type: 'lift',
+            distance: liftDistance,
+            tileX: level.hiddenLift.x,
+            tileY: level.hiddenLift.y,
+            prompt: liftActive ? 'Press E to use lift' : 'Lift inactive',
+        });
+    }
+
+    if (candidates.length === 0) {
+        return null;
+    }
+
+    candidates.sort((a, b) => a.distance - b.distance);
+    return candidates[0];
+}
+
+function updateInteractionPrompt() {
+    const promptNode = document.getElementById('arena-interact-prompt');
+    if (!promptNode) return;
+
+    if (gameState.currentScreen !== 'arena' || gameState.arena.dialogue.open || isArenaModalOpen() || gameState.arena.transitioning) {
+        promptNode.classList.add('hidden');
+        gameState.arena.currentPrompt = null;
+        return;
+    }
+
+    const target = getInteractionTarget();
+    gameState.arena.currentPrompt = target;
+    if (!target) {
+        promptNode.classList.add('hidden');
+        return;
+    }
+
+    const screenX = ((target.tileX * ARENA_TILE + ARENA_TILE / 2) - gameState.arena.cameraX) * CAMERA_ZOOM;
+    const screenY = ((target.tileY * ARENA_TILE) - gameState.arena.cameraY) * CAMERA_ZOOM - 10;
+
+    promptNode.textContent = target.prompt;
+    promptNode.style.left = `${Math.round(screenX)}px`;
+    promptNode.style.top = `${Math.round(screenY)}px`;
+    promptNode.classList.remove('hidden');
+}
+
 function getCameraTarget(level, canvas) {
     const cameraViewWidth = canvas.width / CAMERA_ZOOM;
     const cameraViewHeight = canvas.height / CAMERA_ZOOM;
@@ -725,11 +830,16 @@ function interactInArena() {
     }
 
     const level = currentArenaLevel();
-    const npcDistance = distanceToTile(gameState.arena.playerX, gameState.arena.playerY, level.npc.x, level.npc.y);
-    if (npcDistance < ARENA_TILE * 1.2 && isFacingTarget(level.npc.x, level.npc.y)) {
+    const target = getInteractionTarget();
+    if (!target) {
+        setHudStatus('Move closer to an NPC, portal, or lift and press E.');
+        return;
+    }
+
+    if (target.type === 'npc') {
         if (gameState.arena.challengeCleared[level.npc.questionLevel]) {
             openArenaDialogue(level.npc.name, ['You already cleared this floor. The portal is active.']);
-            setHudStatus('Portal unlocked. Find and enter the portal tile.');
+            setHudStatus('Portal unlocked. Press E near the portal to enter.');
             return;
         }
 
@@ -742,8 +852,46 @@ function interactInArena() {
         return;
     }
 
-    if (npcDistance < ARENA_TILE * 1.2 && !isFacingTarget(level.npc.x, level.npc.y)) {
-        setHudStatus('Face the NPC and press E / Enter to interact.');
+    if (target.type === 'portal') {
+        if (!gameState.arena.challengeCleared[level.npc.questionLevel]) {
+            setHudStatus('Portal locked. Clear this floor challenge first.');
+            return;
+        }
+
+        if (level.id === 1 && !gameState.hiddenRouteAttempted) {
+            showScreen('hiddenRoute');
+            setHudStatus('A strange voice echoes from nearby...');
+            persistProgress();
+            return;
+        }
+
+        const forcedTarget = gameState.arena.portalOverride[level.id];
+        const portalTarget = forcedTarget ?? level.portal.targetLevel;
+        void transitionToLevel(portalTarget);
+        return;
+    }
+
+    if (target.type === 'lift') {
+        if (level.id === 1) {
+            if (!gameState.hiddenRouteLiftReady) {
+                setHudStatus('Lift inactive. Investigate and clear the hidden challenge first.');
+                return;
+            }
+
+            gameState.hiddenRouteLiftReady = false;
+            setHudStatus('Hidden lift engaged. Skipping ahead...');
+            void transitionToLevelWithOptions(3, { spawnAtLift: true });
+            return;
+        }
+
+        if (level.id === 3) {
+            openArenaDialogue('BackLog King', [
+                'You have arrived through the hidden route.',
+                'Continue your mission from this floor.'
+            ]);
+            setHudStatus('Hidden route complete.');
+            return;
+        }
     }
 }
 
@@ -778,19 +926,21 @@ async function transitionToLevel(targetLevel) {
     gameState.arena.transitioning = false;
 }
 
-async function checkPortalTrigger() {
-    const level = currentArenaLevel();
-    const portalDistance = distanceToTile(gameState.arena.playerX, gameState.arena.playerY, level.portal.x, level.portal.y);
-    if (portalDistance >= ARENA_TILE * 0.5) return;
+async function transitionToLevelWithOptions(targetLevel, options = {}) {
+    if (gameState.arena.transitioning) return;
+    gameState.arena.transitioning = true;
+    await fadeTo(1);
 
-    if (!gameState.arena.challengeCleared[level.npc.questionLevel]) {
-        setHudStatus('Portal locked. Clear this floor challenge first.');
+    if (targetLevel === null || targetLevel === undefined) {
+        await fadeTo(0);
+        gameState.arena.transitioning = false;
+        endGame('YOU SAVED THE PARTNER!', true);
         return;
     }
 
-    const forcedTarget = gameState.arena.portalOverride[level.id];
-    const target = forcedTarget ?? level.portal.targetLevel;
-    await transitionToLevel(target);
+    enterArenaLevel(targetLevel, options);
+    await fadeTo(0);
+    gameState.arena.transitioning = false;
 }
 
 function drawArena() {
@@ -872,6 +1022,16 @@ function drawArena() {
         ctx.fillText(level.npc.name, npcX - 16, npcY - 6);
     }
 
+    if (level.hiddenLift) {
+        const liftX = level.hiddenLift.x * ARENA_TILE - cameraX;
+        const liftY = level.hiddenLift.y * ARENA_TILE - cameraY;
+        ctx.fillStyle = '#d2e3ff';
+        ctx.font = '13px Arial';
+        if (liftX > -80 && liftX < cameraViewWidth + 20 && liftY > -40 && liftY < cameraViewHeight + 20) {
+            ctx.fillText('Lift', liftX + 10, liftY - 6);
+        }
+    }
+
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
@@ -945,11 +1105,8 @@ function tickArena() {
         gameState.arena.cameraY += (gameState.arena.targetCameraY - gameState.arena.cameraY) * 0.18;
     }
 
-    if (!gameState.arena.transitioning && !gameState.arena.dialogue.open && !isArenaModalOpen()) {
-        void checkPortalTrigger();
-    }
-
     drawArena();
+    updateInteractionPrompt();
     gameState.arena.loopId = requestAnimationFrame(tickArena);
 }
 
@@ -958,13 +1115,20 @@ function startArenaLoop() {
     gameState.arena.loopId = requestAnimationFrame(tickArena);
 }
 
-function enterArenaLevel(levelIndex) {
+function enterArenaLevel(levelIndex, options = {}) {
     if (!ARENA_LEVELS[levelIndex]) return;
+    const preservePlayerPosition = Boolean(options.preservePlayerPosition);
+    const spawnAtLift = Boolean(options.spawnAtLift);
+    const previousLevel = gameState.arena.currentLevel;
     gameState.arena.currentLevel = levelIndex;
     gameState.level = levelIndex;
     levelDisplay.textContent = levelIndex;
     resizeArenaCanvas();
-    placePlayerAtStart(levelIndex);
+    if (spawnAtLift && ARENA_LEVELS[levelIndex].hiddenLift) {
+        placePlayerAtTile(ARENA_LEVELS[levelIndex].hiddenLift.x, ARENA_LEVELS[levelIndex].hiddenLift.y);
+    } else if (!preservePlayerPosition || previousLevel !== levelIndex) {
+        placePlayerAtStart(levelIndex);
+    }
     closeArenaModals();
     resetCameraToPlayer();
     updateArenaLevelTitle();
@@ -1242,6 +1406,7 @@ async function restorePlayerProgress(sessionStatus) {
     gameState.currentQuestionIndex = Number(progress.currentQuestionIndex || 0);
     gameState.hiddenRouteAttempted = Boolean(progress.hiddenRouteAttempted);
     gameState.hiddenRouteActive = Boolean(progress.hiddenRouteActive);
+    gameState.hiddenRouteLiftReady = Boolean(progress.hiddenRouteLiftReady);
     gameState.shownLevelIntros = progress.shownLevelIntros || {};
 
     const screen = progress.currentScreen || 'story';
@@ -1503,17 +1668,16 @@ function nextQuestion() {
 
     if (gameState.hiddenRouteActive && gameState.level === 1) {
         gameState.hiddenRouteActive = false;
+        gameState.hiddenRouteAttempted = true;
+        gameState.hiddenRouteLiftReady = true;
         gameState.arena.challengeCleared[1] = true;
-        gameState.arena.challengeCleared[2] = true;
-        gameState.arena.portalOverride[1] = 3;
-        setHudStatus('BackLog route unlocked. Portal skips to Level 3.');
-        enterArenaLevel(1);
-        return;
-    }
-
-    if (!gameState.hiddenRouteAttempted && gameState.level === 1) {
-        showScreen('hiddenRoute');
-        persistProgress();
+        setHudStatus('BackLog King: follow me to the hidden lift.');
+        enterArenaLevel(1, { preservePlayerPosition: true });
+        openArenaDialogue('BackLog King', [
+            'Good. You passed my test.',
+            'Follow me. I unlocked a hidden lift on this floor.',
+            'Use that lift to skip ahead.'
+        ]);
         return;
     }
 
@@ -1523,8 +1687,8 @@ function nextQuestion() {
     }
 
     gameState.arena.challengeCleared[gameState.level] = true;
-    setHudStatus('Challenge cleared. Portal unlocked.');
-    enterArenaLevel(gameState.level);
+    setHudStatus('Challenge cleared. Portal unlocked (press E near portal).');
+    enterArenaLevel(gameState.level, { preservePlayerPosition: true });
 }
 
 async function submitCode() {
