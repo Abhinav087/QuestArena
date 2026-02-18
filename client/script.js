@@ -12,6 +12,8 @@ const tabId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const TAB_HEARTBEAT_MS = 2000;
 const TAB_STALE_MS = 15000;
 const TAB_HANDOFF_WAIT_MS = 1200;
+const STATUS_POLL_INTERVAL_MS = 10000;
+const STATUS_POLL_BACKGROUND_MS = 20000;
 
 const LEVEL_INTROS = {
     0: {
@@ -342,6 +344,7 @@ let gameState = {
     level: 0,
     score: 0,
     statusPollInterval: null,
+    statusPollInFlight: false,
     heartbeatInterval: null,
     currentQuestions: [],
     currentQuestionIndex: 0,
@@ -1637,7 +1640,7 @@ function clearAuth() {
     clearProgress();
 }
 
-function startPolling(interval = 2500) {
+function startPolling(interval = STATUS_POLL_INTERVAL_MS) {
     stopPolling();
     pollGameStatus();
     gameState.statusPollInterval = setInterval(pollGameStatus, interval);
@@ -1673,6 +1676,11 @@ function stopHeartbeat() {
 }
 
 async function pollGameStatus() {
+    if (gameState.statusPollInFlight) {
+        return;
+    }
+
+    gameState.statusPollInFlight = true;
     try {
         const response = await fetch(`${API_BASE_URL}/api/game_status`);
         const data = await response.json();
@@ -1714,6 +1722,8 @@ async function pollGameStatus() {
         }
     } catch (err) {
         console.error('Status poll failed:', err);
+    } finally {
+        gameState.statusPollInFlight = false;
     }
 }
 
@@ -2279,6 +2289,9 @@ async function setupAntiCheat() {
     document.addEventListener('visibilitychange', async () => {
         if (document.hidden) {
             clearMovementKeys();
+            startPolling(STATUS_POLL_BACKGROUND_MS);
+        } else {
+            startPolling(STATUS_POLL_INTERVAL_MS);
         }
         if (!gameState.token) return;
         const details = document.hidden ? 'tab_hidden' : 'tab_visible';
@@ -2371,7 +2384,7 @@ async function boot() {
         }
     });
 
-    startPolling(2500);
+    startPolling(STATUS_POLL_INTERVAL_MS);
     startHeartbeat();
 }
 
