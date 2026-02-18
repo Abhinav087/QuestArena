@@ -48,6 +48,13 @@ const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
 const CAMERA_ZOOM = 1.5;
 const PLAYER_SPEED = 4.2;
 const PLAYER_ANIM_MS = 150;
+const NPC_GUIDE_SPEED = 3.35;
+const NPC_SNAP_DISTANCE = 1.2;
+const NPC_REPATH_MS = 450;
+const MOVEMENT_KEYS = new Set([
+    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+    'w', 'W', 'a', 'A', 's', 'S', 'd', 'D',
+]);
 
 function getArenaViewportSize() {
     return {
@@ -374,8 +381,22 @@ let gameState = {
             onComplete: null,
         },
         currentPrompt: null,
+        interactionCandidates: [],
+        promptSelectionIndex: 0,
         loopId: null,
         portalOverride: {},
+        companion: {
+            unlocked: false,
+            visible: false,
+            name: 'BackLog King',
+            spriteId: 5,
+            worldX: 0,
+            worldY: 0,
+            state: 'idle',
+            path: [],
+            pathIndex: 0,
+            nextRepathAt: 0,
+        },
     },
 };
 
@@ -428,6 +449,7 @@ function showScreen(screenName, options = {}) {
     target.classList.add('active');
     gameState.currentScreen = screenName in screens && screens[screenName] ? screenName : 'login';
     if (gameState.currentScreen !== 'arena') {
+        clearMovementKeys();
         closeArenaModals();
     }
     if (shouldPersist) {
@@ -451,6 +473,7 @@ function closeArenaModals() {
 
 function openArenaModal(type) {
     closeArenaModals();
+    clearMovementKeys();
     const modal = arenaModals[type];
     if (modal) {
         modal.classList.remove('hidden');
@@ -461,6 +484,33 @@ function openArenaModal(type) {
 
 function isArenaModalOpen() {
     return gameState.arena.activeModal !== null;
+}
+
+function isArenaModalActuallyVisible() {
+    if (!gameState.arena.activeModal) return false;
+    const modal = arenaModals[gameState.arena.activeModal];
+    if (!modal) {
+        gameState.arena.activeModal = null;
+        return false;
+    }
+    const visible = !modal.classList.contains('hidden');
+    if (!visible) {
+        gameState.arena.activeModal = null;
+    }
+    return visible;
+}
+
+function isArenaDialogueActuallyVisible() {
+    const dialogueBox = document.getElementById('arena-dialogue');
+    if (!dialogueBox) {
+        gameState.arena.dialogue.open = false;
+        return false;
+    }
+    const visible = gameState.arena.dialogue.open && !dialogueBox.classList.contains('hidden');
+    if (!visible && gameState.arena.dialogue.open) {
+        hideArenaDialogue();
+    }
+    return visible;
 }
 
 function sleep(ms) {
@@ -487,6 +537,9 @@ function persistProgress() {
         hiddenRouteAttempted: gameState.hiddenRouteAttempted,
         hiddenRouteActive: gameState.hiddenRouteActive,
         hiddenRouteLiftReady: gameState.hiddenRouteLiftReady,
+        companionUnlocked: gameState.arena.companion.unlocked,
+        companionVisible: gameState.arena.companion.visible,
+        companionState: gameState.arena.companion.state,
         shownLevelIntros: gameState.shownLevelIntros,
         arenaChallengeCleared: gameState.arena.challengeCleared,
         arenaPortalOverride: gameState.arena.portalOverride,
@@ -608,6 +661,7 @@ function hideArenaDialogue() {
 
 function openArenaDialogue(speaker, lines, onComplete = null) {
     closeArenaModals();
+    clearMovementKeys();
     const dialogueBox = document.getElementById('arena-dialogue');
     const speakerNode = document.getElementById('arena-dialogue-speaker');
     const textNode = document.getElementById('arena-dialogue-text');
@@ -708,13 +762,276 @@ function distanceToTile(x, y, tileX, tileY) {
     return Math.hypot(cx - tx, cy - ty);
 }
 
-function getInteractionTarget() {
+function distanceToPoint(x, y, targetX, targetY) {
+    const cx = x + CHARACTER_SIZE / 2;
+    const cy = y + CHARACTER_SIZE / 2;
+    return Math.hypot(cx - targetX, cy - targetY);
+}
+
+function tileToWorldX(tileX) {
+    return tileX * ARENA_TILE + CHARACTER_TILE_OFFSET;
+}
+
+function tileToWorldY(tileY) {
+    return tileY * ARENA_TILE + CHARACTER_TILE_OFFSET;
+}
+
+function getEntityTilePosition(worldX, worldY) {
+    const x = worldX + CHARACTER_SIZE / 2;
+    const y = worldY + CHARACTER_SIZE / 2;
+    return {
+        tileX: Math.round((x - ARENA_TILE / 2) / ARENA_TILE),
+        tileY: Math.round((y - ARENA_TILE / 2) / ARENA_TILE),
+    };
+}
+
+function getPlayerTilePosition() {
+    return getEntityTilePosition(gameState.arena.playerX, gameState.arena.playerY);
+}
+
+function isWalkableTile(level, tileX, tileY) {
+    return tileX >= 0
+        && tileY >= 0
+        && tileX < level.width
+        && tileY < level.height
+        && !level.collisions[tileY][tileX];
+}
+
+function findNearestWalkableTile(level, tileX, tileY, maxRadius = 6) {
+    for (let radius = 0; radius <= maxRadius; radius++) {
+        for (let y = tileY - radius; y <= tileY + radius; y++) {
+            for (let x = tileX - radius; x <= tileX + radius; x++) {
+                const onRing = Math.abs(x - tileX) === radius || Math.abs(y - tileY) === radius;
+                if (!onRing) continue;
+                if (isWalkableTile(level, x, y)) {
+                    return { x, y };
+                }
+            }
+        }
+    }
+    return null;
+}
+
+function setCompanionPositionFromTile(tileX, tileY) {
+    gameState.arena.companion.worldX = tileToWorldX(tileX);
+    gameState.arena.companion.worldY = tileToWorldY(tileY);
+}
+
+function getCompanionTilePosition() {
+    return getEntityTilePosition(gameState.arena.companion.worldX, gameState.arena.companion.worldY);
+}
+
+function buildTilePath(level, startTile, endTile) {
+    const key = (x, y) => `${x},${y}`;
+    const queue = [{ x: startTile.x, y: startTile.y }];
+    const visited = new Set([key(startTile.x, startTile.y)]);
+    const parent = new Map();
+    const moves = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 },
+    ];
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+        if (current.x === endTile.x && current.y === endTile.y) {
+            const path = [];
+            let walk = key(current.x, current.y);
+            while (walk) {
+                const [px, py] = walk.split(',').map(Number);
+                path.push({ x: px, y: py });
+                walk = parent.get(walk);
+            }
+            return path.reverse();
+        }
+
+        for (const move of moves) {
+            const nx = current.x + move.x;
+            const ny = current.y + move.y;
+            if (nx < 0 || ny < 0 || nx >= level.width || ny >= level.height) continue;
+            if (level.collisions[ny][nx]) continue;
+            const nKey = key(nx, ny);
+            if (visited.has(nKey)) continue;
+            visited.add(nKey);
+            parent.set(nKey, key(current.x, current.y));
+            queue.push({ x: nx, y: ny });
+        }
+    }
+
+    return [];
+}
+
+function buildPathFromCompanionToTile(level, targetTile) {
+    const companionTile = getCompanionTilePosition();
+    let startTile = companionTile;
+    if (!isWalkableTile(level, startTile.tileX, startTile.tileY)) {
+        const fallback = findNearestWalkableTile(level, startTile.tileX, startTile.tileY, 8);
+        if (!fallback) return [];
+        startTile = { tileX: fallback.x, tileY: fallback.y };
+        setCompanionPositionFromTile(fallback.x, fallback.y);
+    }
+    return buildTilePath(
+        level,
+        { x: startTile.tileX, y: startTile.tileY },
+        { x: targetTile.x, y: targetTile.y }
+    );
+}
+
+function startCompanionFollowing() {
+    if (!gameState.arena.companion.unlocked) return;
+    gameState.arena.companion.visible = true;
+    gameState.arena.companion.state = 'following';
+    gameState.arena.companion.path = [];
+    gameState.arena.companion.pathIndex = 0;
+    gameState.arena.companion.nextRepathAt = 0;
+}
+
+function syncCompanionForCurrentLevel() {
+    const level = currentArenaLevel();
+    if (!gameState.arena.companion.unlocked) {
+        gameState.arena.companion.visible = false;
+        return;
+    }
+
+    const playerTile = getPlayerTilePosition();
+    const spawnTile = findNearestWalkableTile(level, playerTile.tileX + 1, playerTile.tileY, 8)
+        || findNearestWalkableTile(level, playerTile.tileX, playerTile.tileY + 1, 8)
+        || findNearestWalkableTile(level, playerTile.tileX, playerTile.tileY, 8);
+
+    if (spawnTile) {
+        setCompanionPositionFromTile(spawnTile.x, spawnTile.y);
+    } else {
+        setCompanionPositionFromTile(level.npc.x, level.npc.y);
+    }
+
+    gameState.arena.companion.visible = true;
+    gameState.arena.companion.path = [];
+    gameState.arena.companion.pathIndex = 0;
+    if (level.id === 1 && gameState.hiddenRouteLiftReady) {
+        gameState.arena.companion.state = 'guiding';
+        startBacklogKingGuideToLift();
+    } else {
+        gameState.arena.companion.state = 'following';
+    }
+}
+
+function startBacklogKingGuideToLift() {
+    const level = currentArenaLevel();
+    if (level.id !== 1 || !level.hiddenLift || !gameState.arena.companion.unlocked) return;
+
+    gameState.arena.companion.visible = true;
+    gameState.arena.companion.state = 'guiding';
+
+    const playerTile = getPlayerTilePosition();
+    let companionTile = getCompanionTilePosition();
+    const tileDistance = Math.hypot(playerTile.tileX - companionTile.tileX, playerTile.tileY - companionTile.tileY);
+    if (tileDistance > 8) {
+        const spawnTile = findNearestWalkableTile(level, playerTile.tileX + 1, playerTile.tileY, 8)
+            || findNearestWalkableTile(level, playerTile.tileX, playerTile.tileY + 1, 8)
+            || findNearestWalkableTile(level, playerTile.tileX, playerTile.tileY, 8);
+        if (spawnTile) {
+            setCompanionPositionFromTile(spawnTile.x, spawnTile.y);
+            companionTile = { tileX: spawnTile.x, tileY: spawnTile.y };
+        }
+    }
+
+    const path = buildPathFromCompanionToTile(level, { x: level.hiddenLift.x, y: level.hiddenLift.y });
+
+    if (!path.length) {
+        setHudStatus('BackLog King unlocked the lift. Follow him there.');
+        startCompanionFollowing();
+        return;
+    }
+
+    if (path.length === 1) {
+        setHudStatus('BackLog King reached the lift. Press E near the lift.');
+        startCompanionFollowing();
+        return;
+    }
+
+    gameState.arena.companion.path = path;
+    gameState.arena.companion.pathIndex = 1;
+    gameState.arena.companion.nextRepathAt = performance.now() + NPC_REPATH_MS;
+    setHudStatus('BackLog King is moving to the hidden lift. Follow him.');
+}
+
+function updateCompanionMovement() {
+    const companion = gameState.arena.companion;
+    if (!companion.unlocked || !companion.visible) return;
+
+    const level = currentArenaLevel();
+    const now = performance.now();
+
+    if (companion.state === 'guiding') {
+        if (level.id !== 1 || !level.hiddenLift || !gameState.hiddenRouteLiftReady) {
+            startCompanionFollowing();
+            return;
+        }
+        if (now >= companion.nextRepathAt || !companion.path.length || companion.pathIndex >= companion.path.length) {
+            const liftPath = buildPathFromCompanionToTile(level, { x: level.hiddenLift.x, y: level.hiddenLift.y });
+            companion.path = liftPath;
+            companion.pathIndex = liftPath.length > 1 ? 1 : liftPath.length;
+            companion.nextRepathAt = now + NPC_REPATH_MS;
+        }
+    } else if (companion.state === 'following') {
+        const playerTile = getPlayerTilePosition();
+        const companionTile = getCompanionTilePosition();
+        const tileGap = Math.hypot(playerTile.tileX - companionTile.tileX, playerTile.tileY - companionTile.tileY);
+
+        if (tileGap <= 2) {
+            companion.path = [];
+            companion.pathIndex = 0;
+            return;
+        }
+
+        if (now >= companion.nextRepathAt || !companion.path.length || companion.pathIndex >= companion.path.length) {
+            const followPath = buildPathFromCompanionToTile(level, { x: playerTile.tileX, y: playerTile.tileY });
+            companion.path = followPath;
+            companion.pathIndex = followPath.length > 1 ? 1 : followPath.length;
+            companion.nextRepathAt = now + NPC_REPATH_MS;
+        }
+    } else {
+        return;
+    }
+
+    if (!companion.path.length || companion.pathIndex >= companion.path.length) {
+        if (companion.state === 'guiding') {
+            setHudStatus('BackLog King reached the lift. Press E near the lift.');
+        }
+        return;
+    }
+
+    const targetTile = companion.path[companion.pathIndex];
+    const targetX = tileToWorldX(targetTile.x);
+    const targetY = tileToWorldY(targetTile.y);
+
+    const dx = targetX - companion.worldX;
+    const dy = targetY - companion.worldY;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance <= NPC_SNAP_DISTANCE) {
+        companion.worldX = targetX;
+        companion.worldY = targetY;
+        companion.pathIndex += 1;
+        return;
+    }
+
+    const step = Math.min(NPC_GUIDE_SPEED, distance);
+    companion.worldX += (dx / distance) * step;
+    companion.worldY += (dy / distance) * step;
+}
+
+function getInteractionCandidates() {
     const level = currentArenaLevel();
     const playerX = gameState.arena.playerX;
     const playerY = gameState.arena.playerY;
+    const companion = gameState.arena.companion;
+    const staticNpcCenterX = tileToWorldX(level.npc.x) + CHARACTER_SIZE / 2;
+    const staticNpcCenterY = tileToWorldY(level.npc.y) + CHARACTER_SIZE / 2;
 
     const targetLimit = ARENA_TILE * 1.28;
-    const npcDistance = distanceToTile(playerX, playerY, level.npc.x, level.npc.y);
+    const npcDistance = distanceToPoint(playerX, playerY, staticNpcCenterX, staticNpcCenterY);
     const portalDistance = distanceToTile(playerX, playerY, level.portal.x, level.portal.y);
     const liftDistance = level.hiddenLift
         ? distanceToTile(playerX, playerY, level.hiddenLift.x, level.hiddenLift.y)
@@ -728,6 +1045,8 @@ function getInteractionTarget() {
             distance: npcDistance,
             tileX: level.npc.x,
             tileY: level.npc.y,
+            worldX: staticNpcCenterX,
+            worldY: staticNpcCenterY,
             prompt: `Press E to talk to ${level.npc.name}`,
         });
     }
@@ -754,38 +1073,132 @@ function getInteractionTarget() {
         });
     }
 
-    if (candidates.length === 0) {
-        return null;
+    if (companion.unlocked && companion.visible) {
+        const companionCenterX = companion.worldX + CHARACTER_SIZE / 2;
+        const companionCenterY = companion.worldY + CHARACTER_SIZE / 2;
+        const companionDistance = distanceToPoint(playerX, playerY, companionCenterX, companionCenterY);
+        if (companionDistance < targetLimit) {
+            const companionTile = getCompanionTilePosition();
+            candidates.push({
+                type: 'companion',
+                distance: companionDistance,
+                tileX: companionTile.tileX,
+                tileY: companionTile.tileY,
+                worldX: companionCenterX,
+                worldY: companionCenterY,
+                prompt: `Press E to talk to ${companion.name}`,
+            });
+        }
     }
 
     candidates.sort((a, b) => a.distance - b.distance);
-    return candidates[0];
+    return candidates;
+}
+
+function getSelectedInteractionTarget() {
+    const candidates = gameState.arena.interactionCandidates;
+    if (!candidates.length) return null;
+    const index = Math.max(0, Math.min(gameState.arena.promptSelectionIndex, candidates.length - 1));
+    gameState.arena.promptSelectionIndex = index;
+    return candidates[index];
+}
+
+function cyclePromptSelection(direction = 1) {
+    const candidates = gameState.arena.interactionCandidates;
+    if (!candidates.length) return;
+    const total = candidates.length;
+    const step = direction >= 0 ? 1 : -1;
+    gameState.arena.promptSelectionIndex = (gameState.arena.promptSelectionIndex + step + total) % total;
+    updateInteractionPrompt();
 }
 
 function updateInteractionPrompt() {
     const promptNode = document.getElementById('arena-interact-prompt');
+    const promptListNode = document.getElementById('arena-interact-prompt-list');
     if (!promptNode) return;
 
-    if (gameState.currentScreen !== 'arena' || gameState.arena.dialogue.open || isArenaModalOpen() || gameState.arena.transitioning) {
+    const hidePromptList = () => {
+        if (!promptListNode) return;
+        promptListNode.classList.add('hidden');
+        promptListNode.innerHTML = '';
+    };
+
+    const dialogueBlocking = isArenaDialogueActuallyVisible();
+    const modalBlocking = isArenaModalActuallyVisible();
+
+    if (gameState.currentScreen !== 'arena' || dialogueBlocking || modalBlocking || gameState.arena.transitioning) {
         promptNode.classList.add('hidden');
+        hidePromptList();
         gameState.arena.currentPrompt = null;
+        gameState.arena.interactionCandidates = [];
         return;
     }
 
-    const target = getInteractionTarget();
+    const candidates = getInteractionCandidates();
+    gameState.arena.interactionCandidates = candidates;
+
+    if (!candidates.length) {
+        promptNode.classList.add('hidden');
+        hidePromptList();
+        gameState.arena.currentPrompt = null;
+        gameState.arena.promptSelectionIndex = 0;
+        return;
+    }
+
+    if (gameState.arena.promptSelectionIndex >= candidates.length) {
+        gameState.arena.promptSelectionIndex = 0;
+    }
+
+    const target = getSelectedInteractionTarget();
     gameState.arena.currentPrompt = target;
     if (!target) {
         promptNode.classList.add('hidden');
+        hidePromptList();
         return;
     }
 
-    const screenX = ((target.tileX * ARENA_TILE + ARENA_TILE / 2) - gameState.arena.cameraX) * CAMERA_ZOOM;
-    const screenY = ((target.tileY * ARENA_TILE) - gameState.arena.cameraY) * CAMERA_ZOOM - 10;
+    if (candidates.length === 1 || !promptListNode) {
+        const anchorX = target.worldX ?? (target.tileX * ARENA_TILE + ARENA_TILE / 2);
+        const anchorY = target.worldY ?? (target.tileY * ARENA_TILE + ARENA_TILE / 2);
+        const screenX = (anchorX - gameState.arena.cameraX) * CAMERA_ZOOM;
+        const screenY = (anchorY - CHARACTER_SIZE / 2 - gameState.arena.cameraY) * CAMERA_ZOOM - 10;
 
-    promptNode.textContent = target.prompt;
-    promptNode.style.left = `${Math.round(screenX)}px`;
-    promptNode.style.top = `${Math.round(screenY)}px`;
-    promptNode.classList.remove('hidden');
+        promptNode.textContent = target.prompt;
+        promptNode.style.left = `${Math.round(screenX)}px`;
+        promptNode.style.top = `${Math.round(screenY)}px`;
+        promptNode.classList.remove('hidden');
+
+        hidePromptList();
+        return;
+    }
+
+    const anchorX = target.worldX ?? (target.tileX * ARENA_TILE + ARENA_TILE / 2);
+    const anchorY = target.worldY ?? (target.tileY * ARENA_TILE + ARENA_TILE / 2);
+    const rawScreenX = (anchorX - gameState.arena.cameraX) * CAMERA_ZOOM;
+    const rawScreenY = (anchorY - CHARACTER_SIZE / 2 - gameState.arena.cameraY) * CAMERA_ZOOM - 10;
+
+    promptNode.classList.add('hidden');
+    promptListNode.innerHTML = `${candidates.map((candidate, index) => {
+        const activeClass = index === gameState.arena.promptSelectionIndex ? ' active' : '';
+        const marker = index === gameState.arena.promptSelectionIndex ? '▶' : '•';
+        return `<div class="arena-prompt-item${activeClass}">${marker} ${candidate.prompt}</div>`;
+    }).join('')}<div class="arena-prompt-hint">Tab / Shift+Tab to switch interaction</div>`;
+
+    const viewportPadding = 16;
+    const listWidth = promptListNode.offsetWidth || 360;
+    const listHeight = promptListNode.offsetHeight || 140;
+    const clampedX = Math.max(
+        viewportPadding + listWidth / 2,
+        Math.min(window.innerWidth - viewportPadding - listWidth / 2, rawScreenX)
+    );
+    const clampedY = Math.max(
+        viewportPadding + listHeight,
+        Math.min(window.innerHeight - viewportPadding, rawScreenY)
+    );
+
+    promptListNode.style.left = `${Math.round(clampedX)}px`;
+    promptListNode.style.top = `${Math.round(clampedY)}px`;
+    promptListNode.classList.remove('hidden');
 }
 
 function getCameraTarget(level, canvas) {
@@ -830,7 +1243,7 @@ function interactInArena() {
     }
 
     const level = currentArenaLevel();
-    const target = getInteractionTarget();
+    const target = gameState.arena.currentPrompt || getSelectedInteractionTarget();
     if (!target) {
         setHudStatus('Move closer to an NPC, portal, or lift and press E.');
         return;
@@ -892,6 +1305,15 @@ function interactInArena() {
             setHudStatus('Hidden route complete.');
             return;
         }
+    }
+
+    if (target.type === 'companion') {
+        openArenaDialogue(gameState.arena.companion.name, [
+            gameState.hiddenRouteLiftReady
+                ? 'Stay close. The hidden lift is ready.'
+                : 'I am with you. Let us keep moving floor by floor.'
+        ]);
+        return;
     }
 }
 
@@ -1022,6 +1444,25 @@ function drawArena() {
         ctx.fillText(level.npc.name, npcX - 16, npcY - 6);
     }
 
+    const companion = gameState.arena.companion;
+    if (companion.unlocked && companion.visible) {
+        const companionImage = gameState.arena.images.get(`/assets/sprites/npc_${companion.spriteId}.png`);
+        const companionX = companion.worldX - cameraX;
+        const companionY = companion.worldY - cameraY;
+        if (companionImage) {
+            ctx.drawImage(companionImage, companionX, companionY, CHARACTER_SIZE, CHARACTER_SIZE);
+        } else {
+            ctx.fillStyle = '#ffd300';
+            ctx.fillRect(companionX + 8, companionY + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
+        }
+
+        ctx.fillStyle = '#ffe98b';
+        ctx.font = '14px Arial';
+        if (companionX > -100 && companionX < cameraViewWidth + 20 && companionY > -40 && companionY < cameraViewHeight + 20) {
+            ctx.fillText(companion.name, companionX - 22, companionY - 6);
+        }
+    }
+
     if (level.hiddenLift) {
         const liftX = level.hiddenLift.x * ARENA_TILE - cameraX;
         const liftY = level.hiddenLift.y * ARENA_TILE - cameraY;
@@ -1049,7 +1490,10 @@ function tickArena() {
         return;
     }
 
-    if (!gameState.arena.dialogue.open && !isArenaModalOpen() && !gameState.arena.transitioning) {
+    const dialogueBlocking = isArenaDialogueActuallyVisible();
+    const modalBlocking = isArenaModalActuallyVisible();
+
+    if (!dialogueBlocking && !modalBlocking && !gameState.arena.transitioning) {
         const level = currentArenaLevel();
         let dx = 0;
         let dy = 0;
@@ -1100,7 +1544,11 @@ function tickArena() {
         }
     }
 
-    if (!gameState.arena.dialogue.open && !isArenaModalOpen() && !gameState.arena.transitioning) {
+    if (!dialogueBlocking && !modalBlocking && !gameState.arena.transitioning) {
+        updateCompanionMovement();
+    }
+
+    if (!dialogueBlocking && !modalBlocking && !gameState.arena.transitioning) {
         gameState.arena.cameraX += (gameState.arena.targetCameraX - gameState.arena.cameraX) * 0.18;
         gameState.arena.cameraY += (gameState.arena.targetCameraY - gameState.arena.cameraY) * 0.18;
     }
@@ -1133,9 +1581,17 @@ function enterArenaLevel(levelIndex, options = {}) {
     resetCameraToPlayer();
     updateArenaLevelTitle();
     hideArenaDialogue();
+    clearMovementKeys();
+    gameState.arena.promptSelectionIndex = 0;
+    gameState.arena.interactionCandidates = [];
+    syncCompanionForCurrentLevel();
     setHudStatus(`Talk to ${ARENA_LEVELS[levelIndex].npc.name}`);
     showScreen('arena');
     startArenaLoop();
+}
+
+function clearMovementKeys() {
+    gameState.arena.keys.clear();
 }
 
 function getStoredProgress() {
@@ -1407,6 +1863,9 @@ async function restorePlayerProgress(sessionStatus) {
     gameState.hiddenRouteAttempted = Boolean(progress.hiddenRouteAttempted);
     gameState.hiddenRouteActive = Boolean(progress.hiddenRouteActive);
     gameState.hiddenRouteLiftReady = Boolean(progress.hiddenRouteLiftReady);
+    gameState.arena.companion.unlocked = Boolean(progress.companionUnlocked);
+    gameState.arena.companion.visible = Boolean(progress.companionVisible) || gameState.arena.companion.unlocked;
+    gameState.arena.companion.state = progress.companionState || (gameState.arena.companion.unlocked ? 'following' : 'idle');
     gameState.shownLevelIntros = progress.shownLevelIntros || {};
 
     const screen = progress.currentScreen || 'story';
@@ -1671,8 +2130,12 @@ function nextQuestion() {
         gameState.hiddenRouteAttempted = true;
         gameState.hiddenRouteLiftReady = true;
         gameState.arena.challengeCleared[1] = true;
+        gameState.arena.companion.unlocked = true;
+        gameState.arena.companion.visible = true;
+        gameState.arena.companion.state = 'guiding';
         setHudStatus('BackLog King: follow me to the hidden lift.');
         enterArenaLevel(1, { preservePlayerPosition: true });
+        startBacklogKingGuideToLift();
         openArenaDialogue('BackLog King', [
             'Good. You passed my test.',
             'Follow me. I unlocked a hidden lift on this floor.',
@@ -1814,6 +2277,9 @@ async function setupAntiCheat() {
     });
 
     document.addEventListener('visibilitychange', async () => {
+        if (document.hidden) {
+            clearMovementKeys();
+        }
         if (!gameState.token) return;
         const details = document.hidden ? 'tab_hidden' : 'tab_visible';
         try {
@@ -1862,7 +2328,7 @@ async function boot() {
                 return;
             }
 
-            if (!isArenaModalOpen()) {
+            if (!isArenaModalActuallyVisible()) {
                 event.preventDefault();
                 interactInArena();
                 return;
@@ -1870,14 +2336,20 @@ async function boot() {
         }
 
         if (event.key === 'e' || event.key === 'E') {
-            if (!isArenaModalOpen()) {
+            if (!isArenaModalActuallyVisible()) {
                 event.preventDefault();
                 interactInArena();
             }
             return;
         }
 
-        if (!typingInInput && !isArenaModalOpen()) {
+        if (event.key === 'Tab' && !typingInInput && !isArenaModalActuallyVisible()) {
+            event.preventDefault();
+            cyclePromptSelection(event.shiftKey ? -1 : 1);
+            return;
+        }
+
+        if (!typingInInput && !isArenaModalActuallyVisible() && MOVEMENT_KEYS.has(event.key)) {
             gameState.arena.keys.add(event.key);
         }
     });
@@ -1886,6 +2358,10 @@ async function boot() {
         if (gameState.currentScreen === 'arena') {
             gameState.arena.keys.delete(event.key);
         }
+    });
+
+    window.addEventListener('blur', () => {
+        clearMovementKeys();
     });
 
     window.addEventListener('resize', () => {

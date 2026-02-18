@@ -277,7 +277,47 @@ footer {
     text-transform: none;
     z-index: 925;
     pointer-events: none;
+    white-space: pre-line;
+}
+
+#arena-interact-prompt-list {
+    position: fixed;
+    transform: translate(-50%, -100%);
+    z-index: 926;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: min(52vw, 720px);
+    pointer-events: none;
+}
+
+.arena-prompt-item {
+    padding: 8px 12px;
+    border: 2px solid #c7d8ff;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.74);
+    color: #f4f7ff;
+    font-family: 'Press Start 2P', var(--font-heading);
+    font-size: clamp(8px, 0.7vw, 10px);
+    line-height: 1.4;
+    text-align: left;
     white-space: nowrap;
+}
+
+.arena-prompt-item.active {
+    border-color: #ffe98b;
+    color: #ffe98b;
+}
+
+.arena-prompt-hint {
+    padding: 6px 10px;
+    border: 1px solid rgba(199, 216, 255, 0.5);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.62);
+    color: #d9e3ff;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    text-align: left;
 }
 
 #arena-dialogue {
