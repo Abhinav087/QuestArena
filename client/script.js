@@ -1315,6 +1315,120 @@ function getCameraTarget(level, canvas) {
     return { targetX, targetY };
 }
 
+function getArenaObjective() {
+    if (gameState.currentScreen !== 'arena') return null;
+
+    const level = currentArenaLevel();
+    const challengeCleared = Boolean(gameState.arena.challengeCleared[level.npc.questionLevel]);
+
+    if (level.id === 1 && gameState.hiddenRouteLiftReady && level.hiddenLift) {
+        return {
+            label: 'Use the hidden lift',
+            worldX: level.hiddenLift.x * ARENA_TILE + ARENA_TILE / 2,
+            worldY: level.hiddenLift.y * ARENA_TILE + ARENA_TILE / 2,
+        };
+    }
+
+    if (!challengeCleared) {
+        return {
+            label: `Talk to ${level.npc.name}`,
+            worldX: level.npc.x * ARENA_TILE + ARENA_TILE / 2,
+            worldY: level.npc.y * ARENA_TILE + ARENA_TILE / 2,
+        };
+    }
+
+    return {
+        label: 'Enter the portal',
+        worldX: level.portal.x * ARENA_TILE + ARENA_TILE / 2,
+        worldY: level.portal.y * ARENA_TILE + ARENA_TILE / 2,
+    };
+}
+
+function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
+    if (gameState.arena.dialogue.open || isArenaModalActuallyVisible() || gameState.arena.transitioning) {
+        return;
+    }
+
+    const objective = getArenaObjective();
+    if (!objective) return;
+
+    const accent = '#61d9ff';
+    const softBg = 'rgba(0, 0, 0, 0.58)';
+    const targetX = (objective.worldX - cameraX) * CAMERA_ZOOM;
+    const targetY = (objective.worldY - cameraY) * CAMERA_ZOOM;
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    const title = `Objective: ${objective.label}`;
+    ctx.font = '600 15px Orbitron, Arial';
+    const textWidth = ctx.measureText(title).width;
+    const boxWidth = textWidth + 22;
+    const boxHeight = 32;
+    const boxX = Math.round((canvas.width - boxWidth) / 2);
+    const boxY = 84;
+    ctx.fillStyle = softBg;
+    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+    ctx.fillStyle = accent;
+    ctx.fillText(title, boxX + 11, boxY + 21);
+
+    const margin = 56;
+    const onScreen = (
+        targetX > margin
+        && targetX < (canvas.width - margin)
+        && targetY > margin
+        && targetY < (canvas.height - margin)
+    );
+
+    if (onScreen) {
+        const pulse = 6 + Math.sin(performance.now() / 220) * 2.2;
+        const markerX = targetX;
+        const markerY = targetY - 26;
+
+        ctx.beginPath();
+        ctx.moveTo(markerX, markerY - pulse);
+        ctx.lineTo(markerX - 10, markerY + 8);
+        ctx.lineTo(markerX + 10, markerY + 8);
+        ctx.closePath();
+        ctx.fillStyle = accent;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(targetX, targetY, 13, 0, Math.PI * 2);
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    } else {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const dx = targetX - cx;
+        const dy = targetY - cy;
+        const angle = Math.atan2(dy, dx);
+        const radius = Math.min(cx, cy) - 72;
+        const ax = cx + Math.cos(angle) * radius;
+        const ay = cy + Math.sin(angle) * radius;
+
+        ctx.translate(ax, ay);
+        ctx.rotate(angle + Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(0, -16);
+        ctx.lineTo(-12, 10);
+        ctx.lineTo(12, 10);
+        ctx.closePath();
+        ctx.fillStyle = accent;
+        ctx.fill();
+
+        ctx.strokeStyle = '#173040';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
 function resetCameraToPlayer() {
     const canvas = document.getElementById('arena-canvas');
     if (!(canvas instanceof HTMLCanvasElement)) return;
@@ -1565,6 +1679,7 @@ function drawArena() {
     }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    drawObjectivePointer(ctx, canvas, cameraX, cameraY);
 }
 
 function resizeArenaCanvas() {
