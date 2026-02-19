@@ -25,7 +25,7 @@ const DEFAULT_WAITING_HINT = 'The game will begin automatically once the server 
 const LEVEL_INTROS = {
     0: {
         title: 'Level 0 — College Gate',
-        dialogue: 'Security: "Where is your ID card? No ID, no entry." Clear the General Knowledge questions to enter the campus.'
+        dialogue: 'Gate Security: "Stop there. No ID card, no entry." Clear the General Knowledge challenge and I will open the way to the college lobby.'
     },
     1: {
         title: 'Level 1 — Lobby',
@@ -54,7 +54,7 @@ const ARENA_HEIGHT = 1080;
 const ARENA_TILE = 64;
 const CHARACTER_SIZE = 32;
 const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
-const CAMERA_ZOOM = 1.5;
+const CAMERA_ZOOM = 1.2;
 const PLAYER_SPEED = 4.2;
 const PLAYER_ANIM_MS = 150;
 const NPC_GUIDE_SPEED = 3.35;
@@ -114,6 +114,21 @@ function getTileImageName(tileType, visualLevel) {
         '12': 'caution_sign_l5.png',
         '13': 'stairs_up_l1.png',
         '14': 'lift_l1.png',
+        // outdoor / campus tiles (Level 0)
+        'G': 'grass.png',
+        'R': 'road.png',
+        'RD': 'road_dash.png',
+        'SW': 'sidewalk.png',
+        'F': 'fence.png',
+        'GP': 'gate_pillar.png',
+        'T': 'tree.png',
+        'PK': 'parking.png',
+        'BL': 'building.png',
+        'BW': 'building_window.png',
+        'BD': 'building_door.png',
+        'KS': 'kiosk.png',
+        'FL': 'flower.png',
+        'GO': 'gate_open.png',
     };
     return tileMap[tileType] || `floor_l${visualLevel}.png`;
 }
@@ -256,6 +271,223 @@ function decorateRooftop(level) {
 decorateRooftop(ARENA_LEVELS[4]);
 decorateRooftop(ARENA_LEVELS[5]);
 
+function fillTileRect(tiles, x1, y1, x2, y2, value) {
+    for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x <= x2; x++) {
+            tiles[y][x] = value;
+        }
+    }
+}
+
+function strokeTileRect(tiles, x1, y1, x2, y2, value) {
+    for (let x = x1; x <= x2; x++) {
+        tiles[y1][x] = value;
+        tiles[y2][x] = value;
+    }
+    for (let y = y1; y <= y2; y++) {
+        tiles[y][x1] = value;
+        tiles[y][x2] = value;
+    }
+}
+
+function buildLevel0CampusLayout(level) {
+    // ── dimensions ──
+    const W = 90;
+    const H = 60;
+    const CX = Math.floor(W / 2); // gate center X = 45
+
+    // ── vertical zone boundaries ──
+    const BLDG_TOP     = 4;   // college building top
+    const BLDG_BOT     = 16;  // college building bottom
+    const YARD_TOP     = BLDG_BOT + 1; // 17  campus yard start
+    const FENCE_Y      = 38;  // campus boundary fence row
+    const ROAD_TOP     = 42;  // road zone start
+    const ROAD_BOT     = H - 2; // road zone end
+    const SPAWN_Y      = H - 4; // player spawn row
+
+    // ── horizontal zones ──
+    const PARK_L = 4;  const PARK_R = 26;  // parking area
+    const GARDEN_L = 54; const GARDEN_R = 86; // garden/tree area
+    const GATE_HALF = 3; // gate opening half-width
+
+    // ── 1. Fill everything with grass ──
+    const t = [];
+    for (let y = 0; y < H; y++) {
+        t.push(Array(W).fill('G'));
+    }
+
+    // ── 2. Road zone (bottom) ──
+    for (let y = ROAD_TOP; y <= ROAD_BOT; y++) {
+        for (let x = 0; x < W; x++) {
+            t[y][x] = 'R';
+        }
+    }
+    // road center dashes
+    const roadMidY = Math.floor((ROAD_TOP + ROAD_BOT) / 2);
+    for (let x = 0; x < W; x++) {
+        if (x % 4 < 2) {
+            t[roadMidY][x] = 'RD';
+        }
+    }
+    // sidewalk strips at road edges
+    for (let x = 0; x < W; x++) {
+        t[ROAD_TOP][x] = 'SW';
+        t[ROAD_BOT][x] = 'SW';
+    }
+    // vertical entry road from road zone to gate
+    for (let y = FENCE_Y + 1; y < ROAD_TOP; y++) {
+        for (let x = CX - 2; x <= CX + 2; x++) {
+            t[y][x] = 'SW';
+        }
+    }
+
+    // ── 3. Campus boundary fence ──
+    for (let x = 1; x < W - 1; x++) {
+        if (Math.abs(x - CX) <= GATE_HALF) continue; // gate opening
+        t[FENCE_Y][x] = 'F';
+    }
+    // side fences
+    for (let y = BLDG_TOP; y <= FENCE_Y; y++) {
+        t[y][1] = 'F';
+        t[y][W - 2] = 'F';
+    }
+    // top fence
+    for (let x = 1; x < W - 1; x++) {
+        t[BLDG_TOP - 1][x] = 'F';
+    }
+
+    // ── 4. Gate pillars + kiosks ──
+    t[FENCE_Y][CX - GATE_HALF - 1] = 'GP';
+    t[FENCE_Y][CX + GATE_HALF + 1] = 'GP';
+    // gate opening tiles (walkable)
+    for (let x = CX - GATE_HALF; x <= CX + GATE_HALF; x++) {
+        t[FENCE_Y][x] = 'GO';
+    }
+    // watchman kiosks flanking the gate
+    t[FENCE_Y - 2][CX - GATE_HALF - 3] = 'KS';
+    t[FENCE_Y - 1][CX - GATE_HALF - 3] = 'KS';
+    t[FENCE_Y - 2][CX + GATE_HALF + 3] = 'KS';
+    t[FENCE_Y - 1][CX + GATE_HALF + 3] = 'KS';
+
+    // ── 5. College building ──
+    for (let y = BLDG_TOP; y <= BLDG_BOT; y++) {
+        for (let x = 28; x <= 62; x++) {
+            t[y][x] = 'BL';
+        }
+    }
+    // windows on building
+    for (let y = BLDG_TOP + 1; y <= BLDG_BOT - 1; y += 2) {
+        for (let x = 30; x <= 60; x += 3) {
+            if (Math.abs(x - CX) <= 2) continue; // skip entrance column
+            t[y][x] = 'BW';
+        }
+    }
+    // entrance (protruding section)
+    for (let y = BLDG_BOT - 3; y <= BLDG_BOT + 1; y++) {
+        for (let x = CX - 3; x <= CX + 3; x++) {
+            t[y][x] = 'BL';
+        }
+    }
+    // lobby entrance door (this is the portal to Level 1)
+    t[BLDG_BOT + 1][CX] = 'BD';
+
+    // ── 6. Parking area (left side) ──
+    for (let y = YARD_TOP + 2; y <= FENCE_Y - 3; y++) {
+        for (let x = PARK_L; x <= PARK_R; x++) {
+            t[y][x] = 'PK';
+        }
+    }
+    // parking lot border (sidewalk)
+    for (let x = PARK_L - 1; x <= PARK_R + 1; x++) {
+        t[YARD_TOP + 1][x] = 'SW';
+        t[FENCE_Y - 2][x] = 'SW';
+    }
+    for (let y = YARD_TOP + 1; y <= FENCE_Y - 2; y++) {
+        t[y][PARK_L - 1] = 'SW';
+        t[y][PARK_R + 1] = 'SW';
+    }
+
+    // ── 7. Garden area with trees (right side) ──
+    for (let y = YARD_TOP + 1; y <= FENCE_Y - 2; y += 3) {
+        for (let x = GARDEN_L; x <= GARDEN_R; x += 4) {
+            t[y][x] = 'T';
+        }
+    }
+    // flower patches between trees
+    for (let y = YARD_TOP + 2; y <= FENCE_Y - 3; y += 3) {
+        for (let x = GARDEN_L + 2; x <= GARDEN_R - 2; x += 6) {
+            t[y][x] = 'FL';
+        }
+    }
+
+    // ── 8. Campus walkway (center path from gate to building) ──
+    for (let y = BLDG_BOT + 2; y < FENCE_Y; y++) {
+        for (let x = CX - 2; x <= CX + 2; x++) {
+            t[y][x] = 'SW';
+        }
+    }
+
+    // ── 9. Tree rows along walkway ──
+    for (let y = BLDG_BOT + 3; y < FENCE_Y - 1; y += 3) {
+        t[y][CX - 4] = 'T';
+        t[y][CX + 4] = 'T';
+    }
+
+    // ── 10. Protect key points (clear 3x3 area around NPC, portal, spawn) ──
+    const npcPos   = { x: CX, y: FENCE_Y - 4 };
+    const portalPos = { x: CX, y: BLDG_BOT + 1 };
+    const spawnPos  = { x: CX, y: SPAWN_Y };
+
+    [npcPos, portalPos, spawnPos].forEach((pt) => {
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const py = pt.y + dy;
+                const px = pt.x + dx;
+                if (px <= 0 || py <= 0 || px >= W - 1 || py >= H - 1) continue;
+                const cur = t[py][px];
+                // only clear blocking tiles, keep grass/road/sidewalk
+                if (['F', 'GP', 'KS', 'BL', 'BW', 'T', 'PK'].includes(cur)) {
+                    t[py][px] = pt === spawnPos ? 'R' : 'SW';
+                }
+            }
+        }
+    });
+    // restore portal door
+    t[portalPos.y][portalPos.x] = 'BD';
+
+    // ── 11. World border (invisible collision wall) ──
+    for (let x = 0; x < W; x++) { t[0][x] = 'F'; t[H - 1][x] = 'F'; }
+    for (let y = 0; y < H; y++) { t[y][0] = 'F'; t[y][W - 1] = 'F'; }
+
+    // ── Assign to level ──
+    level.width = W;
+    level.height = H;
+    level.tiles = t;
+    level.npc = {
+        spriteId: 1,
+        x: npcPos.x,
+        y: npcPos.y,
+        name: 'Gate Security',
+        questionLevel: 0,
+    };
+    level.portal = {
+        x: portalPos.x,
+        y: portalPos.y,
+        targetLevel: 1,
+    };
+    level.playerStart = {
+        x: spawnPos.x,
+        y: spawnPos.y,
+    };
+
+    // solid tiles: fence, gate pillar, kiosk, building, tree, parking edges
+    finalizeCollisions(level, new Set([
+        'F', 'GP', 'KS', 'BL', 'BW', 'T',
+        // keep original indoor solids for other levels that share this fn
+        '1', '4', '6', '7', '8', '9', '11'
+    ]));
+}
+
 function applyLargeWorldLayout(level, targetWidth, targetHeight) {
     const oldTiles = level.tiles;
     const oldWidth = level.width;
@@ -342,6 +574,10 @@ const LARGE_WORLD_SIZES = [
 
 ARENA_LEVELS.forEach((level, index) => {
     const size = LARGE_WORLD_SIZES[index];
+    if (level.id === 0) {
+        buildLevel0CampusLayout(level);
+        return;
+    }
     applyLargeWorldLayout(level, size.width, size.height);
 });
 
@@ -812,6 +1048,16 @@ async function loadArenaAssets() {
         for (let level = 1; level <= 5; level++) {
             tileUrls.push(`/assets/tiles/${name}_l${level}.png`);
         }
+    });
+
+    // outdoor / campus tiles (no level suffix)
+    const outdoorTiles = [
+        'grass', 'road', 'road_dash', 'sidewalk', 'fence', 'gate_pillar',
+        'tree', 'parking', 'building', 'building_window', 'building_door',
+        'kiosk', 'flower', 'gate_open'
+    ];
+    outdoorTiles.forEach((name) => {
+        tileUrls.push(`/assets/tiles/${name}.png`);
     });
 
     const allUrls = [...new Set([...spriteUrls, ...tileUrls])];
