@@ -31,5 +31,9 @@ coverage.xml
 #FOLDERS
 app/
 questarena.db
+questarena.db-wal
+questarena.db-shm
+*.db-wal
+*.db-shm
 
 CONTEXT_HANDOFF.md

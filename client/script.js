@@ -14,6 +14,13 @@ const TAB_STALE_MS = 15000;
 const TAB_HANDOFF_WAIT_MS = 1200;
 const STATUS_POLL_INTERVAL_MS = 10000;
 const STATUS_POLL_BACKGROUND_MS = 20000;
+const WS_RECONNECT_BASE_MS = 1500;
+const WS_RECONNECT_MAX_MS = 15000;
+const WS_RECONNECT_WARN_AFTER = 4;
+const WS_RECONNECT_FAILSAFE_AFTER = 12;
+const STATUS_POLL_FAIL_WARN_AFTER = 3;
+const STATUS_POLL_FAIL_FAILSAFE_AFTER = 8;
+const DEFAULT_WAITING_HINT = 'The game will begin automatically once the server admin starts the timer.';
 
 const LEVEL_INTROS = {
     0: {
@@ -48,9 +55,9 @@ const ARENA_TILE = 64;
 const CHARACTER_SIZE = 32;
 const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
 const CAMERA_ZOOM = 1.5;
-const PLAYER_SPEED = 4.2;
+const PLAYER_SPEED = 3.2;
 const PLAYER_ANIM_MS = 150;
-const NPC_GUIDE_SPEED = 3.35;
+const NPC_GUIDE_SPEED = 2.35;
 const NPC_SNAP_DISTANCE = 1.2;
 const NPC_REPATH_MS = 450;
 const MOVEMENT_KEYS = new Set([
@@ -352,6 +359,12 @@ let gameState = {
     gameActive: false,
     isCompleted: false,
     ws: null,
+    wsReconnectAttempts: 0,
+    wsReconnectTimer: null,
+    wsIntentionalClose: false,
+    wsWarningShown: false,
+    statusPollFailures: 0,
+    statusPollWarningShown: false,
     currentScreen: 'login',
     pendingAfterIntro: null,
     shownLevelIntros: {},
@@ -463,6 +476,81 @@ function showScreen(screenName, options = {}) {
 function setHudStatus(text) {
     if (hudStatus) {
         hudStatus.textContent = text;
+    }
+}
+
+function setWaitingHint(text = DEFAULT_WAITING_HINT) {
+    const hintNode = document.querySelector('.waiting-hint');
+    if (hintNode) {
+        hintNode.textContent = text;
+    }
+}
+
+function clearLiveSocketReconnectTimer() {
+    if (gameState.wsReconnectTimer) {
+        clearTimeout(gameState.wsReconnectTimer);
+        gameState.wsReconnectTimer = null;
+    }
+}
+
+function closeLiveSocket(intentional = false) {
+    clearLiveSocketReconnectTimer();
+    const socket = gameState.ws;
+    if (!socket) {
+        gameState.wsIntentionalClose = intentional;
+        return;
+    }
+
+    gameState.wsIntentionalClose = intentional;
+    gameState.ws = null;
+    try {
+        socket.onopen = null;
+        socket.onmessage = null;
+        socket.onerror = null;
+        socket.onclose = null;
+        socket.close();
+    } catch (err) {
+        console.warn('WebSocket close warning:', err);
+    }
+}
+
+function scheduleLiveSocketReconnect(reason = 'closed') {
+    if (gameState.wsIntentionalClose || gameState.wsReconnectTimer) {
+        return;
+    }
+
+    gameState.wsReconnectAttempts += 1;
+    const attempt = gameState.wsReconnectAttempts;
+    const exponentialDelay = Math.min(
+        WS_RECONNECT_MAX_MS,
+        WS_RECONNECT_BASE_MS * (2 ** Math.min(attempt - 1, 6))
+    );
+    const jitter = Math.floor(Math.random() * 500);
+    const delay = exponentialDelay + jitter;
+
+    if (attempt === WS_RECONNECT_WARN_AFTER) {
+        setWaitingHint('Realtime connection is unstable. Reconnecting automatically...');
+        if (gameState.currentScreen === 'arena') {
+            setHudStatus('Connection unstable. Reconnecting...');
+        }
+    }
+
+    if (attempt >= WS_RECONNECT_FAILSAFE_AFTER && !gameState.wsWarningShown) {
+        gameState.wsWarningShown = true;
+        setWaitingHint('Realtime connection is unavailable. Auto-sync mode is active.');
+        if (gameState.currentScreen === 'arena') {
+            setHudStatus('Realtime unavailable. Auto-sync mode active.');
+        }
+        alert('Live updates are temporarily unstable. The game will continue in auto-sync mode. Please keep this tab open.');
+    }
+
+    gameState.wsReconnectTimer = setTimeout(() => {
+        gameState.wsReconnectTimer = null;
+        connectLiveSocket();
+    }, delay);
+
+    if (attempt >= WS_RECONNECT_WARN_AFTER) {
+        console.warn(`WebSocket reconnect scheduled (${reason}) in ${delay}ms (attempt ${attempt})`);
     }
 }
 
@@ -1683,7 +1771,18 @@ async function pollGameStatus() {
     gameState.statusPollInFlight = true;
     try {
         const response = await fetch(`${API_BASE_URL}/api/game_status`);
+        if (!response.ok) {
+            throw new Error(`Status poll failed (${response.status})`);
+        }
         const data = await response.json();
+        if (gameState.statusPollFailures >= STATUS_POLL_FAIL_WARN_AFTER) {
+            setWaitingHint(DEFAULT_WAITING_HINT);
+            if (gameState.currentScreen === 'arena') {
+                setHudStatus('Connection restored.');
+            }
+        }
+        gameState.statusPollFailures = 0;
+        gameState.statusPollWarningShown = false;
 
         const waitingCount = document.getElementById('waiting-player-count');
         if (waitingCount) {
@@ -1721,29 +1820,64 @@ async function pollGameStatus() {
             endGame('Session ended');
         }
     } catch (err) {
-        console.error('Status poll failed:', err);
+        gameState.statusPollFailures += 1;
+        if (gameState.statusPollFailures === STATUS_POLL_FAIL_WARN_AFTER) {
+            setWaitingHint('Temporary network issue detected. Retrying automatically...');
+            if (gameState.currentScreen === 'arena') {
+                setHudStatus('Network issue detected. Retrying...');
+            }
+        }
+        if (
+            gameState.statusPollFailures >= STATUS_POLL_FAIL_FAILSAFE_AFTER
+            && !gameState.statusPollWarningShown
+        ) {
+            gameState.statusPollWarningShown = true;
+            setWaitingHint('Connection to server is unstable. We are retrying in the background.');
+            alert('Connection is unstable. The game keeps retrying automatically. If this continues, check local network and keep this tab open.');
+        }
+        console.warn('Status poll failed:', err);
     } finally {
         gameState.statusPollInFlight = false;
     }
 }
 
 function connectLiveSocket() {
-    if (gameState.ws) {
-        try {
-            gameState.ws.close();
-        } catch (err) {
-            console.error(err);
-        }
+    if (gameState.ws && (gameState.ws.readyState === WebSocket.OPEN || gameState.ws.readyState === WebSocket.CONNECTING)) {
+        return;
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    gameState.ws = new WebSocket(`${protocol}://${window.location.host}/ws/live`);
+    let socket;
+    try {
+        socket = new WebSocket(`${protocol}://${window.location.host}/ws/live`);
+    } catch (err) {
+        console.warn('WebSocket init failed:', err);
+        scheduleLiveSocketReconnect('init_failed');
+        return;
+    }
 
-    gameState.ws.onopen = () => {
-        gameState.ws.send('subscribe');
+    gameState.wsIntentionalClose = false;
+    gameState.ws = socket;
+
+    socket.onopen = () => {
+        clearLiveSocketReconnectTimer();
+        const recovered = gameState.wsReconnectAttempts >= WS_RECONNECT_WARN_AFTER || gameState.wsWarningShown;
+        gameState.wsReconnectAttempts = 0;
+        gameState.wsWarningShown = false;
+        setWaitingHint(DEFAULT_WAITING_HINT);
+        if (recovered && gameState.currentScreen === 'arena') {
+            setHudStatus('Live connection restored.');
+        }
+
+        try {
+            socket.send('subscribe');
+        } catch (err) {
+            console.warn('WebSocket subscribe failed:', err);
+            scheduleLiveSocketReconnect('subscribe_failed');
+        }
     };
 
-    gameState.ws.onmessage = async (event) => {
+    socket.onmessage = async (event) => {
         try {
             const data = JSON.parse(event.data);
             if (data.event === 'session_update') {
@@ -1770,12 +1904,23 @@ function connectLiveSocket() {
                 }
             }
         } catch (err) {
-            console.error('WebSocket parse error:', err);
+            console.warn('WebSocket parse warning:', err);
         }
     };
 
-    gameState.ws.onclose = () => {
-        setTimeout(connectLiveSocket, 2000);
+    socket.onerror = () => {
+        console.warn('WebSocket transport warning. Reconnect will be attempted automatically.');
+    };
+
+    socket.onclose = (event) => {
+        if (gameState.ws === socket) {
+            gameState.ws = null;
+        }
+        if (gameState.wsIntentionalClose) {
+            return;
+        }
+        const closeReason = event && event.reason ? event.reason : `code_${event.code || 'unknown'}`;
+        scheduleLiveSocketReconnect(closeReason);
     };
 }
 
@@ -2259,6 +2404,7 @@ async function setupAntiCheat() {
 
     window.addEventListener('beforeunload', () => {
         clearInterval(tabHeartbeat);
+        closeLiveSocket(true);
         const lock = parseTabLock(localStorage.getItem(TAB_KEY));
         if (lock && lock.id === tabId) {
             localStorage.removeItem(TAB_KEY);

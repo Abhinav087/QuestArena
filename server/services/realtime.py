@@ -21,15 +21,20 @@ class ConnectionManager:
 
     async def broadcast(self, event: str, payload: Any) -> None:
         message = {"event": event, "payload": payload}
-        stale: list[WebSocket] = []
         async with self._lock:
-            for conn in self._connections:
-                try:
-                    await conn.send_json(message)
-                except Exception:
-                    stale.append(conn)
-            for conn in stale:
-                self._connections.remove(conn)
+            connections = list(self._connections)
+
+        stale: list[WebSocket] = []
+        for conn in connections:
+            try:
+                await asyncio.wait_for(conn.send_json(message), timeout=2.0)
+            except Exception:
+                stale.append(conn)
+
+        if stale:
+            async with self._lock:
+                for conn in stale:
+                    self._connections.discard(conn)
 
 
 manager = ConnectionManager()

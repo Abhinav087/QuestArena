@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 
 from fastapi import FastAPI, HTTPException
@@ -13,6 +14,9 @@ from routes.auth import router as auth_router
 from routes.player import router as player_router
 from routes.session import router as session_router
 from services.timer import timer_loop
+
+logging.getLogger("websockets.protocol").setLevel(logging.CRITICAL)
+logging.getLogger("websockets.server").setLevel(logging.CRITICAL)
 
 app = FastAPI(title="QuestArena v2", version="2.0.0")
 
