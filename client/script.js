@@ -55,11 +55,12 @@ const ARENA_TILE = 64;
 const CHARACTER_SIZE = 32;
 const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
 const CAMERA_ZOOM = 1.5;
-const PLAYER_SPEED = 3.2;
+const PLAYER_SPEED = 4.2;
 const PLAYER_ANIM_MS = 150;
-const NPC_GUIDE_SPEED = 2.35;
+const NPC_GUIDE_SPEED = 3.35;
 const NPC_SNAP_DISTANCE = 1.2;
 const NPC_REPATH_MS = 450;
+const BASE_FRAME_MS = 1000 / 60;
 const MOVEMENT_KEYS = new Set([
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
     'w', 'W', 'a', 'A', 's', 'S', 'd', 'D',
@@ -379,6 +380,7 @@ let gameState = {
         frame: 0,
         isMoving: false,
         lastFrameAt: 0,
+        lastTickAt: 0,
         keys: new Set(),
         images: new Map(),
         imagesLoaded: false,
@@ -1047,7 +1049,7 @@ function startBacklogKingGuideToLift() {
     setHudStatus('BackLog King is moving to the hidden lift. Follow him.');
 }
 
-function updateCompanionMovement() {
+function updateCompanionMovement(frameScale = 1) {
     const companion = gameState.arena.companion;
     if (!companion.unlocked || !companion.visible) return;
 
@@ -1108,7 +1110,7 @@ function updateCompanionMovement() {
         return;
     }
 
-    const step = Math.min(NPC_GUIDE_SPEED, distance);
+    const step = Math.min(NPC_GUIDE_SPEED * frameScale, distance);
     companion.worldX += (dx / distance) * step;
     companion.worldY += (dy / distance) * step;
 }
@@ -1354,6 +1356,8 @@ function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
 
     const accent = '#61d9ff';
     const softBg = 'rgba(0, 0, 0, 0.58)';
+    const safeTop = 138;
+    const sideMargin = 56;
     const targetX = (objective.worldX - cameraX) * CAMERA_ZOOM;
     const targetY = (objective.worldY - cameraY) * CAMERA_ZOOM;
 
@@ -1366,7 +1370,7 @@ function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
     const boxWidth = textWidth + 22;
     const boxHeight = 32;
     const boxX = Math.round((canvas.width - boxWidth) / 2);
-    const boxY = 84;
+    const boxY = safeTop;
     ctx.fillStyle = softBg;
     ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
     ctx.strokeStyle = accent;
@@ -1375,18 +1379,29 @@ function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
     ctx.fillStyle = accent;
     ctx.fillText(title, boxX + 11, boxY + 21);
 
-    const margin = 56;
+    const margin = sideMargin;
     const onScreen = (
         targetX > margin
         && targetX < (canvas.width - margin)
-        && targetY > margin
+        && targetY > (safeTop + boxHeight + 20)
         && targetY < (canvas.height - margin)
     );
 
     if (onScreen) {
         const pulse = 6 + Math.sin(performance.now() / 220) * 2.2;
         const markerX = targetX;
-        const markerY = targetY - 26;
+        const markerY = Math.max(safeTop + boxHeight + 24, targetY - 26);
+
+        ctx.beginPath();
+        ctx.moveTo(markerX, markerY - pulse);
+        ctx.lineTo(markerX - 10, markerY + 8);
+        ctx.lineTo(markerX + 10, markerY + 8);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(9, 23, 33, 0.95)';
+        ctx.fill();
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
         ctx.beginPath();
         ctx.moveTo(markerX, markerY - pulse);
@@ -1397,7 +1412,7 @@ function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(targetX, targetY, 13, 0, Math.PI * 2);
+        ctx.arc(targetX, Math.max(safeTop + boxHeight + 32, targetY), 13, 0, Math.PI * 2);
         ctx.strokeStyle = accent;
         ctx.lineWidth = 2;
         ctx.stroke();
@@ -1408,11 +1423,18 @@ function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
         const dy = targetY - cy;
         const angle = Math.atan2(dy, dx);
         const radius = Math.min(cx, cy) - 72;
-        const ax = cx + Math.cos(angle) * radius;
-        const ay = cy + Math.sin(angle) * radius;
+        const rawAx = cx + Math.cos(angle) * radius;
+        const rawAy = cy + Math.sin(angle) * radius;
+        const ax = Math.max(sideMargin + 18, Math.min(canvas.width - sideMargin - 18, rawAx));
+        const ay = Math.max(safeTop + boxHeight + 28, Math.min(canvas.height - sideMargin, rawAy));
 
         ctx.translate(ax, ay);
         ctx.rotate(angle + Math.PI / 2);
+        ctx.beginPath();
+        ctx.arc(0, 0, 18, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(5, 14, 22, 0.75)';
+        ctx.fill();
+
         ctx.beginPath();
         ctx.moveTo(0, -16);
         ctx.lineTo(-12, 10);
@@ -1692,9 +1714,15 @@ function resizeArenaCanvas() {
 
 function tickArena() {
     if (gameState.currentScreen !== 'arena') {
+        gameState.arena.lastTickAt = 0;
         gameState.arena.loopId = null;
         return;
     }
+
+    const tickNow = performance.now();
+    const deltaMs = gameState.arena.lastTickAt > 0 ? tickNow - gameState.arena.lastTickAt : BASE_FRAME_MS;
+    gameState.arena.lastTickAt = tickNow;
+    const frameScale = Math.max(0.5, Math.min(2, deltaMs / BASE_FRAME_MS));
 
     const dialogueBlocking = isArenaDialogueActuallyVisible();
     const modalBlocking = isArenaModalActuallyVisible();
@@ -1706,22 +1734,22 @@ function tickArena() {
         let moving = false;
 
         if (gameState.arena.keys.has('ArrowUp') || gameState.arena.keys.has('w') || gameState.arena.keys.has('W')) {
-            dy -= PLAYER_SPEED;
+            dy -= PLAYER_SPEED * frameScale;
             gameState.arena.facing = 'up';
             moving = true;
         }
         if (gameState.arena.keys.has('ArrowDown') || gameState.arena.keys.has('s') || gameState.arena.keys.has('S')) {
-            dy += PLAYER_SPEED;
+            dy += PLAYER_SPEED * frameScale;
             gameState.arena.facing = 'down';
             moving = true;
         }
         if (gameState.arena.keys.has('ArrowLeft') || gameState.arena.keys.has('a') || gameState.arena.keys.has('A')) {
-            dx -= PLAYER_SPEED;
+            dx -= PLAYER_SPEED * frameScale;
             gameState.arena.facing = 'left';
             moving = true;
         }
         if (gameState.arena.keys.has('ArrowRight') || gameState.arena.keys.has('d') || gameState.arena.keys.has('D')) {
-            dx += PLAYER_SPEED;
+            dx += PLAYER_SPEED * frameScale;
             gameState.arena.facing = 'right';
             moving = true;
         }
@@ -1733,10 +1761,9 @@ function tickArena() {
         if (!isBlocked(level, gameState.arena.playerX, nextY)) gameState.arena.playerY = nextY;
 
         if (moving) {
-            const now = performance.now();
-            if (now - gameState.arena.lastFrameAt > PLAYER_ANIM_MS) {
+            if (tickNow - gameState.arena.lastFrameAt > PLAYER_ANIM_MS) {
                 gameState.arena.frame = (gameState.arena.frame + 1) % 3;
-                gameState.arena.lastFrameAt = now;
+                gameState.arena.lastFrameAt = tickNow;
             }
         } else {
             gameState.arena.frame = 0;
@@ -1751,7 +1778,7 @@ function tickArena() {
     }
 
     if (!dialogueBlocking && !modalBlocking && !gameState.arena.transitioning) {
-        updateCompanionMovement();
+        updateCompanionMovement(frameScale);
     }
 
     if (!dialogueBlocking && !modalBlocking && !gameState.arena.transitioning) {
@@ -1766,6 +1793,7 @@ function tickArena() {
 
 function startArenaLoop() {
     if (gameState.arena.loopId) cancelAnimationFrame(gameState.arena.loopId);
+    gameState.arena.lastTickAt = 0;
     gameState.arena.loopId = requestAnimationFrame(tickArena);
 }
 
