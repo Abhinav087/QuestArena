@@ -130,6 +130,12 @@ function getTileImageName(tileType, visualLevel) {
         'KS': 'kiosk.png',
         'FL': 'flower.png',
         'GO': 'gate_open.png',
+        // lobby furniture tiles (Level 1)
+        'SF': 'sofa.png',
+        'NB': 'notice_board.png',
+        'RC': 'reception_counter.png',
+        'DF': 'diamond_floor.png',
+        'BN': 'bench.png',
     };
     return tileMap[tileType] || `floor_l${visualLevel}.png`;
 }
@@ -210,20 +216,8 @@ ARENA_LEVELS[0].tiles[5][8] = '4';
 ARENA_LEVELS[0].tiles[1][7] = '2';
 finalizeCollisions(ARENA_LEVELS[0], new Set(['1', '7', '4', '6']));
 
-addBorderWalls(ARENA_LEVELS[1].tiles, 18, 14);
-ARENA_LEVELS[1].tiles[6][3] = '8';
-ARENA_LEVELS[1].tiles[6][4] = '8';
-ARENA_LEVELS[1].tiles[6][5] = '8';
-ARENA_LEVELS[1].tiles[6][12] = '8';
-ARENA_LEVELS[1].tiles[6][13] = '8';
-ARENA_LEVELS[1].tiles[6][14] = '8';
-ARENA_LEVELS[1].tiles[8][2] = '11';
-ARENA_LEVELS[1].tiles[8][15] = '11';
-ARENA_LEVELS[1].tiles[9][1] = '12';
-ARENA_LEVELS[1].tiles[9][16] = '12';
-ARENA_LEVELS[1].tiles[1][9] = '13';
-ARENA_LEVELS[1].tiles[10][14] = '14';
-finalizeCollisions(ARENA_LEVELS[1], new Set(['1', '8', '11']));
+// ── Level 1  Lobby (matching lobby sketch) ──
+// (now handled by buildLevel1LobbyLayout below)
 
 addBorderWalls(ARENA_LEVELS[2].tiles, 16, 12);
 for (let y = 3; y <= 8; y++) {
@@ -564,6 +558,152 @@ function applyLargeWorldLayout(level, targetWidth, targetHeight) {
     finalizeCollisions(level, new Set(['1', '4', '6', '7', '8', '9', '11']));
 }
 
+// ---------------------------------------------------------------------------
+//  Level 1 – Lobby  (matches lobby reference sketch)
+// ---------------------------------------------------------------------------
+function buildLevel1LobbyLayout(level) {
+    const W = 40;
+    const H = 24;
+
+    // ── 1. Fill with lobby floor ──
+    const t = [];
+    for (let y = 0; y < H; y++) {
+        t.push(Array(W).fill('0'));
+    }
+
+    // ── 2. Border walls ──
+    for (let x = 0; x < W; x++) { t[0][x] = '1'; t[H - 1][x] = '1'; }
+    for (let y = 0; y < H; y++) { t[y][0] = '1'; t[y][W - 1] = '1'; }
+
+    // ── 3. Upper section (rows 1-4) — lift, sofas, notice boards, reception ──
+
+    // Lift (elevator doors) at top-center
+    t[1][18] = '14';
+    t[1][19] = '14';
+
+    // Notice boards on upper-left wall area
+    t[1][3]  = 'NB';
+    t[1][7]  = 'NB';
+
+    // Sofas along upper-left (below notice boards)
+    t[2][2]  = 'SF';
+    t[2][5]  = 'SF';
+    t[2][8]  = 'SF';
+
+    // Plants between sofas
+    t[2][4]  = '6';
+    t[2][7]  = '6';
+    t[3][3]  = '6';
+    t[3][9]  = '6';
+
+    // Reception counter (upper-right area) — L-shaped desk
+    t[2][27] = 'RC';  t[2][28] = 'RC';  t[2][29] = 'RC';  t[2][30] = 'RC';
+    t[3][27] = 'RC';                                        t[3][30] = 'RC';
+    // Plant near reception
+    t[2][32] = '6';
+    t[3][33] = '6';
+
+    // ── 4. Divider wall (row 5) — separates upper area from main lobby ──
+    // Left wall section
+    for (let x = 1; x <= 15; x++) t[5][x] = '1';
+    // Gap (opening from lobby to upper area) at x = 16–21
+    // Right wall section
+    for (let x = 22; x <= 35; x++) t[5][x] = '1';
+    // "Way to Classroom" — stairs/portal at right end of divider
+    t[5][37] = '13';
+    // Door label tile beside stairs
+    t[5][36] = '2';
+
+    // ── 5. Main lobby area (rows 6-22) ──
+
+    // Plants along left wall
+    t[7][1]  = '6';
+    t[12][1] = '6';
+
+    // Wooden chairs (left-center area, 2x2 block)
+    t[9][6]  = '10';  t[9][7]  = '10';
+    t[10][6] = '10';  t[10][7] = '10';
+
+    // Diamond decorative floor (center of lobby, 2x2)
+    t[10][18] = 'DF';  t[10][19] = 'DF';
+    t[11][18] = 'DF';  t[11][19] = 'DF';
+
+    // Additional diamond accents
+    t[9][17]  = 'DF';  t[9][20]  = 'DF';
+    t[12][17] = 'DF';  t[12][20] = 'DF';
+
+    // Plants on right side
+    t[8][35]  = '6';
+    t[14][36] = '6';
+
+    // Bench at bottom-center
+    t[18][16] = 'BN';
+    t[18][17] = 'BN';
+
+    // Bench / cushion (red, using sofa tile) at far bottom
+    t[20][14] = 'SF';
+
+    // Door on right wall (bottom area)
+    t[17][W - 1] = '2';
+
+    // Plant decorations in lower lobby
+    t[16][4]  = '6';
+    t[16][33] = '6';
+
+    // ── 6. Hidden lift (in upper area near elevator) ──
+    // The hidden lift is accessible through the gap
+    t[2][18] = '14';
+
+    // ── 7. Assign to level ──
+    level.width  = W;
+    level.height = H;
+    level.tiles  = t;
+
+    // Reception Aunty — main NPC, positioned at the counter gap (row 3)
+    level.npc = {
+        spriteId: 2,
+        x: 28,
+        y: 7,
+        name: 'Reception Aunty',
+        questionLevel: 1,
+    };
+
+    // Portal — "Way to Classroom" stairs on right side of divider wall
+    level.portal = {
+        x: 37,
+        y: 5,
+        targetLevel: 2,
+    };
+
+    // Hidden lift — the elevator in the upper area
+    level.hiddenLift = {
+        x: 18,
+        y: 1,
+        targetLevel: 3,
+    };
+
+    // Player spawns in the lower lobby area
+    level.playerStart = {
+        x: 19,
+        y: 20,
+    };
+
+    // Decorative NPCs — students standing around the lobby
+    level.decorativeNpcs = [
+        { spriteId: 6, x: 2,  y: 9,  name: 'npc' },   // boy, left side
+        { spriteId: 7, x: 10, y: 14, name: 'npc' },   // girl, center-left
+        { spriteId: 8, x: 10, y: 15, name: 'npc' },   // boy, center-left
+        { spriteId: 9, x: 28, y: 10, name: 'npc' },   // girl, right side
+        { spriteId: 6, x: 28, y: 13, name: 'npc' },   // boy, right side
+        { spriteId: 7, x: 35, y: 12, name: 'npc' },   // girl, far right
+    ];
+
+    // Solid tiles for collision
+    finalizeCollisions(level, new Set([
+        '1', 'SF', 'NB', 'RC', 'BN', '6', '10',
+    ]));
+}
+
 const LARGE_WORLD_SIZES = [
     { width: 86, height: 58 },
     { width: 92, height: 62 },
@@ -577,6 +717,10 @@ ARENA_LEVELS.forEach((level, index) => {
     const size = LARGE_WORLD_SIZES[index];
     if (level.id === 0) {
         buildLevel0CampusLayout(level);
+        return;
+    }
+    if (level.id === 1) {
+        buildLevel1LobbyLayout(level);
         return;
     }
     applyLargeWorldLayout(level, size.width, size.height);
@@ -1035,7 +1179,7 @@ async function loadArenaAssets() {
             spriteUrls.push(`/assets/sprites/player_${direction}_${frame}.png`);
         });
     });
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 9; i++) {
         spriteUrls.push(`/assets/sprites/npc_${i}.png`);
     }
 
@@ -1055,7 +1199,9 @@ async function loadArenaAssets() {
     const outdoorTiles = [
         'grass', 'road', 'road_dash', 'sidewalk', 'fence', 'gate_pillar',
         'tree', 'parking', 'building', 'building_window', 'building_door',
-        'kiosk', 'flower', 'gate_open'
+        'kiosk', 'flower', 'gate_open',
+        // lobby furniture tiles
+        'sofa', 'notice_board', 'reception_counter', 'diamond_floor', 'bench'
     ];
     outdoorTiles.forEach((name) => {
         tileUrls.push(`/assets/tiles/${name}.png`);
@@ -1910,6 +2056,27 @@ function drawArena() {
         ctx.fillRect(npcX + 8, npcY + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
     }
 
+    // ── Decorative (non-interactive) NPCs ──
+    if (level.decorativeNpcs) {
+        for (const dnpc of level.decorativeNpcs) {
+            const dImg = gameState.arena.images.get(`/assets/sprites/npc_${dnpc.spriteId}.png`);
+            const dx = dnpc.x * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraX;
+            const dy = dnpc.y * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraY;
+            if (dx < -80 || dx > cameraViewWidth + 40 || dy < -80 || dy > cameraViewHeight + 40) continue;
+            if (dImg) {
+                ctx.drawImage(dImg, dx, dy, CHARACTER_SIZE, CHARACTER_SIZE);
+            } else {
+                ctx.fillStyle = '#aa88cc';
+                ctx.fillRect(dx + 8, dy + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
+            }
+            if (dnpc.name) {
+                ctx.fillStyle = '#c8c8c8';
+                ctx.font = '12px Arial';
+                ctx.fillText(dnpc.name, dx - 4, dy - 4);
+            }
+        }
+    }
+
     const playerImage = gameState.arena.images.get(
         `/assets/sprites/player_${gameState.arena.facing}_${gameState.arena.frame}.png`
     );
@@ -1954,6 +2121,17 @@ function drawArena() {
         ctx.font = '13px Arial';
         if (liftX > -80 && liftX < cameraViewWidth + 20 && liftY > -40 && liftY < cameraViewHeight + 20) {
             ctx.fillText('Lift', liftX + 10, liftY - 6);
+        }
+    }
+
+    // "WAY TO CLASSROOM →" sign for lobby level
+    if (level.id === 1) {
+        const signX = level.portal.x * ARENA_TILE - renderCameraX;
+        const signY = level.portal.y * ARENA_TILE - renderCameraY;
+        if (signX > -120 && signX < cameraViewWidth + 40 && signY > -40 && signY < cameraViewHeight + 40) {
+            ctx.fillStyle = '#8b6914';
+            ctx.font = 'bold 13px Arial';
+            ctx.fillText('WAY TO CLASSROOM →', signX - 60, signY - 8);
         }
     }
 
