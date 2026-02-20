@@ -1,5 +1,6 @@
 fastapi
-uvicorn
+uvicorn[standard]
+wsproto
 requests
 python-multipart
 sqlalchemy

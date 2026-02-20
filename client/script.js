@@ -55,6 +55,7 @@ const ARENA_TILE = 64;
 const CHARACTER_SIZE = 32;
 const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
 const CAMERA_ZOOM = 1.2;
+const TILE_OVERDRAW = 1 / CAMERA_ZOOM;
 const PLAYER_SPEED = 4.2;
 const PLAYER_ANIM_MS = 150;
 const NPC_GUIDE_SPEED = 3.35;
@@ -1848,29 +1849,39 @@ function drawArena() {
     const visualLevel = Math.min(level.id + 1, 5);
     const cameraX = gameState.arena.cameraX;
     const cameraY = gameState.arena.cameraY;
+    const renderCameraX = Math.round(cameraX * CAMERA_ZOOM) / CAMERA_ZOOM;
+    const renderCameraY = Math.round(cameraY * CAMERA_ZOOM) / CAMERA_ZOOM;
     const cameraViewWidth = canvas.width / CAMERA_ZOOM;
     const cameraViewHeight = canvas.height / CAMERA_ZOOM;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(CAMERA_ZOOM, 0, 0, CAMERA_ZOOM, 0, 0);
 
-    const startX = Math.max(0, Math.floor(cameraX / ARENA_TILE) - 1);
-    const startY = Math.max(0, Math.floor(cameraY / ARENA_TILE) - 1);
-    const endX = Math.min(level.width - 1, Math.ceil((cameraX + cameraViewWidth) / ARENA_TILE) + 1);
-    const endY = Math.min(level.height - 1, Math.ceil((cameraY + cameraViewHeight) / ARENA_TILE) + 1);
+    const startX = Math.max(0, Math.floor(renderCameraX / ARENA_TILE) - 1);
+    const startY = Math.max(0, Math.floor(renderCameraY / ARENA_TILE) - 1);
+    const endX = Math.min(level.width - 1, Math.ceil((renderCameraX + cameraViewWidth) / ARENA_TILE) + 1);
+    const endY = Math.min(level.height - 1, Math.ceil((renderCameraY + cameraViewHeight) / ARENA_TILE) + 1);
 
     for (let y = startY; y <= endY; y++) {
         for (let x = startX; x <= endX; x++) {
             const px = x * ARENA_TILE;
             const py = y * ARENA_TILE;
-            const screenX = px - cameraX;
-            const screenY = py - cameraY;
+            const screenX = px - renderCameraX;
+            const screenY = py - renderCameraY;
             const tileType = level.tiles[y][x];
             const tileName = getTileImageName(tileType, visualLevel);
             const tileImage = gameState.arena.images.get(`/assets/tiles/${tileName}`);
             if (tileImage) {
-                ctx.drawImage(tileImage, screenX, screenY, ARENA_TILE, ARENA_TILE);
+                const halfBleed = TILE_OVERDRAW / 2;
+                ctx.drawImage(
+                    tileImage,
+                    screenX - halfBleed,
+                    screenY - halfBleed,
+                    ARENA_TILE + TILE_OVERDRAW,
+                    ARENA_TILE + TILE_OVERDRAW,
+                );
             } else {
                 ctx.fillStyle = level.collisions[y][x] ? '#2d233d' : '#14181f';
                 ctx.fillRect(screenX, screenY, ARENA_TILE, ARENA_TILE);
@@ -1880,8 +1891,8 @@ function drawArena() {
 
     const portalUnlocked = Boolean(gameState.arena.challengeCleared[level.npc.questionLevel]);
     const portalImage = gameState.arena.images.get('/assets/tiles/portal_l1.png');
-    const portalX = level.portal.x * ARENA_TILE - cameraX;
-    const portalY = level.portal.y * ARENA_TILE - cameraY;
+    const portalX = level.portal.x * ARENA_TILE - renderCameraX;
+    const portalY = level.portal.y * ARENA_TILE - renderCameraY;
     if (portalUnlocked && portalImage) {
         ctx.drawImage(portalImage, portalX, portalY, ARENA_TILE, ARENA_TILE);
     } else if (portalUnlocked) {
@@ -1890,8 +1901,8 @@ function drawArena() {
     }
 
     const npcImage = gameState.arena.images.get(`/assets/sprites/npc_${level.npc.spriteId}.png`);
-    const npcX = level.npc.x * ARENA_TILE + CHARACTER_TILE_OFFSET - cameraX;
-    const npcY = level.npc.y * ARENA_TILE + CHARACTER_TILE_OFFSET - cameraY;
+    const npcX = level.npc.x * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraX;
+    const npcY = level.npc.y * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraY;
     if (npcImage) {
         ctx.drawImage(npcImage, npcX, npcY, CHARACTER_SIZE, CHARACTER_SIZE);
     } else {
@@ -1902,8 +1913,8 @@ function drawArena() {
     const playerImage = gameState.arena.images.get(
         `/assets/sprites/player_${gameState.arena.facing}_${gameState.arena.frame}.png`
     );
-    const playerScreenX = gameState.arena.playerX - cameraX;
-    const playerScreenY = gameState.arena.playerY - cameraY;
+    const playerScreenX = gameState.arena.playerX - renderCameraX;
+    const playerScreenY = gameState.arena.playerY - renderCameraY;
     if (playerImage) {
         ctx.drawImage(playerImage, playerScreenX, playerScreenY, CHARACTER_SIZE, CHARACTER_SIZE);
     } else {
@@ -1920,8 +1931,8 @@ function drawArena() {
     const companion = gameState.arena.companion;
     if (companion.unlocked && companion.visible) {
         const companionImage = gameState.arena.images.get(`/assets/sprites/npc_${companion.spriteId}.png`);
-        const companionX = companion.worldX - cameraX;
-        const companionY = companion.worldY - cameraY;
+        const companionX = companion.worldX - renderCameraX;
+        const companionY = companion.worldY - renderCameraY;
         if (companionImage) {
             ctx.drawImage(companionImage, companionX, companionY, CHARACTER_SIZE, CHARACTER_SIZE);
         } else {
@@ -1937,8 +1948,8 @@ function drawArena() {
     }
 
     if (level.hiddenLift) {
-        const liftX = level.hiddenLift.x * ARENA_TILE - cameraX;
-        const liftY = level.hiddenLift.y * ARENA_TILE - cameraY;
+        const liftX = level.hiddenLift.x * ARENA_TILE - renderCameraX;
+        const liftY = level.hiddenLift.y * ARENA_TILE - renderCameraY;
         ctx.fillStyle = '#d2e3ff';
         ctx.font = '13px Arial';
         if (liftX > -80 && liftX < cameraViewWidth + 20 && liftY > -40 && liftY < cameraViewHeight + 20) {
@@ -1947,7 +1958,7 @@ function drawArena() {
     }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    drawObjectivePointer(ctx, canvas, cameraX, cameraY);
+    drawObjectivePointer(ctx, canvas, renderCameraX, renderCameraY);
 }
 
 function resizeArenaCanvas() {
@@ -2598,7 +2609,7 @@ function renderQuestion() {
     container.innerHTML = `
         <h3>${question.text}</h3>
         <div class="options-container">
-            ${question.options.map((option) => `<button class="option-btn" onclick="selectOption(this, '${option.replace(/'/g, "\\'")}')">${option}</button>`).join('')}
+            ${question.options.map((option) => `<button type="button" class="option-btn" onclick="selectOption(this, '${option.replace(/'/g, "\\'")}')">${option}</button>`).join('')}
         </div>
     `;
     persistProgress();
