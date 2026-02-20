@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+from contextlib import suppress
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -10,6 +12,7 @@ from services.leaderboard import get_leaderboard
 from services.realtime import manager
 
 router = APIRouter(tags=["session"])
+logger = logging.getLogger(__name__)
 
 _questions_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "questions.json")
 with open(_questions_path, "r", encoding="utf-8") as file:
@@ -113,6 +116,12 @@ async def live_ws(websocket: WebSocket):
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
-        await manager.disconnect(websocket)
+        pass
+    except OSError as exc:
+        logger.warning("Live websocket transport issue: %s", exc)
     except Exception:
+        logger.exception("Unexpected live websocket failure")
+    finally:
         await manager.disconnect(websocket)
+        with suppress(Exception):
+            await websocket.close()

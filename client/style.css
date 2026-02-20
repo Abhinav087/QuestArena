@@ -18,6 +18,7 @@ body {
     align-items: center;
     min-height: 100vh;
     text-align: center;
+    overflow: hidden;
 }
 
 h1, h2, h3 {
@@ -43,6 +44,10 @@ header#game-hud {
     border-bottom: 2px solid var(--primary-color);
     font-family: var(--font-heading);
     z-index: 1000;
+}
+
+#hud-status {
+    color: #9dd5ff;
 }
 
 /* Sections */
@@ -206,6 +211,216 @@ footer {
     font-size: 0.8rem;
     color: #666;
     font-style: italic;
+}
+
+#level-intro-dialogue,
+#hidden-route-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #d8d8d8;
+    margin: 18px 0 24px;
+}
+
+#arena-screen {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #0a0a0a;
+    z-index: 900;
+    overflow: hidden;
+}
+
+#arena-canvas {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    border: none;
+    border-radius: 0;
+    background: #111;
+    box-shadow: none;
+    display: block;
+    image-rendering: pixelated;
+}
+
+#arena-hint {
+    position: fixed;
+    left: 16px;
+    bottom: 14px;
+    margin: 0;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    font-size: 0.92rem;
+    color: #bfbfbf;
+    z-index: 920;
+}
+
+#arena-interact-prompt {
+    position: fixed;
+    transform: translate(-50%, -100%);
+    min-width: 170px;
+    max-width: 320px;
+    margin: 0;
+    padding: 8px 12px;
+    border: 2px solid #c7d8ff;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.74);
+    color: #f4f7ff;
+    font-family: 'Press Start 2P', var(--font-heading);
+    font-size: clamp(8px, 0.68vw, 10px);
+    line-height: 1.4;
+    text-transform: none;
+    z-index: 925;
+    pointer-events: none;
+    white-space: pre-line;
+}
+
+#arena-interact-prompt-list {
+    position: fixed;
+    transform: translate(-50%, -100%);
+    z-index: 926;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: min(52vw, 720px);
+    pointer-events: none;
+}
+
+.arena-prompt-item {
+    padding: 8px 12px;
+    border: 2px solid #c7d8ff;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.74);
+    color: #f4f7ff;
+    font-family: 'Press Start 2P', var(--font-heading);
+    font-size: clamp(8px, 0.7vw, 10px);
+    line-height: 1.4;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.arena-prompt-item.active {
+    border-color: #ffe98b;
+    color: #ffe98b;
+}
+
+.arena-prompt-hint {
+    padding: 6px 10px;
+    border: 1px solid rgba(199, 216, 255, 0.5);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.62);
+    color: #d9e3ff;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    text-align: left;
+}
+
+#arena-dialogue {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    width: min(94vw, 1520px);
+    margin: 0;
+    padding: 24px 26px 34px;
+    border: 4px solid #f5f7ff;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(1px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    text-align: left;
+    z-index: 930;
+    pointer-events: auto;
+}
+
+#arena-level-title {
+    position: fixed;
+    top: 42px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    font-size: 1rem;
+    z-index: 920;
+}
+
+#arena-dialogue h3 {
+    margin: 0 0 16px;
+    color: #ffd300;
+    font-family: 'Press Start 2P', var(--font-heading);
+    font-size: clamp(16px, 1.6vw, 28px);
+    letter-spacing: 1px;
+    text-transform: none;
+}
+
+#arena-dialogue p {
+    margin: 0;
+    color: #f4f4f4;
+    font-family: 'Press Start 2P', var(--font-heading);
+    font-size: clamp(14px, 1.3vw, 24px);
+    line-height: 1.6;
+    text-transform: none;
+}
+
+#arena-dialogue button {
+    position: absolute;
+    right: 28px;
+    bottom: -22px;
+    min-width: 180px;
+    border: 2px solid #c7d8ff;
+    border-radius: 2px;
+    background: #3f63b8;
+    color: #f4f7ff;
+    font-family: 'Press Start 2P', var(--font-heading);
+    font-size: clamp(10px, 0.9vw, 14px);
+    text-transform: none;
+    box-shadow: 0 2px 0 #22356a;
+}
+
+#arena-dialogue button:hover {
+    background: #557ce0;
+    color: #ffffff;
+    box-shadow: 0 2px 0 #2f4a93;
+}
+
+#modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 940;
+}
+
+#path-selection,
+#question-screen,
+#coding-screen {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(92vw, 900px);
+    max-height: 82vh;
+    overflow: auto;
+    margin: 0;
+    z-index: 950;
+    background: rgba(10, 10, 10, 0.94);
+}
+
+#fade-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1200;
+    transition: opacity 320ms ease;
 }
 
 /* =============================================

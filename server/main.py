@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 
 from fastapi import FastAPI, HTTPException
@@ -6,13 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from database import Base, SessionLocal, engine
+from database import Base, SessionLocal, engine, ensure_performance_indexes
 from models import SessionModel
 from routes.admin import router as admin_router
 from routes.auth import router as auth_router
 from routes.player import router as player_router
 from routes.session import router as session_router
 from services.timer import timer_loop
+
+logging.getLogger("websockets.protocol").setLevel(logging.CRITICAL)
+logging.getLogger("websockets.server").setLevel(logging.CRITICAL)
 
 app = FastAPI(title="QuestArena v2", version="2.0.0")
 
@@ -37,6 +41,7 @@ async def startup() -> None:
     global _timer_task
 
     Base.metadata.create_all(bind=engine)
+    ensure_performance_indexes()
     db = SessionLocal()
     try:
         live = (

@@ -1,55 +1,55 @@
 {
     "0": {
-        "title": "General Knowledge",
+        "title": "Level 0 — College Gate (General Knowledge)",
         "questions": [
             {
                 "id": "q0_1",
-                "text": "Level 0 - Question 1 Placeholder",
+                "text": "Which planet is known as the Red Planet?",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "Venus",
+                    "Mars",
+                    "Jupiter",
+                    "Mercury"
                 ],
-                "answer": "Option A"
+                "answer": "Mars"
             },
             {
                 "id": "q0_2",
-                "text": "Level 0 - Question 2 Placeholder",
+                "text": "Who wrote the Indian national anthem?",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "Bankim Chandra Chatterjee",
+                    "Rabindranath Tagore",
+                    "Sarojini Naidu",
+                    "Subramania Bharati"
                 ],
-                "answer": "Option A"
+                "answer": "Rabindranath Tagore"
             }
         ]
     },
     "1": {
-        "title": "English",
+        "title": "Level 1 — Lobby (English)",
         "questions": [
             {
                 "id": "q1_1",
-                "text": "Level 1 - Question 1 Placeholder",
+                "text": "Choose the correct sentence:",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "He don't like coffee.",
+                    "He doesn't likes coffee.",
+                    "He doesn't like coffee.",
+                    "He not like coffee."
                 ],
-                "answer": "Option A"
+                "answer": "He doesn't like coffee."
             },
             {
                 "id": "q1_2",
-                "text": "Level 1 - Question 2 Placeholder",
+                "text": "Pick the word closest in meaning to 'resilient'.",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "Fragile",
+                    "Adaptable",
+                    "Silent",
+                    "Anxious"
                 ],
-                "answer": "Option A"
+                "answer": "Adaptable"
             }
         ],
         "hidden_route": {
@@ -57,98 +57,131 @@
             "questions": [
                 {
                     "id": "q1_hidden",
-                    "text": "Hidden Route - Question Placeholder",
+                    "text": "BackLog King asks: Which data structure uses LIFO order?",
                     "options": [
-                        "Option A",
-                        "Option B",
-                        "Option C",
-                        "Option D"
+                        "Queue",
+                        "Array",
+                        "Stack",
+                        "Tree"
                     ],
-                    "answer": "Option A"
+                    "answer": "Stack"
                 }
             ]
         }
     },
     "2": {
-        "title": "Aptitude",
+        "title": "Level 2 — Classroom (Aptitude)",
         "easy": [
             {
                 "id": "q2_e1",
-                "text": "Level 2 (Easy) - Question Placeholder",
+                "text": "If a train covers 120 km in 2 hours, what is its speed?",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "50 km/h",
+                    "60 km/h",
+                    "70 km/h",
+                    "80 km/h"
                 ],
-                "answer": "Option A"
+                "answer": "60 km/h"
+            },
+            {
+                "id": "q2_e2",
+                "text": "What is 25% of 320?",
+                "options": [
+                    "60",
+                    "70",
+                    "80",
+                    "90"
+                ],
+                "answer": "80"
             }
         ],
         "hard": [
             {
                 "id": "q2_h1",
-                "text": "Level 2 (Hard) - Question Placeholder",
+                "text": "A sum doubles in 5 years at simple interest. In how many years will it become 4 times?",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "10",
+                    "12",
+                    "15",
+                    "20"
                 ],
-                "answer": "Option A"
+                "answer": "15"
             }
         ]
     },
     "3": {
-        "title": "Reasoning",
+        "title": "Level 3 — Lab (Reasoning)",
         "easy": [
             {
                 "id": "q3_e1",
-                "text": "Level 3 (Easy) - Question Placeholder",
+                "text": "Find the next number: 2, 6, 12, 20, ?",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "28",
+                    "30",
+                    "32",
+                    "36"
                 ],
-                "answer": "Option A"
+                "answer": "30"
+            },
+            {
+                "id": "q3_e2",
+                "text": "If all roses are flowers and some flowers fade quickly, which statement is definitely true?",
+                "options": [
+                    "All roses fade quickly",
+                    "Some roses are flowers",
+                    "No flower is a rose",
+                    "All flowers are roses"
+                ],
+                "answer": "Some roses are flowers"
             }
         ],
         "hard": [
             {
                 "id": "q3_h1",
-                "text": "Level 3 (Hard) - Question Placeholder",
+                "text": "Statement: All coders are gamers. Some gamers are designers. Conclusion: Some coders are designers.",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "Definitely true",
+                    "Definitely false",
+                    "Cannot be determined",
+                    "Both true and false"
                 ],
-                "answer": "Option A"
+                "answer": "Cannot be determined"
             }
         ]
     },
     "4": {
-        "title": "Technical MCQs",
+        "title": "Level 4 — Server Room (Technical MCQs)",
         "questions": [
             {
                 "id": "q4_1",
-                "text": "Level 4 - Question 1 Placeholder",
+                "text": "Which HTTP status code means 'Unauthorized'?",
                 "options": [
-                    "Option A",
-                    "Option B",
-                    "Option C",
-                    "Option D"
+                    "200",
+                    "401",
+                    "403",
+                    "500"
                 ],
-                "answer": "Option A"
+                "answer": "401"
+            },
+            {
+                "id": "q4_2",
+                "text": "Which SQL command is used to remove a table and all its data?",
+                "options": [
+                    "DELETE TABLE",
+                    "REMOVE TABLE",
+                    "TRUNCATE TABLE",
+                    "DROP TABLE"
+                ],
+                "answer": "DROP TABLE"
             }
         ]
     },
     "5": {
-        "title": "Coding Challenge",
+        "title": "Level 5 — Principal's Final Coding Trial",
         "question": {
             "id": "q5_code",
-            "text": "Level 5 - Coding Challenge Placeholder",
-            "template": "def solve(a, b):\n    # Write your code here\n    pass"
+            "text": "Write a function solve(a, b) that returns the sum of two integers.",
+            "template": "def solve(a, b):\n    # return sum of a and b\n    return"
         }
     }
 }
