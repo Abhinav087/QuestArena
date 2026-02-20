@@ -559,7 +559,7 @@ function applyLargeWorldLayout(level, targetWidth, targetHeight) {
 }
 
 // ---------------------------------------------------------------------------
-//  Level 1 – Lobby  (matches lobby reference sketch)
+//  Level 1 – Lobby  (refined lobby / reception layout)
 // ---------------------------------------------------------------------------
 function buildLevel1LobbyLayout(level) {
     const W = 40;
@@ -575,91 +575,75 @@ function buildLevel1LobbyLayout(level) {
     for (let x = 0; x < W; x++) { t[0][x] = '1'; t[H - 1][x] = '1'; }
     for (let y = 0; y < H; y++) { t[y][0] = '1'; t[y][W - 1] = '1'; }
 
-    // ── 3. Upper section (rows 1-4) — lift, sofas, notice boards, reception ──
+    // ── 3. Upper section (rows 1–4) — behind divider wall ──
 
-    // Lift (elevator doors) at top-center
-    t[1][18] = '14';
+    // Lift (elevator) at top-center wall
     t[1][19] = '14';
+    t[1][20] = '14';
 
-    // Notice boards on upper-left wall area
-    t[1][3]  = 'NB';
-    t[1][7]  = 'NB';
+    // Sofas along upper-left wall (waiting area)
+    t[2][2] = 'SF';  t[2][4] = 'SF';  t[2][6] = 'SF';
+    // Plant at end of sofa row
+    t[2][8] = '6';
 
-    // Sofas along upper-left (below notice boards)
-    t[2][2]  = 'SF';
-    t[2][5]  = 'SF';
-    t[2][8]  = 'SF';
+    // Notice boards on upper wall (between sofas and lift)
+    t[1][10] = 'NB';
+    t[1][13] = 'NB';
 
-    // Plants between sofas
-    t[2][4]  = '6';
-    t[2][7]  = '6';
-    t[3][3]  = '6';
-    t[3][9]  = '6';
-
-    // Reception counter (upper-right area) — L-shaped desk
-    t[2][27] = 'RC';  t[2][28] = 'RC';  t[2][29] = 'RC';  t[2][30] = 'RC';
-    t[3][27] = 'RC';                                        t[3][30] = 'RC';
-    // Plant near reception
-    t[2][32] = '6';
-    t[3][33] = '6';
-
-    // ── 4. Divider wall (row 5) — separates upper area from main lobby ──
-    // Left wall section
-    for (let x = 1; x <= 15; x++) t[5][x] = '1';
-    // Gap (opening from lobby to upper area) at x = 16–21
-    // Right wall section
-    for (let x = 22; x <= 35; x++) t[5][x] = '1';
-    // "Way to Classroom" — stairs/portal at right end of divider
-    t[5][37] = '13';
-    // Door label tile beside stairs
+    // ── 4. Divider wall (row 5) ──
+    // Left section
+    for (let x = 1; x <= 16; x++) t[5][x] = '1';
+    // Gap opening at x = 17–22 (walk-through to upper area)
+    // Right section
+    for (let x = 23; x <= 35; x++) t[5][x] = '1';
+    // Door + stairs to classroom on far right
     t[5][36] = '2';
+    t[5][37] = '13';
 
-    // ── 5. Main lobby area (rows 6-22) ──
+    // ── 5. Reception area (right side, rows 6–9) ──
+    // Reception counter — horizontal desk in front of Aunty
+    t[8][26] = 'RC';  t[8][27] = 'RC';  t[8][28] = 'RC';  t[8][29] = 'RC';  t[8][30] = 'RC';
+    // Side returns of desk
+    t[7][26] = 'RC';  t[7][30] = 'RC';
+    // Plant flanking reception desk
+    t[7][25] = '6';
+    t[7][31] = '6';
 
-    // Plants along left wall
-    t[7][1]  = '6';
-    t[12][1] = '6';
+    // ── 6. Main lobby open area (rows 6–22) ──
 
-    // Wooden chairs (left-center area, 2x2 block)
-    t[9][6]  = '10';  t[9][7]  = '10';
-    t[10][6] = '10';  t[10][7] = '10';
+    // Diamond decorative floor (centre of lobby)
+    t[12][18] = 'DF'; t[12][19] = 'DF'; t[12][20] = 'DF';
+    t[13][18] = 'DF'; t[13][19] = 'DF'; t[13][20] = 'DF';
+    t[14][18] = 'DF'; t[14][19] = 'DF'; t[14][20] = 'DF';
 
-    // Diamond decorative floor (center of lobby, 2x2)
-    t[10][18] = 'DF';  t[10][19] = 'DF';
-    t[11][18] = 'DF';  t[11][19] = 'DF';
+    // Waiting chairs — left side (two pairs)
+    t[10][5] = '10';  t[10][6] = '10';
+    t[14][5] = '10';  t[14][6] = '10';
 
-    // Additional diamond accents
-    t[9][17]  = 'DF';  t[9][20]  = 'DF';
-    t[12][17] = 'DF';  t[12][20] = 'DF';
+    // Bench along bottom wall
+    t[21][18] = 'BN'; t[21][19] = 'BN';
 
-    // Plants on right side
-    t[8][35]  = '6';
-    t[14][36] = '6';
+    // Sofa on bottom-left area
+    t[19][3] = 'SF';
 
-    // Bench at bottom-center
-    t[18][16] = 'BN';
-    t[18][17] = 'BN';
+    // Plants — sparse, natural placement
+    t[6][1]  = '6';   // upper-left corner
+    t[16][1] = '6';   // lower-left corner
+    t[6][38] = '6';   // upper-right corner
+    t[19][37] = '6';  // lower-right corner
 
-    // Bench / cushion (red, using sofa tile) at far bottom
-    t[20][14] = 'SF';
-
-    // Door on right wall (bottom area)
+    // Door on right wall (lower area exit)
     t[17][W - 1] = '2';
 
-    // Plant decorations in lower lobby
-    t[16][4]  = '6';
-    t[16][33] = '6';
+    // ── 7. Hidden lift — elevator in upper area ──
+    t[2][19] = '14';
 
-    // ── 6. Hidden lift (in upper area near elevator) ──
-    // The hidden lift is accessible through the gap
-    t[2][18] = '14';
-
-    // ── 7. Assign to level ──
+    // ── 8. Assign to level ──
     level.width  = W;
     level.height = H;
     level.tiles  = t;
 
-    // Reception Aunty — main NPC, positioned at the counter gap (row 3)
+    // Reception Aunty — behind the counter desk
     level.npc = {
         spriteId: 2,
         x: 28,
@@ -668,34 +652,34 @@ function buildLevel1LobbyLayout(level) {
         questionLevel: 1,
     };
 
-    // Portal — "Way to Classroom" stairs on right side of divider wall
+    // Portal — stairs on far right of divider wall
     level.portal = {
         x: 37,
         y: 5,
         targetLevel: 2,
     };
 
-    // Hidden lift — the elevator in the upper area
+    // Hidden lift — elevator in upper area
     level.hiddenLift = {
-        x: 18,
+        x: 19,
         y: 1,
         targetLevel: 3,
     };
 
-    // Player spawns in the lower lobby area
+    // Player spawn — lower lobby
     level.playerStart = {
         x: 19,
-        y: 20,
+        y: 18,
     };
 
-    // Decorative NPCs — students standing around the lobby
+    // Decorative NPCs — students placed naturally
     level.decorativeNpcs = [
-        { spriteId: 6, x: 2,  y: 9,  name: 'npc' },   // boy, left side
-        { spriteId: 7, x: 10, y: 14, name: 'npc' },   // girl, center-left
-        { spriteId: 8, x: 10, y: 15, name: 'npc' },   // boy, center-left
-        { spriteId: 9, x: 28, y: 10, name: 'npc' },   // girl, right side
-        { spriteId: 6, x: 28, y: 13, name: 'npc' },   // boy, right side
-        { spriteId: 7, x: 35, y: 12, name: 'npc' },   // girl, far right
+        { spriteId: 6, x: 2,  y: 10, name: 'npc' },   // boy near left chairs
+        { spriteId: 7, x: 8,  y: 16, name: 'npc' },   // girl, lower-left
+        { spriteId: 8, x: 9,  y: 17, name: 'npc' },   // boy, near her
+        { spriteId: 9, x: 30, y: 14, name: 'npc' },   // girl, right side
+        { spriteId: 6, x: 30, y: 16, name: 'npc' },   // boy, right side
+        { spriteId: 7, x: 36, y: 15, name: 'npc' },   // girl, near right door
     ];
 
     // Solid tiles for collision
