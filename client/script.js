@@ -654,8 +654,8 @@ function buildLevel1LobbyLayout(level) {
 
     // Portal — stairs on far right of divider wall
     level.portal = {
-        x: 37,
-        y: 5,
+        x: 38,
+        y: 3,
         targetLevel: 2,
     };
 
