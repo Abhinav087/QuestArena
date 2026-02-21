@@ -25,7 +25,7 @@ const DEFAULT_WAITING_HINT = 'The game will begin automatically once the server 
 const LEVEL_INTROS = {
     0: {
         title: 'Level 0 — College Gate',
-        dialogue: 'Security: "Where is your ID card? No ID, no entry." Clear the General Knowledge questions to enter the campus.'
+        dialogue: 'Gate Security: "Stop there. No ID card, no entry." Clear the General Knowledge challenge and I will open the way to the college lobby.'
     },
     1: {
         title: 'Level 1 — Lobby',
@@ -54,7 +54,8 @@ const ARENA_HEIGHT = 1080;
 const ARENA_TILE = 64;
 const CHARACTER_SIZE = 32;
 const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
-const CAMERA_ZOOM = 1.5;
+const CAMERA_ZOOM = 1.2;
+const TILE_OVERDRAW = 1 / CAMERA_ZOOM;
 const PLAYER_SPEED = 4.2;
 const PLAYER_ANIM_MS = 150;
 const NPC_GUIDE_SPEED = 3.35;
@@ -114,6 +115,27 @@ function getTileImageName(tileType, visualLevel) {
         '12': 'caution_sign_l5.png',
         '13': 'stairs_up_l1.png',
         '14': 'lift_l1.png',
+        // outdoor / campus tiles (Level 0)
+        'G': 'grass.png',
+        'R': 'road.png',
+        'RD': 'road_dash.png',
+        'SW': 'sidewalk.png',
+        'F': 'fence.png',
+        'GP': 'gate_pillar.png',
+        'T': 'tree.png',
+        'PK': 'parking.png',
+        'BL': 'building.png',
+        'BW': 'building_window.png',
+        'BD': 'building_door.png',
+        'KS': 'kiosk.png',
+        'FL': 'flower.png',
+        'GO': 'gate_open.png',
+        // lobby furniture tiles (Level 1)
+        'SF': 'sofa.png',
+        'NB': 'notice_board.png',
+        'RC': 'reception_counter.png',
+        'DF': 'diamond_floor.png',
+        'BN': 'bench.png',
     };
     return tileMap[tileType] || `floor_l${visualLevel}.png`;
 }
@@ -194,20 +216,8 @@ ARENA_LEVELS[0].tiles[5][8] = '4';
 ARENA_LEVELS[0].tiles[1][7] = '2';
 finalizeCollisions(ARENA_LEVELS[0], new Set(['1', '7', '4', '6']));
 
-addBorderWalls(ARENA_LEVELS[1].tiles, 18, 14);
-ARENA_LEVELS[1].tiles[6][3] = '8';
-ARENA_LEVELS[1].tiles[6][4] = '8';
-ARENA_LEVELS[1].tiles[6][5] = '8';
-ARENA_LEVELS[1].tiles[6][12] = '8';
-ARENA_LEVELS[1].tiles[6][13] = '8';
-ARENA_LEVELS[1].tiles[6][14] = '8';
-ARENA_LEVELS[1].tiles[8][2] = '11';
-ARENA_LEVELS[1].tiles[8][15] = '11';
-ARENA_LEVELS[1].tiles[9][1] = '12';
-ARENA_LEVELS[1].tiles[9][16] = '12';
-ARENA_LEVELS[1].tiles[1][9] = '13';
-ARENA_LEVELS[1].tiles[10][14] = '14';
-finalizeCollisions(ARENA_LEVELS[1], new Set(['1', '8', '11']));
+// ── Level 1  Lobby (matching lobby sketch) ──
+// (now handled by buildLevel1LobbyLayout below)
 
 addBorderWalls(ARENA_LEVELS[2].tiles, 16, 12);
 for (let y = 3; y <= 8; y++) {
@@ -255,6 +265,223 @@ function decorateRooftop(level) {
 
 decorateRooftop(ARENA_LEVELS[4]);
 decorateRooftop(ARENA_LEVELS[5]);
+
+function fillTileRect(tiles, x1, y1, x2, y2, value) {
+    for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x <= x2; x++) {
+            tiles[y][x] = value;
+        }
+    }
+}
+
+function strokeTileRect(tiles, x1, y1, x2, y2, value) {
+    for (let x = x1; x <= x2; x++) {
+        tiles[y1][x] = value;
+        tiles[y2][x] = value;
+    }
+    for (let y = y1; y <= y2; y++) {
+        tiles[y][x1] = value;
+        tiles[y][x2] = value;
+    }
+}
+
+function buildLevel0CampusLayout(level) {
+    // ── dimensions ──
+    const W = 90;
+    const H = 60;
+    const CX = Math.floor(W / 2); // gate center X = 45
+
+    // ── vertical zone boundaries ──
+    const BLDG_TOP     = 4;   // college building top
+    const BLDG_BOT     = 16;  // college building bottom
+    const YARD_TOP     = BLDG_BOT + 1; // 17  campus yard start
+    const FENCE_Y      = 38;  // campus boundary fence row
+    const ROAD_TOP     = 42;  // road zone start
+    const ROAD_BOT     = H - 2; // road zone end
+    const SPAWN_Y      = H - 4; // player spawn row
+
+    // ── horizontal zones ──
+    const PARK_L = 4;  const PARK_R = 26;  // parking area
+    const GARDEN_L = 54; const GARDEN_R = 86; // garden/tree area
+    const GATE_HALF = 3; // gate opening half-width
+
+    // ── 1. Fill everything with grass ──
+    const t = [];
+    for (let y = 0; y < H; y++) {
+        t.push(Array(W).fill('G'));
+    }
+
+    // ── 2. Road zone (bottom) ──
+    for (let y = ROAD_TOP; y <= ROAD_BOT; y++) {
+        for (let x = 0; x < W; x++) {
+            t[y][x] = 'R';
+        }
+    }
+    // road center dashes
+    const roadMidY = Math.floor((ROAD_TOP + ROAD_BOT) / 2);
+    for (let x = 0; x < W; x++) {
+        if (x % 4 < 2) {
+            t[roadMidY][x] = 'RD';
+        }
+    }
+    // sidewalk strips at road edges
+    for (let x = 0; x < W; x++) {
+        t[ROAD_TOP][x] = 'SW';
+        t[ROAD_BOT][x] = 'SW';
+    }
+    // vertical entry road from road zone to gate
+    for (let y = FENCE_Y + 1; y < ROAD_TOP; y++) {
+        for (let x = CX - 2; x <= CX + 2; x++) {
+            t[y][x] = 'SW';
+        }
+    }
+
+    // ── 3. Campus boundary fence ──
+    for (let x = 1; x < W - 1; x++) {
+        if (Math.abs(x - CX) <= GATE_HALF) continue; // gate opening
+        t[FENCE_Y][x] = 'F';
+    }
+    // side fences
+    for (let y = BLDG_TOP; y <= FENCE_Y; y++) {
+        t[y][1] = 'F';
+        t[y][W - 2] = 'F';
+    }
+    // top fence
+    for (let x = 1; x < W - 1; x++) {
+        t[BLDG_TOP - 1][x] = 'F';
+    }
+
+    // ── 4. Gate pillars + kiosks ──
+    t[FENCE_Y][CX - GATE_HALF - 1] = 'GP';
+    t[FENCE_Y][CX + GATE_HALF + 1] = 'GP';
+    // gate opening tiles (walkable)
+    for (let x = CX - GATE_HALF; x <= CX + GATE_HALF; x++) {
+        t[FENCE_Y][x] = 'GO';
+    }
+    // watchman kiosks flanking the gate
+    t[FENCE_Y - 2][CX - GATE_HALF - 3] = 'KS';
+    t[FENCE_Y - 1][CX - GATE_HALF - 3] = 'KS';
+    t[FENCE_Y - 2][CX + GATE_HALF + 3] = 'KS';
+    t[FENCE_Y - 1][CX + GATE_HALF + 3] = 'KS';
+
+    // ── 5. College building ──
+    for (let y = BLDG_TOP; y <= BLDG_BOT; y++) {
+        for (let x = 28; x <= 62; x++) {
+            t[y][x] = 'BL';
+        }
+    }
+    // windows on building
+    for (let y = BLDG_TOP + 1; y <= BLDG_BOT - 1; y += 2) {
+        for (let x = 30; x <= 60; x += 3) {
+            if (Math.abs(x - CX) <= 2) continue; // skip entrance column
+            t[y][x] = 'BW';
+        }
+    }
+    // entrance (protruding section)
+    for (let y = BLDG_BOT - 3; y <= BLDG_BOT + 1; y++) {
+        for (let x = CX - 3; x <= CX + 3; x++) {
+            t[y][x] = 'BL';
+        }
+    }
+    // lobby entrance door (this is the portal to Level 1)
+    t[BLDG_BOT + 1][CX] = 'BD';
+
+    // ── 6. Parking area (left side) ──
+    for (let y = YARD_TOP + 2; y <= FENCE_Y - 3; y++) {
+        for (let x = PARK_L; x <= PARK_R; x++) {
+            t[y][x] = 'PK';
+        }
+    }
+    // parking lot border (sidewalk)
+    for (let x = PARK_L - 1; x <= PARK_R + 1; x++) {
+        t[YARD_TOP + 1][x] = 'SW';
+        t[FENCE_Y - 2][x] = 'SW';
+    }
+    for (let y = YARD_TOP + 1; y <= FENCE_Y - 2; y++) {
+        t[y][PARK_L - 1] = 'SW';
+        t[y][PARK_R + 1] = 'SW';
+    }
+
+    // ── 7. Garden area with trees (right side) ──
+    for (let y = YARD_TOP + 1; y <= FENCE_Y - 2; y += 3) {
+        for (let x = GARDEN_L; x <= GARDEN_R; x += 4) {
+            t[y][x] = 'T';
+        }
+    }
+    // flower patches between trees
+    for (let y = YARD_TOP + 2; y <= FENCE_Y - 3; y += 3) {
+        for (let x = GARDEN_L + 2; x <= GARDEN_R - 2; x += 6) {
+            t[y][x] = 'FL';
+        }
+    }
+
+    // ── 8. Campus walkway (center path from gate to building) ──
+    for (let y = BLDG_BOT + 2; y < FENCE_Y; y++) {
+        for (let x = CX - 2; x <= CX + 2; x++) {
+            t[y][x] = 'SW';
+        }
+    }
+
+    // ── 9. Tree rows along walkway ──
+    for (let y = BLDG_BOT + 3; y < FENCE_Y - 1; y += 3) {
+        t[y][CX - 4] = 'T';
+        t[y][CX + 4] = 'T';
+    }
+
+    // ── 10. Protect key points (clear 3x3 area around NPC, portal, spawn) ──
+    const npcPos   = { x: CX, y: FENCE_Y - 4 };
+    const portalPos = { x: CX, y: BLDG_BOT + 1 };
+    const spawnPos  = { x: CX, y: SPAWN_Y };
+
+    [npcPos, portalPos, spawnPos].forEach((pt) => {
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const py = pt.y + dy;
+                const px = pt.x + dx;
+                if (px <= 0 || py <= 0 || px >= W - 1 || py >= H - 1) continue;
+                const cur = t[py][px];
+                // only clear blocking tiles, keep grass/road/sidewalk
+                if (['F', 'GP', 'KS', 'BL', 'BW', 'T', 'PK'].includes(cur)) {
+                    t[py][px] = pt === spawnPos ? 'R' : 'SW';
+                }
+            }
+        }
+    });
+    // restore portal door
+    t[portalPos.y][portalPos.x] = 'BD';
+
+    // ── 11. World border (invisible collision wall) ──
+    for (let x = 0; x < W; x++) { t[0][x] = 'F'; t[H - 1][x] = 'F'; }
+    for (let y = 0; y < H; y++) { t[y][0] = 'F'; t[y][W - 1] = 'F'; }
+
+    // ── Assign to level ──
+    level.width = W;
+    level.height = H;
+    level.tiles = t;
+    level.npc = {
+        spriteId: 1,
+        x: npcPos.x,
+        y: npcPos.y,
+        name: 'Gate Security',
+        questionLevel: 0,
+    };
+    level.portal = {
+        x: portalPos.x,
+        y: portalPos.y,
+        targetLevel: 1,
+    };
+    level.playerStart = {
+        x: spawnPos.x,
+        y: spawnPos.y,
+    };
+
+    // solid tiles: fence, gate pillar, kiosk, building, tree, parking edges
+    finalizeCollisions(level, new Set([
+        'F', 'GP', 'KS', 'BL', 'BW', 'T',
+        // keep original indoor solids for other levels that share this fn
+        '1', '4', '6', '7', '8', '9', '11'
+    ]));
+}
 
 function applyLargeWorldLayout(level, targetWidth, targetHeight) {
     const oldTiles = level.tiles;
@@ -331,6 +558,136 @@ function applyLargeWorldLayout(level, targetWidth, targetHeight) {
     finalizeCollisions(level, new Set(['1', '4', '6', '7', '8', '9', '11']));
 }
 
+// ---------------------------------------------------------------------------
+//  Level 1 – Lobby  (refined lobby / reception layout)
+// ---------------------------------------------------------------------------
+function buildLevel1LobbyLayout(level) {
+    const W = 40;
+    const H = 24;
+
+    // ── 1. Fill with lobby floor ──
+    const t = [];
+    for (let y = 0; y < H; y++) {
+        t.push(Array(W).fill('0'));
+    }
+
+    // ── 2. Border walls ──
+    for (let x = 0; x < W; x++) { t[0][x] = '1'; t[H - 1][x] = '1'; }
+    for (let y = 0; y < H; y++) { t[y][0] = '1'; t[y][W - 1] = '1'; }
+
+    // ── 3. Upper section (rows 1–4) — behind divider wall ──
+
+    // Lift (elevator) at top-center wall
+    t[1][19] = '14';
+    t[1][20] = '14';
+
+    // Sofas along upper-left wall (waiting area)
+    t[2][2] = 'SF';  t[2][4] = 'SF';  t[2][6] = 'SF';
+    // Plant at end of sofa row
+    t[2][8] = '6';
+
+    // Notice boards on upper wall (between sofas and lift)
+    t[1][10] = 'NB';
+    t[1][13] = 'NB';
+
+    // ── 4. Divider wall (row 5) ──
+    // Left section
+    for (let x = 1; x <= 16; x++) t[5][x] = '1';
+    // Gap opening at x = 17–22 (walk-through to upper area)
+    // Right section
+    for (let x = 23; x <= 35; x++) t[5][x] = '1';
+    // Door + stairs to classroom on far right
+    t[5][36] = '2';
+    t[5][37] = '13';
+
+    // ── 5. Reception area (right side, rows 6–9) ──
+    // Reception counter — horizontal desk in front of Aunty
+    t[8][26] = 'RC';  t[8][27] = 'RC';  t[8][28] = 'RC';  t[8][29] = 'RC';  t[8][30] = 'RC';
+    // Side returns of desk
+    t[7][26] = 'RC';  t[7][30] = 'RC';
+    // Plant flanking reception desk
+    t[7][25] = '6';
+    t[7][31] = '6';
+
+    // ── 6. Main lobby open area (rows 6–22) ──
+
+    // Diamond decorative floor (centre of lobby)
+    t[12][18] = 'DF'; t[12][19] = 'DF'; t[12][20] = 'DF';
+    t[13][18] = 'DF'; t[13][19] = 'DF'; t[13][20] = 'DF';
+    t[14][18] = 'DF'; t[14][19] = 'DF'; t[14][20] = 'DF';
+
+    // Waiting chairs — left side (two pairs)
+    t[10][5] = '10';  t[10][6] = '10';
+    t[14][5] = '10';  t[14][6] = '10';
+
+    // Bench along bottom wall
+    t[21][18] = 'BN'; t[21][19] = 'BN';
+
+    // Sofa on bottom-left area
+    t[19][3] = 'SF';
+
+    // Plants — sparse, natural placement
+    t[6][1]  = '6';   // upper-left corner
+    t[16][1] = '6';   // lower-left corner
+    t[6][38] = '6';   // upper-right corner
+    t[19][37] = '6';  // lower-right corner
+
+    // Door on right wall (lower area exit)
+    t[17][W - 1] = '2';
+
+    // ── 7. Hidden lift — elevator in upper area ──
+    t[2][19] = '14';
+
+    // ── 8. Assign to level ──
+    level.width  = W;
+    level.height = H;
+    level.tiles  = t;
+
+    // Reception Aunty — behind the counter desk
+    level.npc = {
+        spriteId: 2,
+        x: 28,
+        y: 7,
+        name: 'Reception Aunty',
+        questionLevel: 1,
+    };
+
+    // Portal — stairs on far right of divider wall
+    level.portal = {
+        x: 38,
+        y: 3,
+        targetLevel: 2,
+    };
+
+    // Hidden lift — elevator in upper area
+    level.hiddenLift = {
+        x: 19,
+        y: 1,
+        targetLevel: 3,
+    };
+
+    // Player spawn — lower lobby
+    level.playerStart = {
+        x: 19,
+        y: 18,
+    };
+
+    // Decorative NPCs — students placed naturally
+    level.decorativeNpcs = [
+        { spriteId: 6, x: 2,  y: 10, name: 'npc' },   // boy near left chairs
+        { spriteId: 7, x: 8,  y: 16, name: 'npc' },   // girl, lower-left
+        { spriteId: 8, x: 9,  y: 17, name: 'npc' },   // boy, near her
+        { spriteId: 9, x: 30, y: 14, name: 'npc' },   // girl, right side
+        { spriteId: 6, x: 30, y: 16, name: 'npc' },   // boy, right side
+        { spriteId: 7, x: 36, y: 15, name: 'npc' },   // girl, near right door
+    ];
+
+    // Solid tiles for collision
+    finalizeCollisions(level, new Set([
+        '1', 'SF', 'NB', 'RC', 'BN', '6', '10',
+    ]));
+}
+
 const LARGE_WORLD_SIZES = [
     { width: 86, height: 58 },
     { width: 92, height: 62 },
@@ -342,6 +699,14 @@ const LARGE_WORLD_SIZES = [
 
 ARENA_LEVELS.forEach((level, index) => {
     const size = LARGE_WORLD_SIZES[index];
+    if (level.id === 0) {
+        buildLevel0CampusLayout(level);
+        return;
+    }
+    if (level.id === 1) {
+        buildLevel1LobbyLayout(level);
+        return;
+    }
     applyLargeWorldLayout(level, size.width, size.height);
 });
 
@@ -798,7 +1163,7 @@ async function loadArenaAssets() {
             spriteUrls.push(`/assets/sprites/player_${direction}_${frame}.png`);
         });
     });
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 9; i++) {
         spriteUrls.push(`/assets/sprites/npc_${i}.png`);
     }
 
@@ -812,6 +1177,18 @@ async function loadArenaAssets() {
         for (let level = 1; level <= 5; level++) {
             tileUrls.push(`/assets/tiles/${name}_l${level}.png`);
         }
+    });
+
+    // outdoor / campus tiles (no level suffix)
+    const outdoorTiles = [
+        'grass', 'road', 'road_dash', 'sidewalk', 'fence', 'gate_pillar',
+        'tree', 'parking', 'building', 'building_window', 'building_door',
+        'kiosk', 'flower', 'gate_open',
+        // lobby furniture tiles
+        'sofa', 'notice_board', 'reception_counter', 'diamond_floor', 'bench'
+    ];
+    outdoorTiles.forEach((name) => {
+        tileUrls.push(`/assets/tiles/${name}.png`);
     });
 
     const allUrls = [...new Set([...spriteUrls, ...tileUrls])];
@@ -1602,29 +1979,39 @@ function drawArena() {
     const visualLevel = Math.min(level.id + 1, 5);
     const cameraX = gameState.arena.cameraX;
     const cameraY = gameState.arena.cameraY;
+    const renderCameraX = Math.round(cameraX * CAMERA_ZOOM) / CAMERA_ZOOM;
+    const renderCameraY = Math.round(cameraY * CAMERA_ZOOM) / CAMERA_ZOOM;
     const cameraViewWidth = canvas.width / CAMERA_ZOOM;
     const cameraViewHeight = canvas.height / CAMERA_ZOOM;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(CAMERA_ZOOM, 0, 0, CAMERA_ZOOM, 0, 0);
 
-    const startX = Math.max(0, Math.floor(cameraX / ARENA_TILE) - 1);
-    const startY = Math.max(0, Math.floor(cameraY / ARENA_TILE) - 1);
-    const endX = Math.min(level.width - 1, Math.ceil((cameraX + cameraViewWidth) / ARENA_TILE) + 1);
-    const endY = Math.min(level.height - 1, Math.ceil((cameraY + cameraViewHeight) / ARENA_TILE) + 1);
+    const startX = Math.max(0, Math.floor(renderCameraX / ARENA_TILE) - 1);
+    const startY = Math.max(0, Math.floor(renderCameraY / ARENA_TILE) - 1);
+    const endX = Math.min(level.width - 1, Math.ceil((renderCameraX + cameraViewWidth) / ARENA_TILE) + 1);
+    const endY = Math.min(level.height - 1, Math.ceil((renderCameraY + cameraViewHeight) / ARENA_TILE) + 1);
 
     for (let y = startY; y <= endY; y++) {
         for (let x = startX; x <= endX; x++) {
             const px = x * ARENA_TILE;
             const py = y * ARENA_TILE;
-            const screenX = px - cameraX;
-            const screenY = py - cameraY;
+            const screenX = px - renderCameraX;
+            const screenY = py - renderCameraY;
             const tileType = level.tiles[y][x];
             const tileName = getTileImageName(tileType, visualLevel);
             const tileImage = gameState.arena.images.get(`/assets/tiles/${tileName}`);
             if (tileImage) {
-                ctx.drawImage(tileImage, screenX, screenY, ARENA_TILE, ARENA_TILE);
+                const halfBleed = TILE_OVERDRAW / 2;
+                ctx.drawImage(
+                    tileImage,
+                    screenX - halfBleed,
+                    screenY - halfBleed,
+                    ARENA_TILE + TILE_OVERDRAW,
+                    ARENA_TILE + TILE_OVERDRAW,
+                );
             } else {
                 ctx.fillStyle = level.collisions[y][x] ? '#2d233d' : '#14181f';
                 ctx.fillRect(screenX, screenY, ARENA_TILE, ARENA_TILE);
@@ -1634,8 +2021,8 @@ function drawArena() {
 
     const portalUnlocked = Boolean(gameState.arena.challengeCleared[level.npc.questionLevel]);
     const portalImage = gameState.arena.images.get('/assets/tiles/portal_l1.png');
-    const portalX = level.portal.x * ARENA_TILE - cameraX;
-    const portalY = level.portal.y * ARENA_TILE - cameraY;
+    const portalX = level.portal.x * ARENA_TILE - renderCameraX;
+    const portalY = level.portal.y * ARENA_TILE - renderCameraY;
     if (portalUnlocked && portalImage) {
         ctx.drawImage(portalImage, portalX, portalY, ARENA_TILE, ARENA_TILE);
     } else if (portalUnlocked) {
@@ -1644,8 +2031,8 @@ function drawArena() {
     }
 
     const npcImage = gameState.arena.images.get(`/assets/sprites/npc_${level.npc.spriteId}.png`);
-    const npcX = level.npc.x * ARENA_TILE + CHARACTER_TILE_OFFSET - cameraX;
-    const npcY = level.npc.y * ARENA_TILE + CHARACTER_TILE_OFFSET - cameraY;
+    const npcX = level.npc.x * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraX;
+    const npcY = level.npc.y * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraY;
     if (npcImage) {
         ctx.drawImage(npcImage, npcX, npcY, CHARACTER_SIZE, CHARACTER_SIZE);
     } else {
@@ -1653,11 +2040,32 @@ function drawArena() {
         ctx.fillRect(npcX + 8, npcY + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
     }
 
+    // ── Decorative (non-interactive) NPCs ──
+    if (level.decorativeNpcs) {
+        for (const dnpc of level.decorativeNpcs) {
+            const dImg = gameState.arena.images.get(`/assets/sprites/npc_${dnpc.spriteId}.png`);
+            const dx = dnpc.x * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraX;
+            const dy = dnpc.y * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraY;
+            if (dx < -80 || dx > cameraViewWidth + 40 || dy < -80 || dy > cameraViewHeight + 40) continue;
+            if (dImg) {
+                ctx.drawImage(dImg, dx, dy, CHARACTER_SIZE, CHARACTER_SIZE);
+            } else {
+                ctx.fillStyle = '#aa88cc';
+                ctx.fillRect(dx + 8, dy + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
+            }
+            if (dnpc.name) {
+                ctx.fillStyle = '#c8c8c8';
+                ctx.font = '12px Arial';
+                ctx.fillText(dnpc.name, dx - 4, dy - 4);
+            }
+        }
+    }
+
     const playerImage = gameState.arena.images.get(
         `/assets/sprites/player_${gameState.arena.facing}_${gameState.arena.frame}.png`
     );
-    const playerScreenX = gameState.arena.playerX - cameraX;
-    const playerScreenY = gameState.arena.playerY - cameraY;
+    const playerScreenX = gameState.arena.playerX - renderCameraX;
+    const playerScreenY = gameState.arena.playerY - renderCameraY;
     if (playerImage) {
         ctx.drawImage(playerImage, playerScreenX, playerScreenY, CHARACTER_SIZE, CHARACTER_SIZE);
     } else {
@@ -1674,8 +2082,8 @@ function drawArena() {
     const companion = gameState.arena.companion;
     if (companion.unlocked && companion.visible) {
         const companionImage = gameState.arena.images.get(`/assets/sprites/npc_${companion.spriteId}.png`);
-        const companionX = companion.worldX - cameraX;
-        const companionY = companion.worldY - cameraY;
+        const companionX = companion.worldX - renderCameraX;
+        const companionY = companion.worldY - renderCameraY;
         if (companionImage) {
             ctx.drawImage(companionImage, companionX, companionY, CHARACTER_SIZE, CHARACTER_SIZE);
         } else {
@@ -1691,8 +2099,8 @@ function drawArena() {
     }
 
     if (level.hiddenLift) {
-        const liftX = level.hiddenLift.x * ARENA_TILE - cameraX;
-        const liftY = level.hiddenLift.y * ARENA_TILE - cameraY;
+        const liftX = level.hiddenLift.x * ARENA_TILE - renderCameraX;
+        const liftY = level.hiddenLift.y * ARENA_TILE - renderCameraY;
         ctx.fillStyle = '#d2e3ff';
         ctx.font = '13px Arial';
         if (liftX > -80 && liftX < cameraViewWidth + 20 && liftY > -40 && liftY < cameraViewHeight + 20) {
@@ -1700,8 +2108,19 @@ function drawArena() {
         }
     }
 
+    // "WAY TO CLASSROOM →" sign for lobby level
+    if (level.id === 1) {
+        const signX = level.portal.x * ARENA_TILE - renderCameraX;
+        const signY = level.portal.y * ARENA_TILE - renderCameraY;
+        if (signX > -120 && signX < cameraViewWidth + 40 && signY > -40 && signY < cameraViewHeight + 40) {
+            ctx.fillStyle = '#8b6914';
+            ctx.font = 'bold 13px Arial';
+            ctx.fillText('WAY TO CLASSROOM →', signX - 60, signY - 8);
+        }
+    }
+
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    drawObjectivePointer(ctx, canvas, cameraX, cameraY);
+    drawObjectivePointer(ctx, canvas, renderCameraX, renderCameraY);
 }
 
 function resizeArenaCanvas() {
@@ -2352,7 +2771,7 @@ function renderQuestion() {
     container.innerHTML = `
         <h3>${question.text}</h3>
         <div class="options-container">
-            ${question.options.map((option) => `<button class="option-btn" onclick="selectOption(this, '${option.replace(/'/g, "\\'")}')">${option}</button>`).join('')}
+            ${question.options.map((option) => `<button type="button" class="option-btn" onclick="selectOption(this, '${option.replace(/'/g, "\\'")}')">${option}</button>`).join('')}
         </div>
     `;
     persistProgress();
