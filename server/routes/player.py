@@ -11,6 +11,12 @@ from services.security import get_current_player
 router = APIRouter(prefix="/api", tags=["player"])
 
 
+def _normalize_answer(value: str | None) -> str:
+    if value is None:
+        return ""
+    return " ".join(str(value).strip().split()).casefold()
+
+
 def _ensure_session_running(db: Session, player: Player) -> SessionModel:
     session = db.query(SessionModel).filter(SessionModel.id == player.session_id).first()
     if not session:
@@ -94,7 +100,9 @@ async def submit_answer(
         db.commit()
         return {"status": "already_answered", "new_score": player.score}
 
-    is_correct = question.get("answer") == body.answer
+    expected_answer = _normalize_answer(question.get("answer"))
+    submitted_answer = _normalize_answer(body.answer)
+    is_correct = expected_answer == submitted_answer
     player.last_active = datetime.utcnow()
 
     if is_correct:
