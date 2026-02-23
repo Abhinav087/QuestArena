@@ -167,6 +167,12 @@ function getTileImageName(tileType, visualLevel) {
         'RC': 'reception_counter.png',
         'DF': 'diamond_floor.png',
         'BN': 'bench.png',
+        // classroom tiles (Level 2)
+        'CF': 'classroom_floor.png',
+        'CW': 'classroom_wall.png',
+        'CB': 'chalkboard.png',
+        'SD': 'student_desk.png',
+        'TD': 'teacher_desk.png',
     };
     return tileMap[tileType] || `floor_l${visualLevel}.png`;
 }
@@ -250,17 +256,7 @@ finalizeCollisions(ARENA_LEVELS[0], new Set(['1', '7', '4', '6']));
 // ── Level 1  Lobby (matching lobby sketch) ──
 // (now handled by buildLevel1LobbyLayout below)
 
-addBorderWalls(ARENA_LEVELS[2].tiles, 16, 12);
-for (let y = 3; y <= 8; y++) {
-    ARENA_LEVELS[2].tiles[y][2] = '9';
-    ARENA_LEVELS[2].tiles[y][4] = '9';
-    ARENA_LEVELS[2].tiles[y][11] = '9';
-    ARENA_LEVELS[2].tiles[y][13] = '9';
-}
-ARENA_LEVELS[2].tiles[7][7] = '5';
-ARENA_LEVELS[2].tiles[7][8] = '5';
-ARENA_LEVELS[2].tiles[1][8] = '2';
-finalizeCollisions(ARENA_LEVELS[2], new Set(['1', '9']));
+// (Level 2 - Classroom is now handled by buildLevel2ClassroomLayout below)
 
 addBorderWalls(ARENA_LEVELS[3].tiles, 18, 14);
 ARENA_LEVELS[3].tiles[6][3] = '4';
@@ -718,6 +714,100 @@ function buildLevel1LobbyLayout(level) {
     ]));
 }
 
+// ---------------------------------------------------------------------------
+//  Level 2 – Classroom  (matching classroom reference image)
+// ---------------------------------------------------------------------------
+function buildLevel2ClassroomLayout(level) {
+    const W = 30;
+    const H = 20;
+
+    // ── 1. Fill with classroom floor ──
+    const t = [];
+    for (let y = 0; y < H; y++) {
+        t.push(Array(W).fill('CF'));
+    }
+
+    // ── 2. Border walls (classroom wall tiles) ──
+    for (let x = 0; x < W; x++) { t[0][x] = 'CW'; t[H - 1][x] = 'CW'; }
+    for (let y = 0; y < H; y++) { t[y][0] = 'CW'; t[y][W - 1] = 'CW'; }
+
+    // ── 3. Top interior wall (row 1) — classroom front ──
+    for (let x = 1; x < W - 1; x++) { t[1][x] = 'CW'; }
+
+    // ── 4. Chalkboard on top wall (left side) ──
+    for (let x = 3; x <= 10; x++) { t[1][x] = 'CB'; }
+
+    // ── 5. Teacher desk at center-top ──
+    t[2][14] = 'TD';
+    t[2][15] = 'TD';
+
+    // ── 6. Computer desk at top right ──
+    t[1][23] = '5';
+
+    // ── 7. Door at top right (portal to next level) ──
+    t[1][26] = '2';
+
+    // ── 8. Student desks: 8 columns × 6 rows ──
+    const deskCols = [3, 6, 10, 13, 17, 20, 24, 27];
+    const deskRows = [5, 7, 9, 11, 13, 15];
+
+    for (const dy of deskRows) {
+        for (const dx of deskCols) {
+            t[dy][dx] = 'SD';
+        }
+    }
+
+    // ── 9. Bottom entrance (gap in bottom wall) ──
+    for (let x = 13; x <= 16; x++) {
+        t[H - 1][x] = 'CF';
+    }
+    // Small entrance corridor extending one row below bottom wall
+    t[H - 2][14] = 'CF';
+    t[H - 2][15] = 'CF';
+
+    // ── 10. Assign to level ──
+    level.width = W;
+    level.height = H;
+    level.tiles = t;
+
+    // Teacher NPC — behind the teacher desk
+    level.npc = {
+        spriteId: 3,
+        x: 15,
+        y: 3,
+        name: 'Teacher',
+        questionLevel: 2,
+    };
+
+    // Portal — door at top right of classroom
+    level.portal = {
+        x: 26,
+        y: 1,
+        targetLevel: 3,
+    };
+
+    // Player spawn — bottom center (in front of entrance)
+    level.playerStart = {
+        x: 14,
+        y: 17,
+    };
+
+    // Decorative student NPCs (seated around the room)
+    level.decorativeNpcs = [
+        { spriteId: 6, x: 4,  y: 6,  name: 'npc' },   // boy, front-left
+        { spriteId: 7, x: 11, y: 8,  name: 'npc' },   // girl, second row
+        { spriteId: 8, x: 21, y: 10, name: 'npc' },   // boy, middle-right
+        { spriteId: 9, x: 7,  y: 12, name: 'npc' },   // girl, fourth row
+        { spriteId: 6, x: 25, y: 14, name: 'npc' },   // boy, back-right
+        { spriteId: 7, x: 14, y: 14, name: 'npc' },   // girl, back-center
+    ];
+
+    // Solid tiles for collision
+    finalizeCollisions(level, new Set([
+        'CW', 'CB', 'SD', 'TD', '5',
+    ]));
+}
+
 const LARGE_WORLD_SIZES = [
     { width: 86, height: 58 },
     { width: 92, height: 62 },
@@ -735,6 +825,10 @@ ARENA_LEVELS.forEach((level, index) => {
     }
     if (level.id === 1) {
         buildLevel1LobbyLayout(level);
+        return;
+    }
+    if (level.id === 2) {
+        buildLevel2ClassroomLayout(level);
         return;
     }
     applyLargeWorldLayout(level, size.width, size.height);
@@ -1215,7 +1309,9 @@ async function loadArenaAssets() {
         'tree', 'parking', 'building', 'building_window', 'building_door',
         'kiosk', 'flower', 'gate_open', 'buildingblock',
         // lobby furniture tiles
-        'sofa', 'notice_board', 'reception_counter', 'diamond_floor', 'bench'
+        'sofa', 'notice_board', 'reception_counter', 'diamond_floor', 'bench',
+        // classroom tiles
+        'classroom_floor', 'classroom_wall', 'chalkboard', 'student_desk', 'teacher_desk'
     ];
     outdoorTiles.forEach((name) => {
         tileUrls.push(`/assets/tiles/${name}.png`);

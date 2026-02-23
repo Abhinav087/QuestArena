@@ -551,6 +551,104 @@ def make_bench():
     return img
 
 
+# ---------------------------------------------------------------------------
+#  Classroom-specific tiles (Level 2)
+# ---------------------------------------------------------------------------
+
+def make_classroom_floor():
+    """Warm brick / parquet classroom floor matching reference image."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c8a878"))
+    d = ImageDraw.Draw(img)
+    # brick pattern (horizontal)
+    for y in range(0, BASE_TILE, 8):
+        d.line([(0, y), (BASE_TILE, y)], fill=rgba("#b89868", 100), width=1)
+        offset = 0 if (y // 8) % 2 == 0 else 16
+        for x in range(offset, BASE_TILE + 16, 16):
+            d.line([(x, y), (x, y + 7)], fill=rgba("#b89868", 70), width=1)
+    # subtle specks for texture
+    rng = random.Random(77)
+    for _ in range(12):
+        x = rng.randint(1, BASE_TILE - 2)
+        y = rng.randint(1, BASE_TILE - 2)
+        d.point((x, y), fill=rgba("#b09060", 80))
+    return img
+
+
+def make_classroom_wall():
+    """Beige / cream classroom wall border."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#d8ccb0"))
+    d = ImageDraw.Draw(img)
+    # wainscot band at top
+    d.rectangle([0, 0, BASE_TILE - 1, 5], fill=rgba("#c8bca0"))
+    # brick mortar lines
+    for y in range(8, BASE_TILE, 6):
+        d.line([(1, y), (BASE_TILE - 2, y)], fill=rgba("#beb298", 90), width=1)
+    for y in range(8, BASE_TILE, 12):
+        for x in range(0, BASE_TILE, 16):
+            d.line([(x, y), (x, y + 5)], fill=rgba("#beb298", 60), width=1)
+    d.rectangle([0, 0, BASE_TILE - 1, BASE_TILE - 1], outline=rgba("#9a8e76", 130), width=1)
+    return img
+
+
+def make_chalkboard():
+    """Dark green chalkboard tile for classroom wall."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#d8ccb0"))  # wall base
+    d = ImageDraw.Draw(img)
+    # wooden frame
+    d.rectangle([1, 4, BASE_TILE - 2, BASE_TILE - 4], fill=rgba("#6a4a2a"))
+    # green board surface
+    d.rectangle([3, 6, BASE_TILE - 4, BASE_TILE - 6], fill=rgba("#2a5a3a"))
+    # chalk tray
+    d.rectangle([3, BASE_TILE - 6, BASE_TILE - 4, BASE_TILE - 4], fill=rgba("#7a5a3a"))
+    # chalk marks (faint writing)
+    d.line([(6, 10), (16, 10)], fill=rgba("#e8e8e0", 80), width=1)
+    d.line([(8, 14), (22, 14)], fill=rgba("#e8e8e0", 60), width=1)
+    d.line([(5, 18), (18, 18)], fill=rgba("#e8e8e0", 50), width=1)
+    # chalk piece on tray
+    d.rectangle([10, BASE_TILE - 6, 14, BASE_TILE - 5], fill=rgba("#f0f0e0"))
+    return img
+
+
+def make_student_desk():
+    """Small brown student desk with dark chair backing (top-down view)."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # chair (back part, top of sprite)
+    d.rectangle([6, 3, 25, 8], fill=rgba("#3a2a1a"))
+    # desk surface (brown)
+    d.rectangle([4, 10, 27, 22], fill=rgba("#8a6a40"))
+    d.rectangle([4, 10, 27, 12], fill=rgba("#9a7a50"))  # top edge lighter
+    # desk outline
+    d.rectangle([4, 10, 27, 22], outline=rgba("#4a3a1e", 160), width=1)
+    # desk legs (visible below)
+    d.rectangle([5, 22, 8, 26], fill=rgba("#5a3a1e"))
+    d.rectangle([23, 22, 26, 26], fill=rgba("#5a3a1e"))
+    # chair seat
+    d.rectangle([8, 5, 23, 10], fill=rgba("#4a3020"))
+    return img
+
+
+def make_teacher_desk():
+    """Teacher's larger desk (top-down view, with paper)."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # desk surface
+    d.rectangle([2, 6, 29, 25], fill=rgba("#7a5a30"))
+    d.rectangle([2, 6, 29, 9], fill=rgba("#8a6a40"))  # top edge lighter
+    # front panel
+    d.rectangle([3, 15, 28, 24], fill=rgba("#6a4a20"))
+    # outline
+    d.rectangle([2, 6, 29, 25], outline=rgba("#3a2a10", 160), width=1)
+    # paper on desk
+    d.rectangle([8, 10, 16, 15], fill=rgba("#f0ece0"))
+    # pen
+    d.line([(18, 11), (23, 14)], fill=rgba("#1a1a3a"), width=1)
+    # legs
+    d.rectangle([4, 25, 7, 29], fill=rgba("#5a3a1e"))
+    d.rectangle([24, 25, 27, 29], fill=rgba("#5a3a1e"))
+    return img
+
+
 def make_student_npc(primary: str, secondary: str, skin: str, hair: str, is_girl: bool):
     """Student NPC sprite - boys in shirt+pants, girls in uniform dress."""
     img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
@@ -701,6 +799,13 @@ def generate_tiles():
     save(upscale_tile(make_reception_counter()), TILES_DIR / "reception_counter.png")
     save(upscale_tile(make_diamond_floor()), TILES_DIR / "diamond_floor.png")
     save(upscale_tile(make_bench()), TILES_DIR / "bench.png")
+
+    # ---- Classroom tiles (used by Level 2) ----
+    save(upscale_tile(make_classroom_floor()), TILES_DIR / "classroom_floor.png")
+    save(upscale_tile(make_classroom_wall()), TILES_DIR / "classroom_wall.png")
+    save(upscale_tile(make_chalkboard()), TILES_DIR / "chalkboard.png")
+    save(upscale_tile(make_student_desk()), TILES_DIR / "student_desk.png")
+    save(upscale_tile(make_teacher_desk()), TILES_DIR / "teacher_desk.png")
 
 
 def generate_sprites():
