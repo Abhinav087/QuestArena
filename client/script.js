@@ -1183,7 +1183,7 @@ async function loadArenaAssets() {
     const outdoorTiles = [
         'grass', 'road', 'road_dash', 'sidewalk', 'fence', 'gate_pillar',
         'tree', 'parking', 'building', 'building_window', 'building_door',
-        'kiosk', 'flower', 'gate_open',
+        'kiosk', 'flower', 'gate_open', 'buildingblock',
         // lobby furniture tiles
         'sofa', 'notice_board', 'reception_counter', 'diamond_floor', 'bench'
     ];
@@ -1983,6 +1983,7 @@ function drawArena() {
     const renderCameraY = Math.round(cameraY * CAMERA_ZOOM) / CAMERA_ZOOM;
     const cameraViewWidth = canvas.width / CAMERA_ZOOM;
     const cameraViewHeight = canvas.height / CAMERA_ZOOM;
+    const useLargeLevel0Building = level.id === 0;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.imageSmoothingEnabled = false;
@@ -2001,6 +2002,9 @@ function drawArena() {
             const screenX = px - renderCameraX;
             const screenY = py - renderCameraY;
             const tileType = level.tiles[y][x];
+            if (useLargeLevel0Building && (tileType === 'BL' || tileType === 'BW' || tileType === 'BD')) {
+                continue;
+            }
             const tileName = getTileImageName(tileType, visualLevel);
             const tileImage = gameState.arena.images.get(`/assets/tiles/${tileName}`);
             if (tileImage) {
@@ -2016,6 +2020,72 @@ function drawArena() {
                 ctx.fillStyle = level.collisions[y][x] ? '#2d233d' : '#14181f';
                 ctx.fillRect(screenX, screenY, ARENA_TILE, ARENA_TILE);
             }
+        }
+    }
+
+    if (useLargeLevel0Building) {
+        const sourceBuildingImage = gameState.arena.images.get('/assets/tiles/buildingblock.png');
+        const grassTileImage = gameState.arena.images.get('/assets/tiles/grass.png');
+        if (sourceBuildingImage) {
+            const buildingX = 28 * ARENA_TILE;
+            const buildingY = 4 * ARENA_TILE;
+            const buildingW = (62 - 28 + 1) * ARENA_TILE;
+            const buildingH = (17 - 4 + 1) * ARENA_TILE;
+            const screenBuildingX = buildingX - renderCameraX;
+            const screenBuildingY = buildingY - renderCameraY;
+
+            if (grassTileImage) {
+                for (let gy = 0; gy < buildingH; gy += ARENA_TILE) {
+                    for (let gx = 0; gx < buildingW; gx += ARENA_TILE) {
+                        ctx.drawImage(
+                            grassTileImage,
+                            screenBuildingX + gx,
+                            screenBuildingY + gy,
+                            ARENA_TILE,
+                            ARENA_TILE,
+                        );
+                    }
+                }
+            } else {
+                ctx.fillStyle = '#4aa94a';
+                ctx.fillRect(screenBuildingX, screenBuildingY, buildingW, buildingH);
+            }
+
+            let cleanBuildingImage = gameState.arena.level0BuildingImage;
+            if (!cleanBuildingImage || gameState.arena.level0BuildingImageSource !== sourceBuildingImage) {
+                const sourceWidth = sourceBuildingImage.naturalWidth || sourceBuildingImage.width;
+                const sourceHeight = sourceBuildingImage.naturalHeight || sourceBuildingImage.height;
+                const offscreen = document.createElement('canvas');
+                offscreen.width = sourceWidth;
+                offscreen.height = sourceHeight;
+                const offscreenCtx = offscreen.getContext('2d');
+                if (offscreenCtx) {
+                    offscreenCtx.drawImage(sourceBuildingImage, 0, 0, sourceWidth, sourceHeight);
+                    const imageData = offscreenCtx.getImageData(0, 0, sourceWidth, sourceHeight);
+                    const pixels = imageData.data;
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        const red = pixels[i];
+                        const green = pixels[i + 1];
+                        const blue = pixels[i + 2];
+                        if (red <= 10 && green <= 10 && blue <= 10) {
+                            pixels[i + 3] = 0;
+                        }
+                    }
+                    offscreenCtx.putImageData(imageData, 0, 0);
+                    cleanBuildingImage = offscreen;
+                    gameState.arena.level0BuildingImage = offscreen;
+                    gameState.arena.level0BuildingImageSource = sourceBuildingImage;
+                }
+            }
+
+            const imageToDraw = cleanBuildingImage || sourceBuildingImage;
+            ctx.drawImage(
+                imageToDraw,
+                screenBuildingX,
+                screenBuildingY,
+                buildingW,
+                buildingH,
+            );
         }
     }
 
