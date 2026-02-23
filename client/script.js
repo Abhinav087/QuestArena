@@ -52,7 +52,7 @@ const LEVEL_INTROS = {
 const ARENA_WIDTH = 1920;
 const ARENA_HEIGHT = 1080;
 const ARENA_TILE = 64;
-const CHARACTER_SIZE = 32;
+const CHARACTER_SIZE = 64;
 const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
 const CAMERA_ZOOM = 1.2;
 const TILE_OVERDRAW = 1 / CAMERA_ZOOM;
@@ -62,10 +62,41 @@ const NPC_GUIDE_SPEED = 3.35;
 const NPC_SNAP_DISTANCE = 1.2;
 const NPC_REPATH_MS = 450;
 const BASE_FRAME_MS = 1000 / 60;
-const MOVEMENT_KEYS = new Set([
-    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-    'w', 'W', 'a', 'A', 's', 'S', 'd', 'D',
-]);
+function getMovementDirectionFromEvent(event) {
+    switch (event.code) {
+        case 'ArrowUp':
+        case 'KeyW':
+            return 'up';
+        case 'ArrowDown':
+        case 'KeyS':
+            return 'down';
+        case 'ArrowLeft':
+        case 'KeyA':
+            return 'left';
+        case 'ArrowRight':
+        case 'KeyD':
+            return 'right';
+        default:
+            break;
+    }
+
+    switch ((event.key || '').toLowerCase()) {
+        case 'arrowup':
+        case 'w':
+            return 'up';
+        case 'arrowdown':
+        case 's':
+            return 'down';
+        case 'arrowleft':
+        case 'a':
+            return 'left';
+        case 'arrowright':
+        case 'd':
+            return 'right';
+        default:
+            return null;
+    }
+}
 
 function getArenaViewportSize() {
     return {
@@ -577,9 +608,8 @@ function buildLevel1LobbyLayout(level) {
 
     // ── 3. Upper section (rows 1–4) — behind divider wall ──
 
-    // Lift (elevator) at top-center wall
+    // Lift (elevator) at top-center wall (single tile)
     t[1][19] = '14';
-    t[1][20] = '14';
 
     // Sofas along upper-left wall (waiting area)
     t[2][2] = 'SF';  t[2][4] = 'SF';  t[2][6] = 'SF';
@@ -636,7 +666,7 @@ function buildLevel1LobbyLayout(level) {
     t[17][W - 1] = '2';
 
     // ── 7. Hidden lift — elevator in upper area ──
-    t[2][19] = '14';
+    // (single tile already placed at t[1][19])
 
     // ── 8. Assign to level ──
     level.width  = W;
@@ -654,8 +684,8 @@ function buildLevel1LobbyLayout(level) {
 
     // Portal — stairs on far right of divider wall
     level.portal = {
-        x: 38,
-        y: 3,
+        x: 36,
+        y: 5,
         targetLevel: 2,
     };
 
@@ -2152,22 +2182,22 @@ function tickArena() {
         let dy = 0;
         let moving = false;
 
-        if (gameState.arena.keys.has('ArrowUp') || gameState.arena.keys.has('w') || gameState.arena.keys.has('W')) {
+        if (gameState.arena.keys.has('up')) {
             dy -= PLAYER_SPEED * frameScale;
             gameState.arena.facing = 'up';
             moving = true;
         }
-        if (gameState.arena.keys.has('ArrowDown') || gameState.arena.keys.has('s') || gameState.arena.keys.has('S')) {
+        if (gameState.arena.keys.has('down')) {
             dy += PLAYER_SPEED * frameScale;
             gameState.arena.facing = 'down';
             moving = true;
         }
-        if (gameState.arena.keys.has('ArrowLeft') || gameState.arena.keys.has('a') || gameState.arena.keys.has('A')) {
+        if (gameState.arena.keys.has('left')) {
             dx -= PLAYER_SPEED * frameScale;
             gameState.arena.facing = 'left';
             moving = true;
         }
-        if (gameState.arena.keys.has('ArrowRight') || gameState.arena.keys.has('d') || gameState.arena.keys.has('D')) {
+        if (gameState.arena.keys.has('right')) {
             dx += PLAYER_SPEED * frameScale;
             gameState.arena.facing = 'right';
             moving = true;
@@ -3070,14 +3100,16 @@ async function boot() {
             return;
         }
 
-        if (!typingInInput && !isArenaModalActuallyVisible() && MOVEMENT_KEYS.has(event.key)) {
-            gameState.arena.keys.add(event.key);
+        const movementDirection = getMovementDirectionFromEvent(event);
+        if (!typingInInput && !isArenaModalActuallyVisible() && movementDirection) {
+            gameState.arena.keys.add(movementDirection);
         }
     });
 
     window.addEventListener('keyup', (event) => {
-        if (gameState.currentScreen === 'arena') {
-            gameState.arena.keys.delete(event.key);
+        const movementDirection = getMovementDirectionFromEvent(event);
+        if (movementDirection) {
+            gameState.arena.keys.delete(movementDirection);
         }
     });
 
