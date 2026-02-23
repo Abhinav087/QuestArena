@@ -26,6 +26,66 @@ def upscale_tile(img: Image.Image):
     return img.resize((TARGET_TILE, TARGET_TILE), resample=resample_attr.NEAREST)
 
 
+def crop_to_base_tile(img: Image.Image, center_x: int, center_y: int, sample_size: int = 112):
+    """Crop a square sample around a point, then normalize to BASE_TILE."""
+    source = img.convert("RGBA")
+    size = max(16, int(sample_size))
+    if size > source.width:
+        size = source.width
+    if size > source.height:
+        size = source.height
+
+    half = size // 2
+    left = max(0, min(source.width - size, center_x - half))
+    top = max(0, min(source.height - size, center_y - half))
+    box = (left, top, left + size, top + size)
+
+    resample_attr = getattr(Image, "Resampling", Image)
+    cropped = source.crop(box)
+    return cropped.resize((BASE_TILE, BASE_TILE), resample=resample_attr.BICUBIC)
+
+
+def generate_building_tiles_from_image():
+    """Extract building tiles from user-provided buildingblock.png."""
+    source_path = TILES_DIR / "buildingblock.png"
+    if not source_path.exists():
+        return False
+
+    source = Image.open(source_path).convert("RGBA")
+    width, height = source.size
+
+    # Sample points are normalized to source dimensions and tuned for the
+    # current college facade artwork.
+    sample_points = {
+        "building": (0.50, 0.58),
+        "building_window": (0.19, 0.47),
+        "building_door": (0.50, 0.80),
+        "building_roof": (0.50, 0.16),
+        "building_column": (0.30, 0.56),
+        "building_sign": (0.50, 0.70),
+        "building_steps": (0.50, 0.92),
+    }
+
+    extracted = {}
+    for key, (rx, ry) in sample_points.items():
+        cx = int(width * rx)
+        cy = int(height * ry)
+        extracted[key] = crop_to_base_tile(source, cx, cy, sample_size=112)
+
+    # Primary level-0 building tiles expected by the game.
+    save(upscale_tile(extracted["building"]), TILES_DIR / "building.png")
+    save(upscale_tile(extracted["building_window"]), TILES_DIR / "building_window.png")
+    save(upscale_tile(extracted["building_door"]), TILES_DIR / "building_door.png")
+
+    # Additional reusable tiles derived from the same source image.
+    save(upscale_tile(extracted["building_roof"]), TILES_DIR / "building_roof.png")
+    save(upscale_tile(extracted["building_column"]), TILES_DIR / "building_column.png")
+    save(upscale_tile(extracted["building_sign"]), TILES_DIR / "building_sign.png")
+    save(upscale_tile(extracted["building_steps"]), TILES_DIR / "building_steps.png")
+
+    return True
+
+
 # ---------------------------------------------------------------------------
 #  Indoor tiles (Levels 1-5)
 # ---------------------------------------------------------------------------
@@ -627,9 +687,10 @@ def generate_tiles():
     save(upscale_tile(make_gate_pillar()), TILES_DIR / "gate_pillar.png")
     save(upscale_tile(make_tree()), TILES_DIR / "tree.png")
     save(upscale_tile(make_parking()), TILES_DIR / "parking.png")
-    save(upscale_tile(make_building()), TILES_DIR / "building.png")
-    save(upscale_tile(make_building_window()), TILES_DIR / "building_window.png")
-    save(upscale_tile(make_building_door()), TILES_DIR / "building_door.png")
+    if not generate_building_tiles_from_image():
+        save(upscale_tile(make_building()), TILES_DIR / "building.png")
+        save(upscale_tile(make_building_window()), TILES_DIR / "building_window.png")
+        save(upscale_tile(make_building_door()), TILES_DIR / "building_door.png")
     save(upscale_tile(make_kiosk()), TILES_DIR / "kiosk.png")
     save(upscale_tile(make_flower()), TILES_DIR / "flower.png")
     save(upscale_tile(make_gate_open()), TILES_DIR / "gate_open.png")
