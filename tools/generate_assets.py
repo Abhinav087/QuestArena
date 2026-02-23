@@ -767,6 +767,178 @@ def make_player(direction: str, frame: int):
 
 
 # ---------------------------------------------------------------------------
+#  Lab tiles (Level 3) – computer lab matching reference image
+# ---------------------------------------------------------------------------
+
+def make_lab_floor():
+    """Dark blue-grey floor for the computer lab."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#3e4a58"))
+    d = ImageDraw.Draw(img)
+    rng = random.Random(88)
+    for _ in range(20):
+        x = rng.randint(0, BASE_TILE - 1)
+        y = rng.randint(0, BASE_TILE - 1)
+        shade = rng.choice(["#3a4654", "#42505e", "#384252", "#44525f"])
+        d.point((x, y), fill=rgba(shade))
+    for x in range(0, BASE_TILE, 16):
+        d.line([(x, 0), (x, BASE_TILE - 1)], fill=rgba("#36424e", 30), width=1)
+    for y in range(0, BASE_TILE, 16):
+        d.line([(0, y), (BASE_TILE - 1, y)], fill=rgba("#36424e", 30), width=1)
+    return img
+
+
+def make_lab_wall():
+    """Dark wall for lab border."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#2c3440"))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, BASE_TILE - 1, 5], fill=rgba("#242c36"))
+    for y in range(8, BASE_TILE, 6):
+        d.line([(1, y), (BASE_TILE - 2, y)], fill=rgba("#252d38", 90), width=1)
+    d.rectangle([0, 0, BASE_TILE - 1, BASE_TILE - 1], outline=rgba("#1a2028", 160), width=1)
+    return img
+
+
+def make_lab_partition():
+    """Grey cubicle partition wall between workstation rows (top-down)."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Main body
+    d.rectangle([0, 4, BASE_TILE - 1, BASE_TILE - 4], fill=rgba("#8a9098"))
+    # Top face – lighter for 3-D look
+    d.rectangle([0, 4, BASE_TILE - 1, 10], fill=rgba("#a0a8b0"))
+    # Bottom shadow edge
+    d.rectangle([0, BASE_TILE - 6, BASE_TILE - 1, BASE_TILE - 4], fill=rgba("#707880"))
+    # Vertical seam lines
+    for x in range(8, BASE_TILE, 10):
+        d.line([(x, 5), (x, BASE_TILE - 5)], fill=rgba("#7a8088", 70), width=1)
+    return img
+
+
+def make_lab_monitor():
+    """Desk surface with a computer monitor, keyboard and mouse (top-down)."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Desk surface
+    d.rectangle([0, 6, BASE_TILE - 1, BASE_TILE - 1], fill=rgba("#a89878"))
+    d.rectangle([0, 6, BASE_TILE - 1, 8], fill=rgba("#b8a888"))
+    # Monitor frame
+    d.rectangle([4, 0, BASE_TILE - 5, 16], fill=rgba("#2a2a2a"))
+    # Monitor screen
+    d.rectangle([6, 2, BASE_TILE - 7, 13], fill=rgba("#4488cc"))
+    d.rectangle([7, 3, BASE_TILE - 12, 6], fill=rgba("#5599dd", 100))
+    # Monitor stand
+    d.rectangle([12, 16, 19, 19], fill=rgba("#3a3a3a"))
+    # Keyboard
+    d.rectangle([5, 21, 26, 27], fill=rgba("#3a3a3a"))
+    d.rectangle([6, 22, 25, 26], fill=rgba("#4a4a4a"))
+    # Mouse
+    d.ellipse([BASE_TILE - 8, 22, BASE_TILE - 4, 28], fill=rgba("#4a4a4a"))
+    return img
+
+
+def make_lab_items():
+    """Desk surface with CPU tower, books, coffee cup and pen."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Desk surface
+    d.rectangle([0, 6, BASE_TILE - 1, BASE_TILE - 1], fill=rgba("#a89878"))
+    d.rectangle([0, 6, BASE_TILE - 1, 8], fill=rgba("#b8a888"))
+    # Small CPU / tower
+    d.rectangle([2, 0, 10, 18], fill=rgba("#2a2a30"))
+    d.rectangle([3, 2, 9, 16], fill=rgba("#3a3a40"))
+    d.rectangle([4, 4, 8, 6], fill=rgba("#5588aa"))  # LED strip
+    # Book stack
+    d.rectangle([14, 10, 22, 14], fill=rgba("#cc4444"))
+    d.rectangle([13, 14, 21, 18], fill=rgba("#4444cc"))
+    # Coffee cup
+    d.ellipse([24, 20, 30, 26], fill=rgba("#ddd8d0"))
+    d.ellipse([25, 21, 29, 25], fill=rgba("#6a4a2a"))
+    # Pen
+    d.line([(16, 22), (24, 26)], fill=rgba("#1a1a3a"), width=1)
+    return img
+
+
+def make_lab_office_chair():
+    """Office swivel chair seen from above."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # 5-star base legs
+    for lx in (6, 14, 23):
+        d.rectangle([lx, 27, lx + 3, 31], fill=rgba("#4a4a4a"))
+    d.rectangle([8, 30, 23, 31], fill=rgba("#4a4a4a"))
+    # Seat cushion
+    d.ellipse([6, 8, 25, 24], fill=rgba("#3a3a42"))
+    d.ellipse([8, 10, 23, 22], fill=rgba("#444450"))
+    # Backrest
+    d.rectangle([8, 4, 23, 12], fill=rgba("#2a2a32"))
+    d.rectangle([9, 5, 22, 11], fill=rgba("#3a3a44"))
+    # Armrests
+    d.rectangle([4, 10, 8, 20], fill=rgba("#3a3a42"))
+    d.rectangle([23, 10, 27, 20], fill=rgba("#3a3a42"))
+    return img
+
+
+def make_lab_teacher_desk():
+    """Instructor desk with laptop (top-down)."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Desk surface
+    d.rectangle([1, 4, 30, 27], fill=rgba("#7a5a30"))
+    d.rectangle([1, 4, 30, 7], fill=rgba("#8a6a40"))
+    d.rectangle([2, 17, 29, 26], fill=rgba("#6a4a20"))
+    d.rectangle([1, 4, 30, 27], outline=rgba("#3a2a10", 160), width=1)
+    # Laptop base
+    d.rectangle([8, 8, 23, 18], fill=rgba("#2a2a30"))
+    # Laptop screen
+    d.rectangle([9, 3, 22, 14], fill=rgba("#303038"))
+    d.rectangle([10, 4, 21, 12], fill=rgba("#4488bb"))
+    d.rectangle([11, 5, 17, 8], fill=rgba("#5599cc", 100))
+    # Laptop keyboard detail
+    d.rectangle([10, 15, 21, 17], fill=rgba("#3a3a40"))
+    return img
+
+
+def make_lab_shelf():
+    """Small wall shelf / supply cabinet."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle([3, 8, 28, 24], fill=rgba("#6a5030"))
+    d.rectangle([3, 8, 28, 10], fill=rgba("#7a6040"))
+    d.line([(4, 16), (27, 16)], fill=rgba("#5a4020"), width=1)
+    # Books on upper shelf
+    d.rectangle([6, 10, 10, 15], fill=rgba("#cc6644"))
+    d.rectangle([12, 11, 15, 15], fill=rgba("#4466cc"))
+    d.rectangle([17, 10, 21, 15], fill=rgba("#44aa66"))
+    # Items on lower shelf
+    d.rectangle([8, 17, 14, 22], fill=rgba("#ddcc88"))
+    d.rectangle([18, 17, 22, 22], fill=rgba("#888888"))
+    d.rectangle([3, 8, 28, 24], outline=rgba("#3a2a10", 140), width=1)
+    return img
+
+
+def make_lab_chalkboard_large():
+    """Lab chalkboard: 5 tiles wide x 1 tile tall."""
+    w = BASE_TILE * 5
+    h = BASE_TILE * 1
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Wooden frame
+    d.rectangle([2, 2, w - 3, h - 3], fill=rgba("#6a4a2a"))
+    # Green board surface
+    d.rectangle([5, 4, w - 6, h - 5], fill=rgba("#2a5a3a"))
+    d.rectangle([7, 6, w - 8, h - 7], fill=rgba("#305f40"))
+    # Chalk marks
+    d.line([(14, 10), (60, 10)], fill=rgba("#e8e8e0", 70), width=1)
+    d.line([(22, 16), (80, 16)], fill=rgba("#e8e8e0", 55), width=1)
+    d.line([(90, 12), (140, 12)], fill=rgba("#e8e8e0", 60), width=1)
+    # Chalk tray
+    d.rectangle([5, h - 6, w - 6, h - 4], fill=rgba("#7a5a3a"))
+    d.rectangle([50, h - 6, 56, h - 5], fill=rgba("#f0f0e0"))
+    resample_attr = getattr(Image, "Resampling", Image)
+    return img.resize((w * 2, h * 2), resample=resample_attr.NEAREST)
+
+
+# ---------------------------------------------------------------------------
 #  Generation entry points
 # ---------------------------------------------------------------------------
 
@@ -837,6 +1009,17 @@ def generate_tiles():
     save(upscale_tile(make_teacher_desk()), TILES_DIR / "teacher_desk.png")
     # Large combined chalkboard (8×2 tiles, already at target size)
     save(make_chalkboard_large(), TILES_DIR / "chalkboard_large.png")
+
+    # ---- Lab tiles (used by Level 3) ----
+    save(upscale_tile(make_lab_floor()), TILES_DIR / "lab_floor.png")
+    save(upscale_tile(make_lab_wall()), TILES_DIR / "lab_wall.png")
+    save(upscale_tile(make_lab_partition()), TILES_DIR / "lab_partition.png")
+    save(upscale_tile(make_lab_monitor()), TILES_DIR / "lab_monitor.png")
+    save(upscale_tile(make_lab_items()), TILES_DIR / "lab_items.png")
+    save(upscale_tile(make_lab_office_chair()), TILES_DIR / "lab_office_chair.png")
+    save(upscale_tile(make_lab_teacher_desk()), TILES_DIR / "lab_teacher_desk.png")
+    save(upscale_tile(make_lab_shelf()), TILES_DIR / "lab_shelf.png")
+    save(make_lab_chalkboard_large(), TILES_DIR / "lab_chalkboard_large.png")
 
 
 def generate_sprites():

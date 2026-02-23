@@ -24,27 +24,27 @@ const DEFAULT_WAITING_HINT = 'The game will begin automatically once the server 
 
 const LEVEL_INTROS = {
     0: {
-        title: 'Level 0 — College Gate',
+        title: 'Level 0 â€” College Gate',
         dialogue: 'Gate Security: "Stop there. No ID card, no entry." Clear the General Knowledge challenge and I will open the way to the college lobby.'
     },
     1: {
-        title: 'Level 1 — Lobby',
+        title: 'Level 1 â€” Lobby',
         dialogue: 'Reception Aunty: "Why are you roaming during class hours?" Prove yourself with English questions.'
     },
     2: {
-        title: 'Level 2 — Classroom',
+        title: 'Level 2 â€” Classroom',
         dialogue: 'Teacher: "Girlfriend, ah? First answer these Aptitude questions and show me your focus."'
     },
     3: {
-        title: 'Level 3 — Lab',
+        title: 'Level 3 â€” Lab',
         dialogue: 'Lab Incharge: "You skipped lab from day one! Solve reasoning questions or forget externals."'
     },
     4: {
-        title: 'Level 4 — Server Room',
+        title: 'Level 4 â€” Server Room',
         dialogue: 'System Admin: "Students are not allowed to touch admin systems. Let us see your technical strength."'
     },
     5: {
-        title: 'Level 5 — Top Floor',
+        title: 'Level 5 â€” Top Floor',
         dialogue: 'Principal: "One final coding question. Clear it, and both of you walk free."'
     },
 };
@@ -173,6 +173,15 @@ function getTileImageName(tileType, visualLevel) {
         'CB': 'chalkboard.png',
         'SD': 'student_desk.png',
         'TD': 'teacher_desk.png',
+        // lab tiles (Level 3)
+        'LF': 'lab_floor.png',
+        'LX': 'lab_wall.png',
+        'LP': 'lab_partition.png',
+        'LM': 'lab_monitor.png',
+        'LI': 'lab_items.png',
+        'LO': 'lab_office_chair.png',
+        'LT': 'lab_teacher_desk.png',
+        'LH': 'lab_shelf.png',
     };
     return tileMap[tileType] || `floor_l${visualLevel}.png`;
 }
@@ -253,27 +262,12 @@ ARENA_LEVELS[0].tiles[5][8] = '4';
 ARENA_LEVELS[0].tiles[1][7] = '2';
 finalizeCollisions(ARENA_LEVELS[0], new Set(['1', '7', '4', '6']));
 
-// ── Level 1  Lobby (matching lobby sketch) ──
+// â”€â”€ Level 1  Lobby (matching lobby sketch) â”€â”€
 // (now handled by buildLevel1LobbyLayout below)
 
 // (Level 2 - Classroom is now handled by buildLevel2ClassroomLayout below)
 
-addBorderWalls(ARENA_LEVELS[3].tiles, 18, 14);
-ARENA_LEVELS[3].tiles[6][3] = '4';
-ARENA_LEVELS[3].tiles[6][4] = '4';
-ARENA_LEVELS[3].tiles[6][5] = '4';
-ARENA_LEVELS[3].tiles[6][12] = '4';
-ARENA_LEVELS[3].tiles[6][13] = '4';
-ARENA_LEVELS[3].tiles[6][14] = '4';
-ARENA_LEVELS[3].tiles[5][4] = '5';
-ARENA_LEVELS[3].tiles[5][13] = '5';
-ARENA_LEVELS[3].tiles[7][4] = '10';
-ARENA_LEVELS[3].tiles[7][13] = '10';
-ARENA_LEVELS[3].tiles[2][2] = '6';
-ARENA_LEVELS[3].tiles[2][15] = '6';
-ARENA_LEVELS[3].tiles[1][9] = '13';
-ARENA_LEVELS[3].tiles[11][3] = '14';
-finalizeCollisions(ARENA_LEVELS[3], new Set(['1', '4', '6']));
+// (Level 3 - Lab is now handled by buildLevel3LabLayout below)
 
 function decorateRooftop(level) {
     addBorderWalls(level.tiles, 16, 12);
@@ -313,12 +307,12 @@ function strokeTileRect(tiles, x1, y1, x2, y2, value) {
 }
 
 function buildLevel0CampusLayout(level) {
-    // ── dimensions ──
+    // â”€â”€ dimensions â”€â”€
     const W = 90;
     const H = 60;
     const CX = Math.floor(W / 2); // gate center X = 45
 
-    // ── vertical zone boundaries ──
+    // â”€â”€ vertical zone boundaries â”€â”€
     const BLDG_TOP     = 4;   // college building top
     const BLDG_BOT     = 16;  // college building bottom
     const YARD_TOP     = BLDG_BOT + 1; // 17  campus yard start
@@ -327,18 +321,18 @@ function buildLevel0CampusLayout(level) {
     const ROAD_BOT     = H - 2; // road zone end
     const SPAWN_Y      = H - 4; // player spawn row
 
-    // ── horizontal zones ──
+    // â”€â”€ horizontal zones â”€â”€
     const PARK_L = 4;  const PARK_R = 26;  // parking area
     const GARDEN_L = 54; const GARDEN_R = 86; // garden/tree area
     const GATE_HALF = 3; // gate opening half-width
 
-    // ── 1. Fill everything with grass ──
+    // â”€â”€ 1. Fill everything with grass â”€â”€
     const t = [];
     for (let y = 0; y < H; y++) {
         t.push(Array(W).fill('G'));
     }
 
-    // ── 2. Road zone (bottom) ──
+    // â”€â”€ 2. Road zone (bottom) â”€â”€
     for (let y = ROAD_TOP; y <= ROAD_BOT; y++) {
         for (let x = 0; x < W; x++) {
             t[y][x] = 'R';
@@ -363,7 +357,7 @@ function buildLevel0CampusLayout(level) {
         }
     }
 
-    // ── 3. Campus boundary fence ──
+    // â”€â”€ 3. Campus boundary fence â”€â”€
     for (let x = 1; x < W - 1; x++) {
         if (Math.abs(x - CX) <= GATE_HALF) continue; // gate opening
         t[FENCE_Y][x] = 'F';
@@ -378,7 +372,7 @@ function buildLevel0CampusLayout(level) {
         t[BLDG_TOP - 1][x] = 'F';
     }
 
-    // ── 4. Gate pillars + kiosks ──
+    // â”€â”€ 4. Gate pillars + kiosks â”€â”€
     t[FENCE_Y][CX - GATE_HALF - 1] = 'GP';
     t[FENCE_Y][CX + GATE_HALF + 1] = 'GP';
     // gate opening tiles (walkable)
@@ -391,7 +385,7 @@ function buildLevel0CampusLayout(level) {
     t[FENCE_Y - 2][CX + GATE_HALF + 3] = 'KS';
     t[FENCE_Y - 1][CX + GATE_HALF + 3] = 'KS';
 
-    // ── 5. College building ──
+    // â”€â”€ 5. College building â”€â”€
     for (let y = BLDG_TOP; y <= BLDG_BOT; y++) {
         for (let x = 28; x <= 62; x++) {
             t[y][x] = 'BL';
@@ -413,7 +407,7 @@ function buildLevel0CampusLayout(level) {
     // lobby entrance door (this is the portal to Level 1)
     t[BLDG_BOT + 1][CX] = 'BD';
 
-    // ── 6. Parking area (left side) ──
+    // â”€â”€ 6. Parking area (left side) â”€â”€
     for (let y = YARD_TOP + 2; y <= FENCE_Y - 3; y++) {
         for (let x = PARK_L; x <= PARK_R; x++) {
             t[y][x] = 'PK';
@@ -429,7 +423,7 @@ function buildLevel0CampusLayout(level) {
         t[y][PARK_R + 1] = 'SW';
     }
 
-    // ── 7. Garden area with trees (right side) ──
+    // â”€â”€ 7. Garden area with trees (right side) â”€â”€
     for (let y = YARD_TOP + 1; y <= FENCE_Y - 2; y += 3) {
         for (let x = GARDEN_L; x <= GARDEN_R; x += 4) {
             t[y][x] = 'T';
@@ -442,20 +436,20 @@ function buildLevel0CampusLayout(level) {
         }
     }
 
-    // ── 8. Campus walkway (center path from gate to building) ──
+    // â”€â”€ 8. Campus walkway (center path from gate to building) â”€â”€
     for (let y = BLDG_BOT + 2; y < FENCE_Y; y++) {
         for (let x = CX - 2; x <= CX + 2; x++) {
             t[y][x] = 'SW';
         }
     }
 
-    // ── 9. Tree rows along walkway ──
+    // â”€â”€ 9. Tree rows along walkway â”€â”€
     for (let y = BLDG_BOT + 3; y < FENCE_Y - 1; y += 3) {
         t[y][CX - 4] = 'T';
         t[y][CX + 4] = 'T';
     }
 
-    // ── 10. Protect key points (clear 3x3 area around NPC, portal, spawn) ──
+    // â”€â”€ 10. Protect key points (clear 3x3 area around NPC, portal, spawn) â”€â”€
     const npcPos   = { x: CX, y: FENCE_Y - 4 };
     const portalPos = { x: CX, y: BLDG_BOT + 1 };
     const spawnPos  = { x: CX, y: SPAWN_Y };
@@ -477,11 +471,11 @@ function buildLevel0CampusLayout(level) {
     // restore portal door
     t[portalPos.y][portalPos.x] = 'BD';
 
-    // ── 11. World border (invisible collision wall) ──
+    // â”€â”€ 11. World border (invisible collision wall) â”€â”€
     for (let x = 0; x < W; x++) { t[0][x] = 'F'; t[H - 1][x] = 'F'; }
     for (let y = 0; y < H; y++) { t[y][0] = 'F'; t[y][W - 1] = 'F'; }
 
-    // ── Assign to level ──
+    // â”€â”€ Assign to level â”€â”€
     level.width = W;
     level.height = H;
     level.tiles = t;
@@ -586,23 +580,23 @@ function applyLargeWorldLayout(level, targetWidth, targetHeight) {
 }
 
 // ---------------------------------------------------------------------------
-//  Level 1 – Lobby  (refined lobby / reception layout)
+//  Level 1 â€“ Lobby  (refined lobby / reception layout)
 // ---------------------------------------------------------------------------
 function buildLevel1LobbyLayout(level) {
     const W = 40;
     const H = 24;
 
-    // ── 1. Fill with lobby floor ──
+    // â”€â”€ 1. Fill with lobby floor â”€â”€
     const t = [];
     for (let y = 0; y < H; y++) {
         t.push(Array(W).fill('0'));
     }
 
-    // ── 2. Border walls ──
+    // â”€â”€ 2. Border walls â”€â”€
     for (let x = 0; x < W; x++) { t[0][x] = '1'; t[H - 1][x] = '1'; }
     for (let y = 0; y < H; y++) { t[y][0] = '1'; t[y][W - 1] = '1'; }
 
-    // ── 3. Upper section (rows 1–4) — behind divider wall ──
+    // â”€â”€ 3. Upper section (rows 1â€“4) â€” behind divider wall â”€â”€
 
     // Lift (elevator) at top-center wall (single tile)
     t[1][19] = '14';
@@ -616,18 +610,18 @@ function buildLevel1LobbyLayout(level) {
     t[1][10] = 'NB';
     t[1][13] = 'NB';
 
-    // ── 4. Divider wall (row 5) ──
+    // â”€â”€ 4. Divider wall (row 5) â”€â”€
     // Left section
     for (let x = 1; x <= 16; x++) t[5][x] = '1';
-    // Gap opening at x = 17–22 (walk-through to upper area)
+    // Gap opening at x = 17â€“22 (walk-through to upper area)
     // Right section
     for (let x = 23; x <= 35; x++) t[5][x] = '1';
     // Door + stairs to classroom on far right
     t[5][36] = '2';
     t[5][37] = '13';
 
-    // ── 5. Reception area (right side, rows 6–9) ──
-    // Reception counter — horizontal desk in front of Aunty
+    // â”€â”€ 5. Reception area (right side, rows 6â€“9) â”€â”€
+    // Reception counter â€” horizontal desk in front of Aunty
     t[8][26] = 'RC';  t[8][27] = 'RC';  t[8][28] = 'RC';  t[8][29] = 'RC';  t[8][30] = 'RC';
     // Side returns of desk
     t[7][26] = 'RC';  t[7][30] = 'RC';
@@ -635,14 +629,14 @@ function buildLevel1LobbyLayout(level) {
     t[7][25] = '6';
     t[7][31] = '6';
 
-    // ── 6. Main lobby open area (rows 6–22) ──
+    // â”€â”€ 6. Main lobby open area (rows 6â€“22) â”€â”€
 
     // Diamond decorative floor (centre of lobby)
     t[12][18] = 'DF'; t[12][19] = 'DF'; t[12][20] = 'DF';
     t[13][18] = 'DF'; t[13][19] = 'DF'; t[13][20] = 'DF';
     t[14][18] = 'DF'; t[14][19] = 'DF'; t[14][20] = 'DF';
 
-    // Waiting chairs — left side (two pairs)
+    // Waiting chairs â€” left side (two pairs)
     t[10][5] = '10';  t[10][6] = '10';
     t[14][5] = '10';  t[14][6] = '10';
 
@@ -652,7 +646,7 @@ function buildLevel1LobbyLayout(level) {
     // Sofa on bottom-left area
     t[19][3] = 'SF';
 
-    // Plants — sparse, natural placement
+    // Plants â€” sparse, natural placement
     t[6][1]  = '6';   // upper-left corner
     t[16][1] = '6';   // lower-left corner
     t[6][38] = '6';   // upper-right corner
@@ -661,15 +655,15 @@ function buildLevel1LobbyLayout(level) {
     // Door on right wall (lower area exit)
     t[17][W - 1] = '2';
 
-    // ── 7. Hidden lift — elevator in upper area ──
+    // â”€â”€ 7. Hidden lift â€” elevator in upper area â”€â”€
     // (single tile already placed at t[1][19])
 
-    // ── 8. Assign to level ──
+    // â”€â”€ 8. Assign to level â”€â”€
     level.width  = W;
     level.height = H;
     level.tiles  = t;
 
-    // Reception Aunty — behind the counter desk
+    // Reception Aunty â€” behind the counter desk
     level.npc = {
         spriteId: 2,
         x: 28,
@@ -678,27 +672,27 @@ function buildLevel1LobbyLayout(level) {
         questionLevel: 1,
     };
 
-    // Portal — stairs on far right of divider wall
+    // Portal â€” stairs on far right of divider wall
     level.portal = {
         x: 36,
         y: 5,
         targetLevel: 2,
     };
 
-    // Hidden lift — elevator in upper area
+    // Hidden lift â€” elevator in upper area
     level.hiddenLift = {
         x: 19,
         y: 1,
         targetLevel: 3,
     };
 
-    // Player spawn — lower lobby
+    // Player spawn â€” lower lobby
     level.playerStart = {
         x: 19,
         y: 18,
     };
 
-    // Decorative NPCs — students placed naturally
+    // Decorative NPCs â€” students placed naturally
     level.decorativeNpcs = [
         { spriteId: 6, x: 2,  y: 10, name: 'npc' },   // boy near left chairs
         { spriteId: 7, x: 8,  y: 16, name: 'npc' },   // girl, lower-left
@@ -715,41 +709,41 @@ function buildLevel1LobbyLayout(level) {
 }
 
 // ---------------------------------------------------------------------------
-//  Level 2 – Classroom  (matching classroom reference image)
+//  Level 2 â€“ Classroom  (matching classroom reference image)
 // ---------------------------------------------------------------------------
 function buildLevel2ClassroomLayout(level) {
     const W = 30;
     const H = 20;
 
-    // ── 1. Fill with classroom floor ──
+    // â”€â”€ 1. Fill with classroom floor â”€â”€
     const t = [];
     for (let y = 0; y < H; y++) {
         t.push(Array(W).fill('CF'));
     }
 
-    // ── 2. Border walls (classroom wall tiles) ──
+    // â”€â”€ 2. Border walls (classroom wall tiles) â”€â”€
     for (let x = 0; x < W; x++) { t[0][x] = 'CW'; t[H - 1][x] = 'CW'; }
     for (let y = 0; y < H; y++) { t[y][0] = 'CW'; t[y][W - 1] = 'CW'; }
 
-    // ── 3. Top interior wall (rows 1–2) — classroom front ──
+    // â”€â”€ 3. Top interior wall (rows 1â€“2) â€” classroom front â”€â”€
     for (let x = 1; x < W - 1; x++) { t[1][x] = 'CW'; }
-    // Row 2 wall behind chalkboard area (x=3..10) — keeps collision solid
+    // Row 2 wall behind chalkboard area (x=3..10) â€” keeps collision solid
     for (let x = 3; x <= 10; x++) { t[2][x] = 'CW'; }
 
-    // ── 4. Chalkboard rendered as a single combined overlay (8w × 2h) ──
+    // â”€â”€ 4. Chalkboard rendered as a single combined overlay (8w Ã— 2h) â”€â”€
     // (tiles stay as CW; chalkboard_large.png drawn on top in drawArena)
 
-    // ── 5. Teacher desk at center-top ──
+    // â”€â”€ 5. Teacher desk at center-top â”€â”€
     t[3][14] = 'TD';
     t[3][15] = 'TD';
 
-    // ── 6. Computer desk at top right ──
+    // â”€â”€ 6. Computer desk at top right â”€â”€
     t[1][23] = '5';
 
-    // ── 7. Door at top right (portal to next level) ──
+    // â”€â”€ 7. Door at top right (portal to next level) â”€â”€
     t[1][26] = '2';
 
-    // ── 8. Student desks: 8 columns × 6 rows ──
+    // â”€â”€ 8. Student desks: 8 columns Ã— 6 rows â”€â”€
     const deskCols = [3, 6, 10, 13, 17, 20, 24, 27];
     const deskRows = [5, 7, 9, 11, 13, 15];
 
@@ -759,7 +753,7 @@ function buildLevel2ClassroomLayout(level) {
         }
     }
 
-    // ── 9. Bottom entrance (gap in bottom wall) ──
+    // â”€â”€ 9. Bottom entrance (gap in bottom wall) â”€â”€
     for (let x = 13; x <= 16; x++) {
         t[H - 1][x] = 'CF';
     }
@@ -767,7 +761,7 @@ function buildLevel2ClassroomLayout(level) {
     t[H - 2][14] = 'CF';
     t[H - 2][15] = 'CF';
 
-    // ── 10. Assign to level ──
+    // â”€â”€ 10. Assign to level â”€â”€
     level.width = W;
     level.height = H;
     level.tiles = t;
@@ -779,7 +773,7 @@ function buildLevel2ClassroomLayout(level) {
     level.backgroundFloor = 'CF';
     level.backgroundWall = 'CW';
 
-    // Teacher NPC — behind the teacher desk
+    // Teacher NPC â€” behind the teacher desk
     level.npc = {
         spriteId: 3,
         x: 15,
@@ -788,14 +782,14 @@ function buildLevel2ClassroomLayout(level) {
         questionLevel: 2,
     };
 
-    // Portal — door at top right of classroom
+    // Portal â€” door at top right of classroom
     level.portal = {
         x: 26,
         y: 1,
         targetLevel: 3,
     };
 
-    // Player spawn — bottom center (in front of entrance)
+    // Player spawn â€” bottom center (in front of entrance)
     level.playerStart = {
         x: 14,
         y: 17,
@@ -814,6 +808,138 @@ function buildLevel2ClassroomLayout(level) {
     // Solid tiles for collision
     finalizeCollisions(level, new Set([
         'CW', 'SD', 'TD', '5',
+    ]));
+}
+
+// ---------------------------------------------------------------------------
+//  Level 3 â€“ Lab  (computer lab matching reference image)
+// ---------------------------------------------------------------------------
+function buildLevel3LabLayout(level) {
+    const W = 26;
+    const H = 20;
+
+    // â”€â”€ 1. Fill with lab floor â”€â”€
+    const t = [];
+    for (let y = 0; y < H; y++) {
+        t.push(Array(W).fill('LF'));
+    }
+
+    // â”€â”€ 2. Border walls â”€â”€
+    for (let x = 0; x < W; x++) { t[0][x] = 'LX'; t[H - 1][x] = 'LX'; }
+    for (let y = 0; y < H; y++) { t[y][0] = 'LX'; t[y][W - 1] = 'LX'; }
+
+    // â”€â”€ 3. Top interior wall (row 1) â”€â”€
+    for (let x = 1; x < W - 1; x++) { t[1][x] = 'LX'; }
+
+    // Bookshelf on far left of top wall
+    t[1][1] = '7'; t[1][2] = '7';
+
+    // Chalkboard area (wall tiles stay LX; overlay drawn on top)
+    // â†’ chalkboard overlay at x=7..11, y=1 (5 tiles wide, 1 tile tall)
+
+    // Teacher desk (instructorâ€™s desk with laptop) â€” row 3, center
+    t[3][12] = 'LT';
+
+    // Door / portal to next level â€” right side of top wall
+    t[1][21] = '2';
+
+    // Small shelf on far right of top wall
+    t[1][23] = 'LH';
+
+    // â”€â”€ 4. Workstation area (4 clusters, each 3 rows) â”€â”€
+    const leftStart  = 1;
+    const leftEnd    = 11;   // 11 tiles per side
+    const rightStart = 14;
+    const rightEnd   = 24;
+    // Centre aisle: x = 12, 13
+
+    const clusterYs = [4, 7, 10, 13];
+
+    // Desk pattern per side (11 tiles): items/monitors alternating
+    const deskRow = ['LI', 'LM', 'LM', 'LI', 'LM', 'LM', 'LI', 'LM', 'LM', 'LI', 'LI'];
+
+    for (const sy of clusterYs) {
+        // Row A â€” partition (back wall of cubicle)
+        for (let x = leftStart; x <= leftEnd; x++) { t[sy][x] = 'LP'; }
+        for (let x = rightStart; x <= rightEnd; x++) { t[sy][x] = 'LP'; }
+
+        // Row B â€” desks with monitors / items
+        for (let i = 0; i <= leftEnd - leftStart; i++) {
+            t[sy + 1][leftStart + i]  = deskRow[i];
+            t[sy + 1][rightStart + i] = deskRow[i];
+        }
+
+        // Row C â€” office chairs (every other tile)
+        for (let i = 0; i <= leftEnd - leftStart; i++) {
+            if (i % 2 === 1) {
+                t[sy + 2][leftStart + i]  = 'LO';
+                t[sy + 2][rightStart + i] = 'LO';
+            }
+        }
+    }
+
+    // â”€â”€ 5. Hidden lift tile (bottom-left area) â”€â”€
+    t[17][1] = '14';
+
+    // â”€â”€ 6. Bottom entrance (gap in bottom wall) â”€â”€
+    for (let x = 11; x <= 14; x++) {
+        t[H - 1][x] = 'LF';
+    }
+
+    // â”€â”€ 7. Assign to level â”€â”€
+    level.width  = W;
+    level.height = H;
+    level.tiles  = t;
+
+    // Chalkboard overlay (rendered by drawArena on top of wall tiles)
+    level.chalkboard = { x: 7, y: 1, width: 5, height: 1 };
+    level.chalkboardImage = '/assets/tiles/lab_chalkboard_large.png';
+
+    level.backgroundFloor = 'LF';
+    level.backgroundWall  = 'LX';
+
+    // Lab Incharge NPC â€” behind the teacher desk
+    level.npc = {
+        spriteId: 4,
+        x: 12,
+        y: 2,
+        name: 'Lab Incharge',
+        questionLevel: 3,
+    };
+
+    // Portal â€” door at top-right
+    level.portal = {
+        x: 21,
+        y: 1,
+        targetLevel: 4,
+    };
+
+    // Hidden lift
+    level.hiddenLift = {
+        x: 1,
+        y: 17,
+        targetLevel: null,
+    };
+
+    // Player spawn â€” bottom centre
+    level.playerStart = {
+        x: 12,
+        y: 17,
+    };
+
+    // Decorative NPCs (students seated at workstations)
+    level.decorativeNpcs = [
+        { spriteId: 6, x: 3,  y: 6,  name: 'npc' },
+        { spriteId: 7, x: 8,  y: 9,  name: 'npc' },
+        { spriteId: 8, x: 16, y: 6,  name: 'npc' },
+        { spriteId: 9, x: 21, y: 12, name: 'npc' },
+        { spriteId: 6, x: 5,  y: 15, name: 'npc' },
+        { spriteId: 7, x: 19, y: 15, name: 'npc' },
+    ];
+
+    // Solid tiles for collision
+    finalizeCollisions(level, new Set([
+        'LX', 'LP', 'LM', 'LI', 'LT', 'LH', '7',
     ]));
 }
 
@@ -838,6 +964,10 @@ ARENA_LEVELS.forEach((level, index) => {
     }
     if (level.id === 2) {
         buildLevel2ClassroomLayout(level);
+        return;
+    }
+    if (level.id === 3) {
+        buildLevel3LabLayout(level);
         return;
     }
     applyLargeWorldLayout(level, size.width, size.height);
@@ -1223,7 +1353,7 @@ function updateArenaLevelTitle() {
     const level = currentArenaLevel();
     const titleNode = document.getElementById('arena-level-title');
     if (level && titleNode) {
-        titleNode.textContent = `Level ${level.id} — ${level.name}`;
+        titleNode.textContent = `Level ${level.id} â€” ${level.name}`;
     }
 }
 
@@ -1321,7 +1451,10 @@ async function loadArenaAssets() {
         'sofa', 'notice_board', 'reception_counter', 'diamond_floor', 'bench',
         // classroom tiles
         'classroom_floor', 'classroom_wall', 'chalkboard', 'student_desk', 'teacher_desk',
-        'chalkboard_large'
+        'chalkboard_large',
+        // lab tiles (Level 3)
+        'lab_floor', 'lab_wall', 'lab_partition', 'lab_monitor', 'lab_items',
+        'lab_office_chair', 'lab_teacher_desk', 'lab_shelf', 'lab_chalkboard_large'
     ];
     outdoorTiles.forEach((name) => {
         tileUrls.push(`/assets/tiles/${name}.png`);
@@ -1786,7 +1919,7 @@ function updateInteractionPrompt() {
     promptNode.classList.add('hidden');
     promptListNode.innerHTML = `${candidates.map((candidate, index) => {
         const activeClass = index === gameState.arena.promptSelectionIndex ? ' active' : '';
-        const marker = index === gameState.arena.promptSelectionIndex ? '▶' : '•';
+        const marker = index === gameState.arena.promptSelectionIndex ? 'â–¶' : 'â€¢';
         return `<div class="arena-prompt-item${activeClass}">${marker} ${candidate.prompt}</div>`;
     }).join('')}<div class="arena-prompt-hint">Tab / Shift+Tab to switch interaction</div>`;
 
@@ -2137,6 +2270,7 @@ function drawArena() {
         '4', '5', '6', '7',                 // desk, computer, plant, bookshelf
         '8', '9', '10', '11', '12',         // lab_table, server_rack, chair, water_tank, caution_sign
         'SF', 'NB', 'RC', 'BN',             // lobby furniture
+        'LP', 'LM', 'LI', 'LO', 'LT', 'LH', // lab props (Level 3)
     ]);
 
     for (let y = startY; y <= endY; y++) {
@@ -2182,9 +2316,10 @@ function drawArena() {
         }
     }
 
-    // ── Classroom: large combined chalkboard overlay ──
+    // â”€â”€ Chalkboard overlay (classroom / lab) â”€â”€
     if (level.chalkboard) {
-        const cbImg = gameState.arena.images.get('/assets/tiles/chalkboard_large.png');
+        const cbPath = level.chalkboardImage || '/assets/tiles/chalkboard_large.png';
+        const cbImg = gameState.arena.images.get(cbPath);
         if (cbImg) {
             const cbScreenX = level.chalkboard.x * ARENA_TILE - renderCameraX;
             const cbScreenY = level.chalkboard.y * ARENA_TILE - renderCameraY;
@@ -2281,7 +2416,7 @@ function drawArena() {
         ctx.fillRect(npcX + 8, npcY + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
     }
 
-    // ── Decorative (non-interactive) NPCs ──
+    // â”€â”€ Decorative (non-interactive) NPCs â”€â”€
     if (level.decorativeNpcs) {
         for (const dnpc of level.decorativeNpcs) {
             const dImg = gameState.arena.images.get(`/assets/sprites/npc_${dnpc.spriteId}.png`);
@@ -2349,14 +2484,14 @@ function drawArena() {
         }
     }
 
-    // "WAY TO CLASSROOM →" sign for lobby level
+    // "WAY TO CLASSROOM â†’" sign for lobby level
     if (level.id === 1) {
         const signX = level.portal.x * ARENA_TILE - renderCameraX;
         const signY = level.portal.y * ARENA_TILE - renderCameraY;
         if (signX > -120 && signX < cameraViewWidth + 40 && signY > -40 && signY < cameraViewHeight + 40) {
             ctx.fillStyle = '#8b6914';
             ctx.font = 'bold 13px Arial';
-            ctx.fillText('WAY TO CLASSROOM →', signX - 60, signY - 8);
+            ctx.fillText('WAY TO CLASSROOM â†’', signX - 60, signY - 8);
         }
     }
 
