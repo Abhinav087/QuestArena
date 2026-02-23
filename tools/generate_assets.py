@@ -609,6 +609,35 @@ def make_chalkboard():
     return img
 
 
+def make_chalkboard_large():
+    """Large combined chalkboard: 8 tiles wide × 2 tiles tall as one board."""
+    w = BASE_TILE * 8
+    h = BASE_TILE * 2
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))  # transparent background
+    d = ImageDraw.Draw(img)
+    # Wooden frame (outer)
+    d.rectangle([2, 3, w - 3, h - 3], fill=rgba("#6a4a2a"))
+    # Green board surface
+    d.rectangle([6, 7, w - 7, h - 7], fill=rgba("#2a5a3a"))
+    # Inner green shade variation for depth
+    d.rectangle([10, 10, w - 11, h - 10], fill=rgba("#305f40"))
+    # Chalk tray at bottom
+    d.rectangle([6, h - 9, w - 7, h - 5], fill=rgba("#7a5a3a"))
+    # Chalk marks (faint writing)
+    d.line([(20, 16), (90, 16)], fill=rgba("#e8e8e0", 80), width=1)
+    d.line([(30, 24), (130, 24)], fill=rgba("#e8e8e0", 65), width=1)
+    d.line([(22, 32), (100, 32)], fill=rgba("#e8e8e0", 50), width=1)
+    d.line([(140, 18), (210, 18)], fill=rgba("#e8e8e0", 75), width=1)
+    d.line([(150, 26), (230, 26)], fill=rgba("#e8e8e0", 55), width=1)
+    d.line([(120, 36), (200, 36)], fill=rgba("#e8e8e0", 45), width=1)
+    # Chalk piece on tray
+    d.rectangle([80, h - 9, 88, h - 7], fill=rgba("#f0f0e0"))
+    d.rectangle([160, h - 9, 166, h - 7], fill=rgba("#f0e0c0"))
+    # Upscale to target size
+    resample_attr = getattr(Image, "Resampling", Image)
+    return img.resize((w * 2, h * 2), resample=resample_attr.NEAREST)
+
+
 def make_student_desk():
     """Small brown student desk with dark chair backing (top-down view)."""
     img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
@@ -806,6 +835,8 @@ def generate_tiles():
     save(upscale_tile(make_chalkboard()), TILES_DIR / "chalkboard.png")
     save(upscale_tile(make_student_desk()), TILES_DIR / "student_desk.png")
     save(upscale_tile(make_teacher_desk()), TILES_DIR / "teacher_desk.png")
+    # Large combined chalkboard (8×2 tiles, already at target size)
+    save(make_chalkboard_large(), TILES_DIR / "chalkboard_large.png")
 
 
 def generate_sprites():

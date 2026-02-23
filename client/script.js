@@ -731,15 +731,17 @@ function buildLevel2ClassroomLayout(level) {
     for (let x = 0; x < W; x++) { t[0][x] = 'CW'; t[H - 1][x] = 'CW'; }
     for (let y = 0; y < H; y++) { t[y][0] = 'CW'; t[y][W - 1] = 'CW'; }
 
-    // ── 3. Top interior wall (row 1) — classroom front ──
+    // ── 3. Top interior wall (rows 1–2) — classroom front ──
     for (let x = 1; x < W - 1; x++) { t[1][x] = 'CW'; }
+    // Row 2 wall behind chalkboard area (x=3..10) — keeps collision solid
+    for (let x = 3; x <= 10; x++) { t[2][x] = 'CW'; }
 
-    // ── 4. Chalkboard on top wall (left side) ──
-    for (let x = 3; x <= 10; x++) { t[1][x] = 'CB'; }
+    // ── 4. Chalkboard rendered as a single combined overlay (8w × 2h) ──
+    // (tiles stay as CW; chalkboard_large.png drawn on top in drawArena)
 
     // ── 5. Teacher desk at center-top ──
-    t[2][14] = 'TD';
-    t[2][15] = 'TD';
+    t[3][14] = 'TD';
+    t[3][15] = 'TD';
 
     // ── 6. Computer desk at top right ──
     t[1][23] = '5';
@@ -770,11 +772,18 @@ function buildLevel2ClassroomLayout(level) {
     level.height = H;
     level.tiles = t;
 
+    // Chalkboard overlay metadata (rendered as single image in drawArena)
+    level.chalkboard = { x: 3, y: 1, width: 8, height: 2 };
+
+    // Background tile codes for overlay rendering
+    level.backgroundFloor = 'CF';
+    level.backgroundWall = 'CW';
+
     // Teacher NPC — behind the teacher desk
     level.npc = {
         spriteId: 3,
         x: 15,
-        y: 3,
+        y: 4,
         name: 'Teacher',
         questionLevel: 2,
     };
@@ -804,7 +813,7 @@ function buildLevel2ClassroomLayout(level) {
 
     // Solid tiles for collision
     finalizeCollisions(level, new Set([
-        'CW', 'CB', 'SD', 'TD', '5',
+        'CW', 'SD', 'TD', '5',
     ]));
 }
 
@@ -1311,7 +1320,8 @@ async function loadArenaAssets() {
         // lobby furniture tiles
         'sofa', 'notice_board', 'reception_counter', 'diamond_floor', 'bench',
         // classroom tiles
-        'classroom_floor', 'classroom_wall', 'chalkboard', 'student_desk', 'teacher_desk'
+        'classroom_floor', 'classroom_wall', 'chalkboard', 'student_desk', 'teacher_desk',
+        'chalkboard_large'
     ];
     outdoorTiles.forEach((name) => {
         tileUrls.push(`/assets/tiles/${name}.png`);
@@ -2121,6 +2131,14 @@ function drawArena() {
     const endX = Math.min(level.width - 1, Math.ceil((renderCameraX + cameraViewWidth) / ARENA_TILE) + 1);
     const endY = Math.min(level.height - 1, Math.ceil((renderCameraY + cameraViewHeight) / ARENA_TILE) + 1);
 
+    // Tiles with transparent backgrounds that need floor/wall drawn underneath
+    const OVERLAY_PROP_TILES = new Set([
+        'SD', 'TD',                         // classroom props
+        '4', '5', '6', '7',                 // desk, computer, plant, bookshelf
+        '8', '9', '10', '11', '12',         // lab_table, server_rack, chair, water_tank, caution_sign
+        'SF', 'NB', 'RC', 'BN',             // lobby furniture
+    ]);
+
     for (let y = startY; y <= endY; y++) {
         for (let x = startX; x <= endX; x++) {
             const px = x * ARENA_TILE;
@@ -2131,10 +2149,25 @@ function drawArena() {
             if (useLargeLevel0Building && (tileType === 'BL' || tileType === 'BW' || tileType === 'BD')) {
                 continue;
             }
+
+            const halfBleed = TILE_OVERDRAW / 2;
+
+            // Draw background tile underneath transparent props
+            if (OVERLAY_PROP_TILES.has(tileType)) {
+                const onBorder = y <= 1 || y >= level.height - 1 || x === 0 || x === level.width - 1;
+                const bgCode = onBorder
+                    ? (level.backgroundWall || '1')
+                    : (level.backgroundFloor || '0');
+                const bgName = getTileImageName(bgCode, visualLevel);
+                const bgImg = gameState.arena.images.get(`/assets/tiles/${bgName}`);
+                if (bgImg) {
+                    ctx.drawImage(bgImg, screenX - halfBleed, screenY - halfBleed, ARENA_TILE + TILE_OVERDRAW, ARENA_TILE + TILE_OVERDRAW);
+                }
+            }
+
             const tileName = getTileImageName(tileType, visualLevel);
             const tileImage = gameState.arena.images.get(`/assets/tiles/${tileName}`);
             if (tileImage) {
-                const halfBleed = TILE_OVERDRAW / 2;
                 ctx.drawImage(
                     tileImage,
                     screenX - halfBleed,
@@ -2146,6 +2179,18 @@ function drawArena() {
                 ctx.fillStyle = level.collisions[y][x] ? '#2d233d' : '#14181f';
                 ctx.fillRect(screenX, screenY, ARENA_TILE, ARENA_TILE);
             }
+        }
+    }
+
+    // ── Classroom: large combined chalkboard overlay ──
+    if (level.chalkboard) {
+        const cbImg = gameState.arena.images.get('/assets/tiles/chalkboard_large.png');
+        if (cbImg) {
+            const cbScreenX = level.chalkboard.x * ARENA_TILE - renderCameraX;
+            const cbScreenY = level.chalkboard.y * ARENA_TILE - renderCameraY;
+            const cbW = level.chalkboard.width * ARENA_TILE;
+            const cbH = level.chalkboard.height * ARENA_TILE;
+            ctx.drawImage(cbImg, cbScreenX, cbScreenY, cbW, cbH);
         }
     }
 
