@@ -939,6 +939,215 @@ def make_lab_chalkboard_large():
 
 
 # ---------------------------------------------------------------------------
+#  Server Room tiles (Level 4)
+#  Palette: light grey raised-floor, dark racks, visible infrastructure
+# ---------------------------------------------------------------------------
+
+def make_server_rack():
+    """Server rack unit — dark cabinet with front panel LEDs on light floor."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light floor beneath
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c8cdd5"))
+    # Rack cabinet body (dark steel)
+    d.rectangle([5, 2, 26, 29], fill=rgba("#1e2430"), outline=rgba("#0e1420"), width=1)
+    # Front panel face (slightly lighter)
+    d.rectangle([7, 4, 24, 27], fill=rgba("#282e3c"))
+    # Rack unit horizontal dividers (equipment slots)
+    for y in range(6, 26, 4):
+        d.line([(7, y), (24, y)], fill=rgba("#1a2028"), width=1)
+    # Status LEDs on each unit (green/amber)
+    for y in range(8, 26, 4):
+        d.ellipse([9, y, 11, y + 2], fill=rgba("#33ff55"))     # green OK
+        d.ellipse([13, y, 15, y + 2], fill=rgba("#33ff55"))    # green OK
+        d.rectangle([17, y, 23, y + 1], fill=rgba("#3388ff", 120))  # blue activity bar
+    # Front mesh vents
+    for y in range(5, 27, 2):
+        d.line([(8, y), (23, y)], fill=rgba("#1e2430", 80), width=1)
+    # Top cap
+    d.rectangle([5, 2, 26, 3], fill=rgba("#3a4050"))
+    # Bottom feet
+    d.rectangle([7, 28, 10, 29], fill=rgba("#3a4050"))
+    d.rectangle([21, 28, 24, 29], fill=rgba("#3a4050"))
+    return img
+
+
+def make_server_floor():
+    """Light grey raised-floor panels with grid lines and screw dots (matches ref image 1)."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light grey base
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c8cdd5"))
+    # Panel edge grid lines
+    d.line([(0, 0), (31, 0)], fill=rgba("#a8b0ba"), width=1)
+    d.line([(0, 31), (31, 31)], fill=rgba("#a8b0ba"), width=1)
+    d.line([(0, 0), (0, 31)], fill=rgba("#a8b0ba"), width=1)
+    d.line([(31, 0), (31, 31)], fill=rgba("#a8b0ba"), width=1)
+    # Inner highlight for panel depth
+    d.line([(1, 1), (30, 1)], fill=rgba("#d5dae2"), width=1)
+    d.line([(1, 1), (1, 30)], fill=rgba("#d5dae2"), width=1)
+    # Corner screws
+    for cx, cy in [(4, 4), (27, 4), (4, 27), (27, 27)]:
+        d.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=rgba("#9aa2ad"))
+    return img
+
+
+def make_server_wall():
+    """Dark steel wall panel with rivets — clearly distinct from light floor."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Dark steel base
+    d.rectangle([0, 0, 31, 31], fill=rgba("#3a4050"))
+    # Panel grooves
+    d.rectangle([1, 1, 30, 30], outline=rgba("#4a5464"), width=1)
+    d.rectangle([3, 3, 28, 28], outline=rgba("#2e3644"), width=1)
+    # Rivets
+    for cx, cy in [(5, 5), (26, 5), (5, 26), (26, 26)]:
+        d.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=rgba("#5a6474"))
+    # Horizontal panel seam
+    d.line([(0, 15), (31, 15)], fill=rgba("#2e3644"), width=1)
+    d.line([(0, 16), (31, 16)], fill=rgba("#4a5464"), width=1)
+    return img
+
+
+def make_server_console():
+    """Monitoring desk with screen — brown desk, dark monitor with green text."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light floor beneath
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c8cdd5"))
+    # Desk surface (brown wood, like image 1)
+    d.rectangle([2, 14, 29, 28], fill=rgba("#8a6a3e"))
+    d.rectangle([2, 14, 29, 16], fill=rgba("#9a7a4e"))
+    d.rectangle([2, 27, 29, 28], fill=rgba("#6a5030"))
+    # Monitor body
+    d.rectangle([6, 3, 25, 15], fill=rgba("#2a2a30"), outline=rgba("#1a1a20"), width=1)
+    # Screen
+    d.rectangle([8, 5, 23, 13], fill=rgba("#0a1818"))
+    # Screen content (green text lines like server terminals)
+    for sy in range(6, 12, 2):
+        w = random.randint(6, 13)
+        d.line([(9, sy), (9 + w, sy)], fill=rgba("#33ff88", 180), width=1)
+    # LED on desk
+    d.ellipse([5, 18, 7, 20], fill=rgba("#33ff33"))
+    d.ellipse([9, 18, 11, 20], fill=rgba("#ffaa00"))
+    return img
+
+
+def make_server_pipe():
+    """Vertical coolant pipe on light floor background."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light floor behind pipe
+    d.rectangle([0, 0, 31, 31], fill=rgba("#b0b8c2"))
+    # Shadow under pipe
+    d.rectangle([12, 0, 20, 31], fill=rgba("#9aa2ad", 80))
+    # Main pipe (steel grey)
+    d.rectangle([12, 0, 18, 31], fill=rgba("#6a7585"))
+    # Pipe highlight (reflection strip)
+    d.rectangle([13, 0, 15, 31], fill=rgba("#8a95a5"))
+    # Pipe joints
+    for y in (5, 17):
+        d.rectangle([10, y, 20, y + 3], fill=rgba("#7a8595"))
+        d.rectangle([10, y, 20, y], fill=rgba("#8a99aa"))
+        d.rectangle([10, y + 3, 20, y + 3], fill=rgba("#5a6575"))
+    return img
+
+
+def make_server_grate():
+    """Floor vent grate — darker strip with visible metal grid pattern."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Dark background (visible gap beneath floor)
+    d.rectangle([0, 0, 31, 31], fill=rgba("#3a4048"))
+    # Metal grate bars (silver/grey)
+    for x in range(1, 30, 3):
+        d.rectangle([x, 0, x + 1, 31], fill=rgba("#7a8494"))
+    for y in range(1, 30, 3):
+        d.rectangle([0, y, 31, y + 1], fill=rgba("#7a8494"))
+    # Slight blue tint from cold air
+    d.rectangle([0, 0, 31, 31], fill=rgba("#4080ff", 18))
+    # Edge trim
+    d.line([(0, 0), (31, 0)], fill=rgba("#8a94a5"), width=1)
+    d.line([(0, 31), (31, 31)], fill=rgba("#8a94a5"), width=1)
+    return img
+
+
+def make_server_cable():
+    """Cable tray — light floor with visible colored cable bundle running through."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light floor beneath
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c0c6ce"))
+    # Cable tray (dark metallic channel)
+    d.rectangle([11, 0, 20, 31], fill=rgba("#505a68"))
+    d.rectangle([11, 0, 11, 31], fill=rgba("#6a7484"))
+    d.rectangle([20, 0, 20, 31], fill=rgba("#6a7484"))
+    # Individual cables (colored)
+    d.line([(13, 0), (13, 31)], fill=rgba("#4466dd"), width=1)
+    d.line([(15, 0), (15, 31)], fill=rgba("#dd4444"), width=1)
+    d.line([(17, 0), (17, 31)], fill=rgba("#44bb44"), width=1)
+    d.line([(19, 0), (19, 31)], fill=rgba("#ddaa22"), width=1)
+    return img
+
+
+def make_server_ups():
+    """UPS / battery backup unit on light floor."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light floor beneath
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c8cdd5"))
+    # UPS cabinet body (dark grey)
+    d.rectangle([4, 3, 27, 28], fill=rgba("#2a3040"), outline=rgba("#1a2030"), width=1)
+    # Front panel (slightly lighter)
+    d.rectangle([6, 5, 25, 26], fill=rgba("#343e50"))
+    # LCD display (blue backlit)
+    d.rectangle([8, 7, 23, 13], fill=rgba("#0a1828"), outline=rgba("#3a5070"), width=1)
+    d.rectangle([10, 9, 21, 11], fill=rgba("#33bbff", 160))
+    # LED indicators (green = ok, amber = battery)
+    d.ellipse([9, 16, 12, 19], fill=rgba("#33ff33"))
+    d.ellipse([14, 16, 17, 19], fill=rgba("#33ff33"))
+    d.ellipse([19, 16, 22, 19], fill=rgba("#ffaa00"))
+    # Ventilation slots
+    for y in range(21, 26, 2):
+        d.line([(8, y), (23, y)], fill=rgba("#1a2535"), width=1)
+    return img
+
+
+def make_server_ac():
+    """AC / cooling unit mounted on dark wall — white unit stands out."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Wall background
+    d.rectangle([0, 0, 31, 31], fill=rgba("#3a4050"))
+    # AC unit body (white/light grey — contrasts against wall)
+    d.rectangle([3, 8, 28, 26], fill=rgba("#e0e6ec"), outline=rgba("#a0aab5"), width=1)
+    # Vents (horizontal slats)
+    for y in range(12, 24, 3):
+        d.line([(5, y), (26, y)], fill=rgba("#b8c2cc"), width=1)
+        d.line([(5, y + 1), (26, y + 1)], fill=rgba("#d0d8e0"), width=1)
+    # Status light (blue LED)
+    d.ellipse([13, 9, 16, 11], fill=rgba("#33ccff"))
+    # Label
+    d.rectangle([10, 24, 21, 25], fill=rgba("#c0c8d0"))
+    return img
+
+
+def make_server_light():
+    """Ceiling LED indicator glow on light floor — subtle green circle."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light floor
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c8cdd5"))
+    # Glow ring
+    d.ellipse([8, 8, 23, 23], fill=rgba("#33ff66", 25))
+    d.ellipse([11, 11, 20, 20], fill=rgba("#33ff66", 45))
+    # Central LED point
+    d.ellipse([14, 14, 17, 17], fill=rgba("#33ff88", 200))
+    return img
+
+
+# ---------------------------------------------------------------------------
 #  Generation entry points
 # ---------------------------------------------------------------------------
 
@@ -1020,6 +1229,19 @@ def generate_tiles():
     save(upscale_tile(make_lab_teacher_desk()), TILES_DIR / "lab_teacher_desk.png")
     save(upscale_tile(make_lab_shelf()), TILES_DIR / "lab_shelf.png")
     save(make_lab_chalkboard_large(), TILES_DIR / "lab_chalkboard_large.png")
+
+    # ---- Server Room tiles (used by Level 4) ----
+    save(upscale_tile(make_server_floor()), TILES_DIR / "server_floor.png")
+    save(upscale_tile(make_server_wall()), TILES_DIR / "server_wall.png")
+    save(upscale_tile(make_server_console()), TILES_DIR / "server_console.png")
+    save(upscale_tile(make_server_pipe()), TILES_DIR / "server_pipe.png")
+    save(upscale_tile(make_server_grate()), TILES_DIR / "server_grate.png")
+    save(upscale_tile(make_server_cable()), TILES_DIR / "server_cable.png")
+    save(upscale_tile(make_server_ups()), TILES_DIR / "server_ups.png")
+    save(upscale_tile(make_server_ac()), TILES_DIR / "server_ac.png")
+    save(upscale_tile(make_server_light()), TILES_DIR / "server_light.png")
+    # Overwrite the generic server_rack_l4 with our custom rack tile
+    save(upscale_tile(make_server_rack()), TILES_DIR / "server_rack_l4.png")
 
 
 def generate_sprites():

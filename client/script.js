@@ -182,6 +182,17 @@ function getTileImageName(tileType, visualLevel) {
         'LO': 'lab_office_chair.png',
         'LT': 'lab_teacher_desk.png',
         'LH': 'lab_shelf.png',
+        // server room tiles (Level 4)
+        'SF4': 'server_floor.png',
+        'SW4': 'server_wall.png',
+        'SR': 'server_rack_l4.png',
+        'SC': 'server_console.png',
+        'SP': 'server_pipe.png',
+        'SG': 'server_grate.png',
+        'SK': 'server_cable.png',
+        'SU': 'server_ups.png',
+        'SA': 'server_ac.png',
+        'SL': 'server_light.png',
     };
     return tileMap[tileType] || `floor_l${visualLevel}.png`;
 }
@@ -284,7 +295,6 @@ function decorateRooftop(level) {
     finalizeCollisions(level, new Set(['1']));
 }
 
-decorateRooftop(ARENA_LEVELS[4]);
 decorateRooftop(ARENA_LEVELS[5]);
 
 function fillTileRect(tiles, x1, y1, x2, y2, value) {
@@ -943,6 +953,263 @@ function buildLevel3LabLayout(level) {
     ]));
 }
 
+// ---------------------------------------------------------------------------
+//  Level 4 — Server Room  (reference-matching data-center layout)
+//
+//  Grid: 44 wide × 30 tall
+//
+//  Column zones (separated by cable trunks):
+//    0        border wall
+//    1        pipe
+//    2-8      LEFT zone (bays)
+//    9        cable trunk
+//    10-19    CENTER-LEFT zone (bays)
+//    20       cable trunk (corridor left edge)
+//    21-22    MAIN CORRIDOR (walkable)
+//    23       cable trunk (corridor right edge)
+//    24-33    CENTER-RIGHT zone (bays)
+//    34       cable trunk
+//    35-41    RIGHT zone (bays)
+//    42       pipe
+//    43       border wall
+//
+//  Row zones (separated by horizontal cable trunks at rows 8, 16):
+//    0-1      border wall + inner wall
+//    2-7      TOP bays
+//    8        cable trunk
+//    9-15     MIDDLE bays
+//    16       cable trunk
+//    17-24    BOTTOM bays
+//    25       grate vent
+//    26-28    approach zone
+//    29       border wall (entrance gap)
+// ---------------------------------------------------------------------------
+function buildLevel4ServerRoomLayout(level) {
+    const W = 44;
+    const H = 30;
+    const t = [];
+    for (let y = 0; y < H; y++) t.push(Array(W).fill('SF4'));
+
+    // ── Helpers ──
+    function fill(x1, y1, x2, y2, tile) {
+        for (let yy = y1; yy <= y2; yy++)
+            for (let xx = x1; xx <= x2; xx++)
+                t[yy][xx] = tile;
+    }
+    function hline(x1, x2, y, tile) {
+        for (let x = x1; x <= x2; x++) t[y][x] = tile;
+    }
+    function vline(y1, y2, x, tile) {
+        for (let yy = y1; yy <= y2; yy++) t[yy][x] = tile;
+    }
+    function bay(x1, y1, x2, y2) {
+        hline(x1, x2, y1, 'SK');
+        hline(x1, x2, y2, 'SK');
+        vline(y1, y2, x1, 'SK');
+        vline(y1, y2, x2, 'SK');
+    }
+
+    // ═══════════════════════════════════════════════
+    //  WALLS, PIPES & AC
+    // ═══════════════════════════════════════════════
+    hline(0, W - 1, 0, 'SW4');
+    hline(0, W - 1, H - 1, 'SW4');
+    vline(0, H - 1, 0, 'SW4');
+    vline(0, H - 1, W - 1, 'SW4');
+    hline(1, W - 2, 1, 'SW4');             // inner top wall
+    t[1][21] = '2';                        // portal door
+    vline(2, H - 2, 1, 'SP');              // left pipe
+    vline(2, H - 2, W - 2, 'SP');          // right pipe
+    // AC units on top wall
+    t[1][12] = 'SA'; t[1][18] = 'SA'; t[1][30] = 'SA'; t[1][36] = 'SA';
+
+    // ═══════════════════════════════════════════════
+    //  PRIMARY CABLE INFRASTRUCTURE NETWORK
+    // ═══════════════════════════════════════════════
+    // 4 vertical cable trunks
+    vline(2, H - 2, 9, 'SK');              // left zone divider
+    vline(2, H - 2, 20, 'SK');             // corridor left edge
+    vline(2, H - 2, 23, 'SK');             // corridor right edge
+    vline(2, H - 2, 34, 'SK');             // right zone divider
+    // 2 horizontal cable trunks
+    hline(2, W - 3, 8, 'SK');              // top / mid divider
+    hline(2, W - 3, 16, 'SK');             // mid / bottom divider
+    // Grate vent in approach zone
+    hline(2, W - 3, 25, 'SG');
+    // Cross-corridor cable branches
+    hline(20, 23, 4, 'SK');
+    hline(20, 23, 12, 'SK');
+    hline(20, 23, 20, 'SK');
+
+    // ═══════════════════════════════════════════════
+    //  CONTROL ROOM (top-left): rows 2-7, cols 2-8
+    // ═══════════════════════════════════════════════
+    fill(2, 2, 8, 2, 'SW4');
+    fill(2, 7, 8, 7, 'SW4');
+    vline(2, 7, 2, 'SW4');
+    vline(2, 7, 8, 'SW4');
+    fill(3, 3, 7, 6, 'SF4');               // clear interior
+    t[7][5] = 'SF4'; t[7][6] = 'SF4';     // door gap
+    t[3][3] = 'SC'; t[3][4] = 'SC'; t[3][5] = 'SC';  // console desk
+    t[4][4] = '10';                        // operator chair
+    t[6][3] = 'SU'; t[6][7] = 'SU';       // UPS
+    t[3][7] = 'SL';                        // status light
+
+    // ═══════════════════════════════════════════════
+    //  TOP ROW BAYS (rows 2-7)
+    // ═══════════════════════════════════════════════
+
+    // Bay T1: rows 2-7, cols 11-19 (9w × 6h)
+    bay(11, 2, 19, 7);
+    hline(12, 18, 5, 'SK');                 // internal cable divider
+    fill(12, 3, 18, 4, 'SR');              // rack band top   (7×2 = 14)
+    fill(12, 6, 18, 6, 'SR');             // rack band bottom (7×1 = 7)
+
+    // Bay T2: rows 2-7, cols 24-33 (10w × 6h — wider)
+    bay(24, 2, 33, 7);
+    hline(25, 32, 4, 'SK');                 // divider at row 4 (asymmetric)
+    fill(25, 3, 32, 3, 'SR');              // rack band top   (8×1)
+    fill(25, 5, 32, 6, 'SR');             // rack band bottom (8×2 = 16)
+
+    // Bay T3: rows 2-7, cols 35-41 (7w × 6h — narrower)
+    bay(35, 2, 41, 7);
+    hline(36, 40, 5, 'SK');
+    fill(36, 3, 40, 4, 'SR');              // 5×2 = 10
+    fill(36, 6, 40, 6, 'SR');             // 5×1 = 5
+
+    // ═══════════════════════════════════════════════
+    //  MIDDLE ROW BAYS (rows 9-15)
+    // ═══════════════════════════════════════════════
+
+    // Bay M1: rows 9-15, cols 2-8 (7w × 7h)
+    bay(2, 9, 8, 15);
+    hline(3, 7, 12, 'SK');                  // internal divider
+    fill(3, 10, 7, 11, 'SR');              // 5×2 = 10
+    fill(3, 13, 7, 14, 'SR');             // 5×2 = 10
+
+    // Bay M2: rows 9-15, cols 10-19 (10w × 7h — DENSE, 3 rack bands)
+    bay(10, 9, 19, 15);
+    hline(11, 18, 11, 'SK');
+    hline(11, 18, 13, 'SK');
+    fill(11, 10, 18, 10, 'SR');            // 8×1
+    fill(11, 12, 18, 12, 'SR');            // 8×1
+    fill(11, 14, 18, 14, 'SR');            // 8×1
+
+    // Central corridor lights
+    t[10][21] = 'SL'; t[10][22] = 'SL';
+    t[14][21] = 'SL'; t[14][22] = 'SL';
+
+    // Bay M3: rows 10-15, cols 24-33 (10w × 6h — starts 1 row late, OFFSET)
+    bay(24, 10, 33, 15);
+    hline(25, 32, 12, 'SK');
+    fill(25, 11, 32, 11, 'SR');            // 8×1
+    fill(25, 13, 32, 14, 'SR');            // 8×2 = 16
+
+    // Bay M4: rows 9-14, cols 35-41 (7w × 6h — L-SHAPE arrangement)
+    bay(35, 9, 41, 14);
+    hline(36, 40, 11, 'SK');
+    fill(36, 10, 40, 10, 'SR');            // full top row (5×1)
+    fill(36, 12, 38, 13, 'SR');            // L-shape: only cols 36-38 bottom (3×2)
+
+    // ═══════════════════════════════════════════════
+    //  BOTTOM ROW BAYS (rows 17-24)
+    // ═══════════════════════════════════════════════
+
+    // Bay B1: rows 17-23, cols 2-8 (7w × 7h)
+    bay(2, 17, 8, 23);
+    hline(3, 7, 20, 'SK');
+    fill(3, 18, 7, 19, 'SR');              // 5×2 = 10
+    fill(3, 21, 7, 22, 'SR');             // 5×2 = 10
+
+    // Bay B2: rows 17-23, cols 10-19 (10w × 7h — HOT-AISLE layout)
+    bay(10, 17, 19, 23);
+    hline(11, 18, 20, 'SK');
+    // Hot aisle: vertical gap at col 15
+    fill(11, 18, 14, 19, 'SR');            // left racks  (4×2)
+    fill(16, 18, 18, 19, 'SR');            // right racks (3×2)
+    fill(11, 21, 14, 22, 'SR');            // left racks  (4×2)
+    fill(16, 21, 18, 22, 'SR');            // right racks (3×2)
+
+    // Bay B3: rows 17-22, cols 24-33 (10w × 6h — shorter)
+    bay(24, 17, 33, 22);
+    hline(25, 32, 19, 'SK');
+    fill(25, 18, 32, 18, 'SR');            // 8×1
+    fill(25, 20, 32, 21, 'SR');            // 8×2 = 16
+
+    // Bay B4: rows 18-24, cols 35-41 (7w × 7h — OFFSET 1 row down)
+    bay(35, 18, 41, 24);
+    hline(36, 40, 21, 'SK');
+    fill(36, 19, 40, 20, 'SR');            // 5×2 = 10
+    fill(36, 22, 40, 23, 'SR');            // 5×2 = 10
+
+    // ═══════════════════════════════════════════════
+    //  CABLE BRANCHES & CONNECTIONS (adds network look)
+    // ═══════════════════════════════════════════════
+    hline(8, 10, 4, 'SK');                  // control room → T1
+    hline(19, 20, 6, 'SK');                 // T1 → corridor
+    hline(33, 34, 5, 'SK');                 // T2 → T3
+    hline(23, 24, 6, 'SK');                 // corridor → T2
+    hline(8, 10, 12, 'SK');                 // M1 → M2
+    hline(8, 10, 20, 'SK');                 // B1 → B2
+    hline(33, 34, 19, 'SK');                // B3 → B4
+    hline(23, 24, 14, 'SK');                // corridor → M3
+    hline(23, 24, 20, 'SK');                // corridor → B3
+    vline(14, 17, 15, 'SK');                // vertical drop: M2 → B2
+
+    // ═══════════════════════════════════════════════
+    //  EQUIPMENT & DETAILS
+    // ═══════════════════════════════════════════════
+    // UPS in approach zone corners
+    t[26][2] = 'SU'; t[26][3] = 'SU';
+    t[26][40] = 'SU'; t[26][41] = 'SU';
+    // Second monitoring station (bottom-right)
+    t[26][38] = 'SC'; t[26][39] = 'SC';
+    t[27][39] = '10';
+    // Corridor floor lights
+    t[6][21] = 'SL'; t[6][22] = 'SL';
+    t[18][21] = 'SL'; t[18][22] = 'SL';
+    // Grate patches in corridors
+    t[2][21] = 'SG'; t[2][22] = 'SG';
+    t[24][21] = 'SG'; t[24][22] = 'SG';
+    // Caution signs near entrance
+    t[27][19] = '12'; t[27][24] = '12';
+
+    // ═══════════════════════════════════════════════
+    //  ENTRANCE (gap in bottom wall)
+    // ═══════════════════════════════════════════════
+    for (let x = 20; x <= 23; x++) t[H - 1][x] = 'SF4';
+
+    // ═══════════════════════════════════════════════
+    //  LEVEL ASSIGNMENT
+    // ═══════════════════════════════════════════════
+    level.width  = W;
+    level.height = H;
+    level.tiles  = t;
+    level.backgroundFloor = 'SF4';
+    level.backgroundWall  = 'SW4';
+
+    level.npc = {
+        spriteId: 5,
+        x: 21,
+        y: 13,
+        name: 'System Admin',
+        questionLevel: 4,
+    };
+    level.portal = { x: 21, y: 1, targetLevel: 5 };
+    level.playerStart = { x: 21, y: 27 };
+
+    level.decorativeNpcs = [
+        { spriteId: 6, x: 5,  y: 5,  name: 'npc' },   // control room operator
+        { spriteId: 8, x: 22, y: 6,  name: 'npc' },   // corridor technician
+        { spriteId: 7, x: 5,  y: 12, name: 'npc' },   // bay M1 tech
+        { spriteId: 9, x: 38, y: 17, name: 'npc' },   // right zone tech
+    ];
+
+    finalizeCollisions(level, new Set([
+        'SW4', 'SR', 'SC', 'SU', 'SA', '12',
+    ]));
+}
+
 const LARGE_WORLD_SIZES = [
     { width: 86, height: 58 },
     { width: 92, height: 62 },
@@ -968,6 +1235,10 @@ ARENA_LEVELS.forEach((level, index) => {
     }
     if (level.id === 3) {
         buildLevel3LabLayout(level);
+        return;
+    }
+    if (level.id === 4) {
+        buildLevel4ServerRoomLayout(level);
         return;
     }
     applyLargeWorldLayout(level, size.width, size.height);
@@ -1454,7 +1725,10 @@ async function loadArenaAssets() {
         'chalkboard_large',
         // lab tiles (Level 3)
         'lab_floor', 'lab_wall', 'lab_partition', 'lab_monitor', 'lab_items',
-        'lab_office_chair', 'lab_teacher_desk', 'lab_shelf', 'lab_chalkboard_large'
+        'lab_office_chair', 'lab_teacher_desk', 'lab_shelf', 'lab_chalkboard_large',
+        // server room tiles (Level 4)
+        'server_floor', 'server_wall', 'server_console', 'server_pipe',
+        'server_grate', 'server_cable', 'server_ups', 'server_ac', 'server_light'
     ];
     outdoorTiles.forEach((name) => {
         tileUrls.push(`/assets/tiles/${name}.png`);
