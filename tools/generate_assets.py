@@ -1255,6 +1255,514 @@ def make_server_wall_blue():
 
 
 # ---------------------------------------------------------------------------
+#  Rooftop tiles (Level 5)
+#  Palette: light grey concrete panels, chain-link fence, HVAC, city skyline
+# ---------------------------------------------------------------------------
+
+def make_roof_floor():
+    """Light grey concrete roof panel with subtle grid seams – matches reference."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))
+    d = ImageDraw.Draw(img)
+    # Panel edge grid lines (subtle mortar / expansion joints)
+    d.line([(0, 0), (31, 0)], fill=rgba("#b0ada4"), width=1)
+    d.line([(0, 31), (31, 31)], fill=rgba("#b0ada4"), width=1)
+    d.line([(0, 0), (0, 31)], fill=rgba("#b0ada4"), width=1)
+    d.line([(31, 0), (31, 31)], fill=rgba("#b0ada4"), width=1)
+    # Inner highlight for panel depth
+    d.line([(1, 1), (30, 1)], fill=rgba("#ccc9c0"), width=1)
+    d.line([(1, 1), (1, 30)], fill=rgba("#ccc9c0"), width=1)
+    # Subtle speck texture
+    rng = random.Random(501)
+    for _ in range(18):
+        x = rng.randint(2, 29)
+        y = rng.randint(2, 29)
+        shade = rng.choice(["#b8b5ac", "#c4c1b8", "#bcb9b0", "#c8c5bc"])
+        d.point((x, y), fill=rgba(shade))
+    return img
+
+
+def make_roof_wall():
+    """Concrete parapet wall / roof edge — dark grey block."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#6a6e72"))
+    d = ImageDraw.Draw(img)
+    # Top cap stone
+    d.rectangle([0, 0, 31, 4], fill=rgba("#7a7e82"))
+    # Mortar lines
+    d.line([(0, 10), (31, 10)], fill=rgba("#5a5e62", 120), width=1)
+    d.line([(0, 20), (31, 20)], fill=rgba("#5a5e62", 120), width=1)
+    d.line([(16, 4), (16, 31)], fill=rgba("#5a5e62", 80), width=1)
+    # Outline
+    d.rectangle([0, 0, 31, 31], outline=rgba("#4a4e52", 160), width=1)
+    return img
+
+
+def make_roof_fence():
+    """Chain-link fence / metal railing – semi-transparent grid on dark posts."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Fence posts (dark metal)
+    d.rectangle([0, 2, 2, 29], fill=rgba("#4a5058"))
+    d.rectangle([29, 2, 31, 29], fill=rgba("#4a5058"))
+    # Top rail
+    d.rectangle([0, 2, 31, 4], fill=rgba("#5a6068"))
+    # Bottom rail
+    d.rectangle([0, 27, 31, 29], fill=rgba("#5a6068"))
+    # Chain-link mesh (diagonal cross-hatch)
+    for i in range(-32, 64, 5):
+        d.line([(i, 5), (i + 22, 27)], fill=rgba("#7a8088", 100), width=1)
+        d.line([(i + 22, 5), (i, 27)], fill=rgba("#7a8088", 100), width=1)
+    # Post caps
+    d.rectangle([0, 0, 3, 3], fill=rgba("#5a6068"))
+    d.rectangle([28, 0, 31, 3], fill=rgba("#5a6068"))
+    return img
+
+
+def make_roof_hvac():
+    """HVAC quad-fan unit (top-down view) – large industrial cooling."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Unit housing (grey metal box)
+    d.rectangle([2, 2, 29, 29], fill=rgba("#909498"), outline=rgba("#606468"), width=1)
+    # Four fan openings (2x2 grid)
+    for fx, fy in [(5, 5), (17, 5), (5, 17), (17, 17)]:
+        # Circular grill
+        d.ellipse([fx, fy, fx + 10, fy + 10], fill=rgba("#3a3e42"), outline=rgba("#707478"), width=1)
+        # Fan blades (cross)
+        cx, cy = fx + 5, fy + 5
+        d.line([(cx - 3, cy), (cx + 3, cy)], fill=rgba("#8a8e92"), width=1)
+        d.line([(cx, cy - 3), (cx, cy + 3)], fill=rgba("#8a8e92"), width=1)
+        # Hub
+        d.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=rgba("#707478"))
+    return img
+
+
+def make_roof_water_tank():
+    """Cylindrical rooftop water tank – silver/grey metal."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Tank shadow
+    d.ellipse([6, 8, 27, 28], fill=rgba("#a0a0a0", 60))
+    # Tank body (cylindrical - top-down = circle)
+    d.ellipse([5, 4, 26, 24], fill=rgba("#a0a8b0"), outline=rgba("#707880"), width=1)
+    # Top surface (lighter)
+    d.ellipse([7, 6, 24, 22], fill=rgba("#b8c0c8"))
+    # Lid / cap
+    d.ellipse([12, 11, 19, 17], fill=rgba("#909aa4"), outline=rgba("#707880"), width=1)
+    # Highlight reflection
+    d.arc([9, 8, 20, 18], 200, 320, fill=rgba("#d0d8e0", 160), width=1)
+    # Pipe connection (bottom)
+    d.rectangle([14, 24, 17, 28], fill=rgba("#606870"))
+    return img
+
+
+def make_roof_ac_unit():
+    """Wall-mounted AC / electrical box on roof floor."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Unit body (white/light grey box)
+    d.rectangle([3, 4, 28, 27], fill=rgba("#dde2e8"), outline=rgba("#a0a8b0"), width=1)
+    # Vent slats
+    for y in range(8, 24, 3):
+        d.line([(5, y), (26, y)], fill=rgba("#c0c8d0"), width=1)
+        d.line([(5, y + 1), (26, y + 1)], fill=rgba("#e0e6ec"), width=1)
+    # Status LED
+    d.ellipse([13, 5, 16, 7], fill=rgba("#33ccff"))
+    # Pipe/connection on bottom
+    d.rectangle([12, 27, 19, 30], fill=rgba("#808890"))
+    return img
+
+
+def make_roof_spotlight():
+    """Flood light on a short pole (top-down)."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Light glow circle on ground
+    d.ellipse([4, 4, 27, 27], fill=rgba("#e8e4d0", 50))
+    d.ellipse([8, 8, 23, 23], fill=rgba("#f0ecd8", 70))
+    # Pole (dark metal)
+    d.rectangle([14, 10, 17, 24], fill=rgba("#4a5058"))
+    # Pole base plate
+    d.rectangle([11, 22, 20, 26], fill=rgba("#5a6068"))
+    # Light fixture head
+    d.rectangle([10, 8, 21, 14], fill=rgba("#3a4048"))
+    d.rectangle([11, 9, 20, 13], fill=rgba("#f0e8c0"))
+    # Mounting bracket
+    d.rectangle([13, 14, 18, 16], fill=rgba("#4a5058"))
+    return img
+
+
+def make_roof_planter():
+    """Green plant in a rectangular concrete planter box."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Planter box (concrete)
+    d.rectangle([4, 12, 27, 28], fill=rgba("#8a8e82"), outline=rgba("#6a6e62"), width=1)
+    # Soil
+    d.rectangle([5, 13, 26, 20], fill=rgba("#5a4a30"))
+    # Green foliage (lush bush)
+    d.ellipse([2, 2, 16, 16], fill=rgba("#3a8a3a"))
+    d.ellipse([10, 4, 24, 18], fill=rgba("#4a9a4a"))
+    d.ellipse([16, 3, 29, 15], fill=rgba("#3d8d3d"))
+    # Highlights
+    rng = random.Random(502)
+    for _ in range(6):
+        x = rng.randint(4, 26)
+        y = rng.randint(3, 14)
+        d.point((x, y), fill=rgba("#5aaa5a", 180))
+    return img
+
+
+def make_roof_crate():
+    """Stacked cardboard boxes / crates on roof."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Bottom crate (larger)
+    d.rectangle([3, 14, 22, 28], fill=rgba("#a08050"), outline=rgba("#6a5030"), width=1)
+    d.line([(12, 14), (12, 28)], fill=rgba("#8a6a3a"), width=1)
+    d.line([(3, 21), (22, 21)], fill=rgba("#8a6a3a"), width=1)
+    # Top crate (smaller, offset)
+    d.rectangle([8, 4, 27, 16], fill=rgba("#b09060"), outline=rgba("#7a5a30"), width=1)
+    d.line([(17, 4), (17, 16)], fill=rgba("#9a7a4a"), width=1)
+    d.line([(8, 10), (27, 10)], fill=rgba("#9a7a4a"), width=1)
+    # Tape strips
+    d.rectangle([12, 4, 14, 16], fill=rgba("#c0a060", 80))
+    return img
+
+
+def make_roof_antenna():
+    """Satellite dish / antenna equipment on roof."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Base plate
+    d.rectangle([10, 22, 21, 28], fill=rgba("#606870"))
+    # Support pole
+    d.rectangle([14, 8, 17, 22], fill=rgba("#5a6268"))
+    # Dish (ellipse, viewed from above at angle)
+    d.ellipse([3, 2, 28, 20], fill=rgba("#b0b8c0"), outline=rgba("#808890"), width=1)
+    # Dish inner surface (concave)
+    d.ellipse([6, 5, 25, 17], fill=rgba("#c0c8d0"))
+    d.ellipse([10, 8, 21, 14], fill=rgba("#d0d8e0"))
+    # Feed horn (center)
+    d.ellipse([13, 9, 18, 13], fill=rgba("#5a6268"))
+    # LNB arm
+    d.line([(15, 11), (15, 5)], fill=rgba("#606870"), width=1)
+    d.line([(15, 5), (20, 3)], fill=rgba("#606870"), width=1)
+    return img
+
+
+def make_roof_pipe():
+    """Horizontal pipe / conduit running across roof surface."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Pipe shadow
+    d.rectangle([0, 16, 31, 20], fill=rgba("#a0a0a0", 40))
+    # Main pipe body (horizontal)
+    d.rectangle([0, 12, 31, 18], fill=rgba("#7a8590"))
+    # Highlight reflection
+    d.rectangle([0, 13, 31, 14], fill=rgba("#9aa5b0"))
+    # Pipe joints
+    for x in (6, 20):
+        d.rectangle([x, 11, x + 4, 19], fill=rgba("#8a95a0"))
+        d.line([(x, 11), (x + 4, 11)], fill=rgba("#9aa5b0"), width=1)
+        d.line([(x, 19), (x + 4, 19)], fill=rgba("#6a7580"), width=1)
+    return img
+
+
+def make_roof_building_facade():
+    """Building exterior facade (sandstone/brick) — visible below the roof edge."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#b09870"))
+    d = ImageDraw.Draw(img)
+    # Brick pattern
+    for y in range(0, BASE_TILE, 6):
+        d.line([(0, y), (31, y)], fill=rgba("#9a8260", 100), width=1)
+        offset = 0 if (y // 6) % 2 == 0 else 12
+        for x in range(offset, BASE_TILE + 12, 12):
+            d.line([(x, y), (x, y + 5)], fill=rgba("#9a8260", 60), width=1)
+    d.rectangle([0, 0, 31, 31], outline=rgba("#8a7250", 100), width=1)
+    return img
+
+
+def make_roof_building_window():
+    """Building facade with window — viewed from above/front."""
+    img = make_roof_building_facade()
+    d = ImageDraw.Draw(img)
+    # Window
+    d.rectangle([6, 4, 25, 22], fill=rgba("#2a4060"), outline=rgba("#8a7a5a"), width=1)
+    # Window panes (cross divider)
+    d.line([(15, 4), (15, 22)], fill=rgba("#6a8aa0", 140), width=1)
+    d.line([(6, 13), (25, 13)], fill=rgba("#6a8aa0", 140), width=1)
+    # Sill
+    d.rectangle([5, 22, 26, 24], fill=rgba("#a09068"))
+    # Glass reflection
+    d.line([(8, 6), (12, 6)], fill=rgba("#4a7aa0", 80), width=1)
+    return img
+
+
+def make_roof_building_door():
+    """Building entrance door on facade — main entry below roof."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#b09870"))
+    d = ImageDraw.Draw(img)
+    # Door frame columns
+    d.rectangle([2, 0, 6, 31], fill=rgba("#909498"))
+    d.rectangle([25, 0, 29, 31], fill=rgba("#909498"))
+    # Door (glass / dark)
+    d.rectangle([7, 2, 24, 31], fill=rgba("#2a3040"))
+    d.rectangle([8, 3, 23, 30], fill=rgba("#3a4a5a"))
+    # Door handle
+    d.rectangle([20, 14, 22, 18], fill=rgba("#c0c8d0"))
+    # Overhang / canopy at top
+    d.rectangle([0, 0, 31, 3], fill=rgba("#808890"))
+    d.rectangle([1, 1, 30, 2], fill=rgba("#909aa4"))
+    return img
+
+
+def make_roof_skyline():
+    """City skyline background — dark blue buildings against night sky."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#1a2a40"))
+    d = ImageDraw.Draw(img)
+    # Sky gradient (dark at top, slightly lighter at horizon)
+    d.rectangle([0, 0, 31, 10], fill=rgba("#14203a"))
+    d.rectangle([0, 10, 31, 20], fill=rgba("#1a2844"))
+    d.rectangle([0, 20, 31, 31], fill=rgba("#20304a"))
+    # Building silhouettes
+    rng = random.Random(503)
+    buildings = [(0, 8), (6, 14), (11, 6), (16, 10), (21, 12), (26, 7)]
+    for bx, bh in buildings:
+        by = 31 - bh
+        bw = rng.randint(4, 6)
+        shade = rng.choice(["#2a3a50", "#1e2e44", "#24344a", "#2e3e54"])
+        d.rectangle([bx, by, bx + bw, 31], fill=rgba(shade))
+        # lit windows (small yellow/blue dots)
+        for wy in range(by + 2, 30, 3):
+            for wx in range(bx + 1, bx + bw, 2):
+                if rng.random() > 0.4:
+                    wc = rng.choice(["#e8c860", "#a0c0e0", "#60a0d0", "#e0b040"])
+                    d.point((wx, wy), fill=rgba(wc, rng.randint(120, 220)))
+    return img
+
+
+def make_roof_vent():
+    """Small floor vent / exhaust grate on roof surface."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Vent housing (square, metal)
+    d.rectangle([6, 6, 25, 25], fill=rgba("#5a6268"), outline=rgba("#4a5258"), width=1)
+    # Grate slats
+    for y in range(9, 23, 3):
+        d.line([(8, y), (23, y)], fill=rgba("#3a4248"), width=1)
+        d.line([(8, y + 1), (23, y + 1)], fill=rgba("#6a7278"), width=1)
+    return img
+
+
+def make_roof_electrical_box():
+    """Electrical junction box mounted on roof surface."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Box body
+    d.rectangle([4, 6, 27, 26], fill=rgba("#808890"), outline=rgba("#606870"), width=1)
+    # Panel face
+    d.rectangle([6, 8, 25, 24], fill=rgba("#909aa4"))
+    # Warning label
+    d.rectangle([10, 10, 21, 16], fill=rgba("#e0c030"))
+    d.line([(15, 11), (15, 15)], fill=rgba("#1a1a1a"), width=1)
+    d.point((15, 14), fill=rgba("#1a1a1a"))
+    # Conduit pipe connections
+    d.rectangle([1, 14, 4, 18], fill=rgba("#606870"))
+    d.rectangle([27, 14, 30, 18], fill=rgba("#606870"))
+    # Latch
+    d.rectangle([14, 22, 17, 24], fill=rgba("#505a62"))
+    return img
+
+
+def make_roof_hvac_fan():
+    """Single LARGE industrial fan filling the entire tile — one fan per tile."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#8a9098"))
+    d = ImageDraw.Draw(img)
+    # Metal housing background
+    d.rectangle([0, 0, 31, 31], fill=rgba("#909498"))
+    # Large circular fan opening (fills most of tile)
+    d.ellipse([1, 1, 30, 30], fill=rgba("#2a3038"), outline=rgba("#606468"), width=1)
+    # Outer protective grill ring
+    d.ellipse([3, 3, 28, 28], outline=rgba("#5a6270", 140), width=1)
+    # Inner grill ring
+    d.ellipse([6, 6, 25, 25], outline=rgba("#4a5260", 100), width=1)
+    # Fan blades — 6 wide blades radiating from center
+    cx, cy = 15, 15
+    blade_tips = [
+        (15, 2), (26, 8), (26, 22),
+        (15, 28), (5, 22), (5, 8),
+    ]
+    blade_edges = [
+        (19, 4), (27, 14), (23, 26),
+        (11, 27), (3, 17), (8, 4),
+    ]
+    for (tx, ty), (ex, ey) in zip(blade_tips, blade_edges):
+        d.polygon([(cx, cy), (tx, ty), (ex, ey)], fill=rgba("#6a7280"))
+        # Blade edge highlight
+        d.line([(cx, cy), (tx, ty)], fill=rgba("#7a828e"), width=1)
+    # Center hub (large bolt)
+    d.ellipse([10, 10, 21, 21], fill=rgba("#5a6268"), outline=rgba("#3a4250"), width=1)
+    d.ellipse([12, 12, 19, 19], fill=rgba("#6a7278"))
+    d.ellipse([14, 14, 17, 17], fill=rgba("#808890"))
+    return img
+
+
+def make_roof_hvac_frame():
+    """Metal HVAC housing frame/border — surrounds the fans."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0bdb4"))  # roof floor base
+    d = ImageDraw.Draw(img)
+    # Metal frame plate
+    d.rectangle([0, 0, 31, 31], fill=rgba("#909498"))
+    # Panel texture (subtle grooves)
+    d.rectangle([1, 1, 30, 30], outline=rgba("#7a8088", 120), width=1)
+    # Cross-hatch texture
+    for i in range(4, 28, 6):
+        d.line([(i, 2), (i, 29)], fill=rgba("#848c94", 60), width=1)
+    for i in range(4, 28, 6):
+        d.line([(2, i), (29, i)], fill=rgba("#848c94", 60), width=1)
+    # Corner bolts
+    for bx, by in [(4, 4), (27, 4), (4, 27), (27, 27)]:
+        d.ellipse([bx - 2, by - 2, bx + 2, by + 2], fill=rgba("#6a7078"), outline=rgba("#5a6068"), width=1)
+        d.point((bx, by), fill=rgba("#8a9098"))
+    # Edge lip (raised border feel)
+    d.rectangle([0, 0, 31, 1], fill=rgba("#a0a8b0"))
+    d.rectangle([0, 30, 31, 31], fill=rgba("#7a8288"))
+    d.rectangle([0, 0, 1, 31], fill=rgba("#a0a8b0"))
+    d.rectangle([30, 0, 31, 31], fill=rgba("#7a8288"))
+    return img
+
+
+def make_roof_access_wall():
+    """Grey-blue concrete wall for the roof stairwell/access structure."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#7a8898"))
+    d = ImageDraw.Draw(img)
+    # Wall body (blue-grey concrete panels)
+    d.rectangle([0, 0, 31, 31], fill=rgba("#7a8898"))
+    # Horizontal panel seam
+    d.line([(0, 15), (31, 15)], fill=rgba("#6a7888"), width=1)
+    d.line([(0, 16), (31, 16)], fill=rgba("#8a98a8"), width=1)
+    # Vertical grooves (panel dividers)
+    d.line([(10, 0), (10, 31)], fill=rgba("#6a7888", 80), width=1)
+    d.line([(21, 0), (21, 31)], fill=rgba("#6a7888", 80), width=1)
+    # Top trim / cornice
+    d.rectangle([0, 0, 31, 3], fill=rgba("#8a98a8"))
+    d.line([(0, 3), (31, 3)], fill=rgba("#6a7888"), width=1)
+    # Bottom base
+    d.rectangle([0, 28, 31, 31], fill=rgba("#6a7888"))
+    # Outline
+    d.rectangle([0, 0, 31, 31], outline=rgba("#5a6878", 140), width=1)
+    return img
+
+
+def make_roof_access_door():
+    """Dark doorway in the roof access structure — metal/glass door."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#7a8898"))
+    d = ImageDraw.Draw(img)
+    # Wall base
+    d.rectangle([0, 0, 31, 31], fill=rgba("#7a8898"))
+    # Top trim
+    d.rectangle([0, 0, 31, 3], fill=rgba("#8a98a8"))
+    d.line([(0, 3), (31, 3)], fill=rgba("#6a7888"), width=1)
+    # Bottom base
+    d.rectangle([0, 28, 31, 31], fill=rgba("#6a7888"))
+    # Door frame (dark metal)
+    d.rectangle([3, 4, 28, 27], fill=rgba("#3a4858"), outline=rgba("#2a3848"), width=1)
+    # Door surface (dark glass/metal)
+    d.rectangle([5, 6, 26, 25], fill=rgba("#2a3444"))
+    # Door window (small dark glass pane at top)
+    d.rectangle([7, 7, 24, 14], fill=rgba("#1a2838"))
+    d.rectangle([8, 8, 23, 13], fill=rgba("#243448"))
+    # Window divider
+    d.line([(15, 7), (15, 14)], fill=rgba("#3a4858"), width=1)
+    # Door handle
+    d.rectangle([22, 18, 24, 22], fill=rgba("#8a98a8"))
+    d.rectangle([22, 16, 24, 17], fill=rgba("#909aa4"))
+    # Threshold
+    d.rectangle([3, 26, 28, 27], fill=rgba("#5a6878"))
+    # Outline
+    d.rectangle([0, 0, 31, 31], outline=rgba("#5a6878", 140), width=1)
+    return img
+
+
+def make_roof_access_light():
+    """Roof access wall section with wall-mounted light fixture on top."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#7a8898"))
+    d = ImageDraw.Draw(img)
+    # Wall body
+    d.rectangle([0, 0, 31, 31], fill=rgba("#7a8898"))
+    # Horizontal panel seam
+    d.line([(0, 15), (31, 15)], fill=rgba("#6a7888"), width=1)
+    d.line([(0, 16), (31, 16)], fill=rgba("#8a98a8"), width=1)
+    # Top trim / cornice
+    d.rectangle([0, 0, 31, 3], fill=rgba("#8a98a8"))
+    d.line([(0, 3), (31, 3)], fill=rgba("#6a7888"), width=1)
+    # Bottom base
+    d.rectangle([0, 28, 31, 31], fill=rgba("#6a7888"))
+    # Light fixture (warm glow lamp on wall)
+    # Bracket mount
+    d.rectangle([12, 2, 19, 6], fill=rgba("#5a6878"))
+    # Light dome (warm yellow/amber)
+    d.ellipse([10, 0, 21, 8], fill=rgba("#e0c060"), outline=rgba("#b0a040"), width=1)
+    # Inner glow
+    d.ellipse([12, 1, 19, 6], fill=rgba("#f0d870"))
+    d.ellipse([13, 2, 18, 5], fill=rgba("#fff0a0"))
+    # Light glow on wall below
+    d.ellipse([8, 6, 23, 16], fill=rgba("#f0e0a0", 25))
+    d.ellipse([10, 7, 21, 13], fill=rgba("#f0e0a0", 40))
+    # Vertical groove details
+    d.line([(10, 16), (10, 27)], fill=rgba("#6a7888", 80), width=1)
+    d.line([(21, 16), (21, 27)], fill=rgba("#6a7888", 80), width=1)
+    # Outline
+    d.rectangle([0, 0, 31, 31], outline=rgba("#5a6878", 140), width=1)
+    return img
+
+
+def generate_rooftop_tiles_from_image():
+    """Extract water tank and AC tiles from user-provided rooftop_ref.png."""
+    source_path = TILES_DIR / "rooftop_ref.png"
+    if not source_path.exists():
+        return False
+
+    source = Image.open(source_path).convert("RGBA")
+    width, height = source.size
+    resample_attr = getattr(Image, "Resampling", Image)
+
+    # --- Water tank: crop the left tank area ---
+    # Tanks are in the upper-left of the reference, about 8-22% from left, 6-22% from top
+    tank_cx = int(width * 0.13)
+    tank_cy = int(height * 0.13)
+    tank_tile = crop_to_base_tile(source, tank_cx, tank_cy, sample_size=max(80, int(height * 0.12)))
+    save(upscale_tile(tank_tile), TILES_DIR / "roof_water_tank.png")
+
+    # --- AC unit: crop from left-side of reference ---
+    # AC unit is on the left wall, roughly 4-10% from left, 32-42% from top
+    ac_cx = int(width * 0.065)
+    ac_cy = int(height * 0.37)
+    ac_tile = crop_to_base_tile(source, ac_cx, ac_cy, sample_size=max(60, int(height * 0.10)))
+    save(upscale_tile(ac_tile), TILES_DIR / "roof_ac_unit.png")
+
+    # --- Roof access structure: extract wall/door/light tiles ---
+    # Structure is in the upper-right, roughly 82-96% from left, 4-18% from top
+    # Access wall
+    aw_cx = int(width * 0.88)
+    aw_cy = int(height * 0.12)
+    aw_tile = crop_to_base_tile(source, aw_cx, aw_cy, sample_size=max(60, int(height * 0.08)))
+    save(upscale_tile(aw_tile), TILES_DIR / "roof_access_wall.png")
+    # Access door
+    ad_cx = int(width * 0.86)
+    ad_cy = int(height * 0.10)
+    ad_tile = crop_to_base_tile(source, ad_cx, ad_cy, sample_size=max(50, int(height * 0.07)))
+    save(upscale_tile(ad_tile), TILES_DIR / "roof_access_door.png")
+    # Access light
+    al_cx = int(width * 0.92)
+    al_cy = int(height * 0.06)
+    al_tile = crop_to_base_tile(source, al_cx, al_cy, sample_size=max(50, int(height * 0.07)))
+    save(upscale_tile(al_tile), TILES_DIR / "roof_access_light.png")
+
+    return True
+
+
+# ---------------------------------------------------------------------------
 #  Generation entry points
 # ---------------------------------------------------------------------------
 
@@ -1355,6 +1863,34 @@ def generate_tiles():
     save(upscale_tile(make_server_panel()), TILES_DIR / "server_panel.png")
     save(upscale_tile(make_server_fan()), TILES_DIR / "server_fan.png")
     save(upscale_tile(make_server_wall_blue()), TILES_DIR / "server_wall_blue.png")
+
+    # ---- Rooftop tiles (used by Level 5) ----
+    save(upscale_tile(make_roof_floor()), TILES_DIR / "roof_floor.png")
+    save(upscale_tile(make_roof_wall()), TILES_DIR / "roof_wall.png")
+    save(upscale_tile(make_roof_fence()), TILES_DIR / "roof_fence.png")
+    save(upscale_tile(make_roof_hvac()), TILES_DIR / "roof_hvac.png")
+    save(upscale_tile(make_roof_water_tank()), TILES_DIR / "roof_water_tank.png")
+    save(upscale_tile(make_roof_ac_unit()), TILES_DIR / "roof_ac_unit.png")
+    save(upscale_tile(make_roof_spotlight()), TILES_DIR / "roof_spotlight.png")
+    save(upscale_tile(make_roof_planter()), TILES_DIR / "roof_planter.png")
+    save(upscale_tile(make_roof_crate()), TILES_DIR / "roof_crate.png")
+    save(upscale_tile(make_roof_antenna()), TILES_DIR / "roof_antenna.png")
+    save(upscale_tile(make_roof_pipe()), TILES_DIR / "roof_pipe.png")
+    save(upscale_tile(make_roof_building_facade()), TILES_DIR / "roof_building_facade.png")
+    save(upscale_tile(make_roof_building_window()), TILES_DIR / "roof_building_window.png")
+    save(upscale_tile(make_roof_building_door()), TILES_DIR / "roof_building_door.png")
+    save(upscale_tile(make_roof_skyline()), TILES_DIR / "roof_skyline.png")
+    save(upscale_tile(make_roof_vent()), TILES_DIR / "roof_vent.png")
+    save(upscale_tile(make_roof_electrical_box()), TILES_DIR / "roof_electrical_box.png")
+    save(upscale_tile(make_roof_hvac_fan()), TILES_DIR / "roof_hvac_fan.png")
+    save(upscale_tile(make_roof_hvac_frame()), TILES_DIR / "roof_hvac_frame.png")
+    save(upscale_tile(make_roof_access_wall()), TILES_DIR / "roof_access_wall.png")
+    save(upscale_tile(make_roof_access_door()), TILES_DIR / "roof_access_door.png")
+    save(upscale_tile(make_roof_access_light()), TILES_DIR / "roof_access_light.png")
+
+    # Override water tank, AC, and access tiles from reference image if available
+    if generate_rooftop_tiles_from_image():
+        print("  ✓ Extracted rooftop tiles from rooftop_ref.png")
 
 
 def generate_sprites():

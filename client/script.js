@@ -198,6 +198,29 @@ function getTileImageName(tileType, visualLevel) {
         'SN': 'server_panel.png',
         'SV': 'server_fan.png',
         'SB': 'server_wall_blue.png',
+        // rooftop tiles (Level 5)
+        'RF': 'roof_floor.png',
+        'RW5': 'roof_wall.png',
+        'RFN': 'roof_fence.png',
+        'RHV': 'roof_hvac.png',
+        'RWT': 'roof_water_tank.png',
+        'RAC': 'roof_ac_unit.png',
+        'RSL': 'roof_spotlight.png',
+        'RPL': 'roof_planter.png',
+        'RCR': 'roof_crate.png',
+        'RAN': 'roof_antenna.png',
+        'RPP': 'roof_pipe.png',
+        'RBF': 'roof_building_facade.png',
+        'RBW': 'roof_building_window.png',
+        'RBD': 'roof_building_door.png',
+        'RSK': 'roof_skyline.png',
+        'RVN': 'roof_vent.png',
+        'REB': 'roof_electrical_box.png',
+        'RHF': 'roof_hvac_fan.png',
+        'RHR': 'roof_hvac_frame.png',
+        'RAW5': 'roof_access_wall.png',
+        'RAD5': 'roof_access_door.png',
+        'RAL5': 'roof_access_light.png',
     };
     return tileMap[tileType] || `floor_l${visualLevel}.png`;
 }
@@ -258,12 +281,12 @@ const ARENA_LEVELS = [
     {
         id: 5,
         name: 'Top Floor',
-        width: 16,
-        height: 12,
-        tiles: createEmptyMap(16, 12),
-        npc: { spriteId: 5, x: 8, y: 5, name: 'Principal', questionLevel: 5 },
-        portal: { x: 8, y: 3, targetLevel: null },
-        playerStart: { x: 8, y: 9 },
+        width: 52,
+        height: 38,
+        tiles: createEmptyMap(52, 38),
+        npc: { spriteId: 5, x: 26, y: 18, name: 'Principal', questionLevel: 5 },
+        portal: { x: 26, y: 3, targetLevel: null },
+        playerStart: { x: 26, y: 27 },
     },
 ];
 
@@ -285,22 +308,245 @@ finalizeCollisions(ARENA_LEVELS[0], new Set(['1', '7', '4', '6']));
 
 // (Level 3 - Lab is now handled by buildLevel3LabLayout below)
 
-function decorateRooftop(level) {
-    addBorderWalls(level.tiles, 16, 12);
-    level.tiles[2][2] = '12';
-    level.tiles[2][13] = '12';
-    for (let x = 6; x <= 10; x++) {
-        for (let y = 4; y <= 6; y++) {
-            if (x === 6 || x === 10 || y === 4 || y === 6) {
-                level.tiles[y][x] = '1';
-            }
+// ---------------------------------------------------------------------------
+//  Level 5 — Rooftop  (detailed rooftop layout based on reference image)
+// ---------------------------------------------------------------------------
+function buildLevel5RooftopLayout(level) {
+    const W = 52;
+    const H = 38;
+    const t = [];
+    for (let y = 0; y < H; y++) t.push(Array(W).fill('RF'));
+
+    // ── Helpers ──
+    function fill(x1, y1, x2, y2, tile) {
+        for (let yy = y1; yy <= y2; yy++)
+            for (let xx = x1; xx <= x2; xx++)
+                t[yy][xx] = tile;
+    }
+    function hline(x1, x2, y, tile) {
+        for (let x = x1; x <= x2; x++) t[y][x] = tile;
+    }
+    function vline(y1, y2, x, tile) {
+        for (let yy = y1; yy <= y2; yy++) t[yy][x] = tile;
+    }
+
+    // ═══════════════════════════════════════════════
+    //  1.  SKYLINE BORDER (top 2 rows + left/right 2 cols)
+    //      City skyline wraps around the top and sides
+    // ═══════════════════════════════════════════════
+    fill(0, 0, W - 1, 1, 'RSK');           // top 2 rows skyline
+    vline(0, H - 1, 0, 'RSK');             // left column skyline
+    vline(0, H - 1, 1, 'RSK');             // left column 2
+    vline(0, H - 1, W - 1, 'RSK');         // right column skyline
+    vline(0, H - 1, W - 2, 'RSK');         // right column 2
+
+    // ═══════════════════════════════════════════════
+    //  2.  PARAPET WALL (inner border around roof area)
+    // ═══════════════════════════════════════════════
+    hline(2, W - 3, 2, 'RW5');             // top parapet
+    vline(2, H - 8, 2, 'RW5');             // left parapet
+    vline(2, H - 8, W - 3, 'RW5');         // right parapet
+
+    // ═══════════════════════════════════════════════
+    //  3.  CHAIN-LINK FENCE (lower perimeter before building facade)
+    // ═══════════════════════════════════════════════
+    hline(2, W - 3, H - 8, 'RFN');         // fence across bottom of roof area
+    // Fence gap for entrance (center, 4 tiles wide)
+    for (let x = 24; x <= 28; x++) t[H - 8][x] = 'RF';
+
+    // ═══════════════════════════════════════════════
+    //  4.  BUILDING FACADE (bottom zone, rows H-7 to H-1)
+    // ═══════════════════════════════════════════════
+    // Facade with windows
+    for (let y = H - 7; y <= H - 1; y++) {
+        for (let x = 2; x <= W - 3; x++) {
+            t[y][x] = 'RBF';
         }
     }
-    level.tiles[3][8] = '3';
-    finalizeCollisions(level, new Set(['1']));
+    // Windows on facade (evenly spaced)
+    for (let y = H - 6; y <= H - 2; y += 2) {
+        for (let x = 4; x <= W - 5; x += 3) {
+            if (Math.abs(x - 26) <= 1) continue; // skip entrance
+            t[y][x] = 'RBW';
+        }
+    }
+    // Main entrance door (center bottom)
+    t[H - 4][26] = 'RBD';
+    t[H - 3][26] = 'RBD';
+
+    // ═══════════════════════════════════════════════
+    //  5.  WATER TANKS (top-left and bottom-right, like reference)
+    // ═══════════════════════════════════════════════
+    // Top-left water tanks (2 tanks side by side)
+    t[3][4] = 'RWT'; t[3][5] = 'RWT';
+    t[4][4] = 'RWT'; t[4][5] = 'RWT';
+    t[3][7] = 'RWT'; t[3][8] = 'RWT';
+    t[4][7] = 'RWT'; t[4][8] = 'RWT';
+
+    // Bottom-right water tanks
+    t[H - 10][W - 7] = 'RWT'; t[H - 10][W - 6] = 'RWT';
+    t[H - 9][W - 7] = 'RWT'; t[H - 9][W - 6] = 'RWT';
+    t[H - 10][W - 10] = 'RWT'; t[H - 10][W - 9] = 'RWT';
+    t[H - 9][W - 10] = 'RWT'; t[H - 9][W - 9] = 'RWT';
+
+    // ═══════════════════════════════════════════════
+    //  6.  HVAC UNIT — 4 big fans in metal housing
+    // ═══════════════════════════════════════════════
+    // 4×4 grid: frame border with 2×2 fan center (4 big fans)
+    fill(24, 9, 27, 12, 'RHR');              // fill all with metal frame
+    t[10][25] = 'RHF'; t[10][26] = 'RHF';   // top-row fans
+    t[11][25] = 'RHF'; t[11][26] = 'RHF';   // bottom-row fans
+
+    // ═══════════════════════════════════════════════
+    //  7.  AC UNITS / ELECTRICAL EQUIPMENT (left side)
+    // ═══════════════════════════════════════════════
+    // AC units along left wall
+    t[7][3] = 'RAC'; t[8][3] = 'RAC';
+    t[10][3] = 'RAC'; t[11][3] = 'RAC';
+    t[7][4] = 'REB'; t[8][4] = 'REB';
+
+    // Pipes connecting AC units
+    hline(3, 6, 9, 'RPP');
+    hline(3, 6, 12, 'RPP');
+
+    // Additional AC cluster on left-center
+    t[15][3] = 'RAC'; t[16][3] = 'RAC';
+    t[15][4] = 'REB';
+    hline(3, 5, 17, 'RPP');
+
+    // ═══════════════════════════════════════════════
+    //  8.  ANTENNA / SATELLITE DISH (top-left area)
+    // ═══════════════════════════════════════════════
+    t[6][10] = 'RAN'; t[6][11] = 'RAN';
+    t[7][10] = 'RAN'; t[7][11] = 'RAN';
+
+    // ═══════════════════════════════════════════════
+    //  9.  PLANTERS (along top-right edge & scattered)
+    // ═══════════════════════════════════════════════
+    // Top-right planter row
+    for (let x = W - 8; x <= W - 4; x += 2) {
+        t[3][x] = 'RPL';
+    }
+    // Right side planters
+    t[8][W - 4] = 'RPL';
+    t[12][W - 4] = 'RPL';
+    t[16][W - 4] = 'RPL';
+
+    // Left side scattered planter
+    t[20][4] = 'RPL';
+    t[24][4] = 'RPL';
+
+    // ═══════════════════════════════════════════════
+    //  10. SPOTLIGHTS (flood lights on poles)
+    // ═══════════════════════════════════════════════
+    t[15][14] = 'RSL';
+    t[15][37] = 'RSL';
+    t[22][14] = 'RSL';
+    t[22][37] = 'RSL';
+    // Additional spotlights near fence
+    t[H - 9][10] = 'RSL';
+    t[H - 9][41] = 'RSL';
+
+    // ═══════════════════════════════════════════════
+    //  11. CRATES / BOXES (lower-left area, like reference)
+    // ═══════════════════════════════════════════════
+    t[H - 10][4] = 'RCR'; t[H - 10][5] = 'RCR';
+    t[H - 11][4] = 'RCR'; t[H - 11][5] = 'RCR';
+    t[H - 11][6] = 'RCR';
+
+    // ═══════════════════════════════════════════════
+    //  12. ROOF VENTS (scattered across floor)
+    // ═══════════════════════════════════════════════
+    t[10][18] = 'RVN'; t[10][33] = 'RVN';
+    t[18][10] = 'RVN'; t[18][40] = 'RVN';
+    t[24][18] = 'RVN'; t[24][33] = 'RVN';
+
+    // ═══════════════════════════════════════════════
+    //  13. PIPE RUNS (connecting equipment)
+    // ═══════════════════════════════════════════════
+    // Horizontal pipes along top (connecting tanks to HVAC)
+    hline(9, 21, 4, 'RPP');
+    // Pipe from HVAC to right side
+    hline(30, W - 5, 10, 'RPP');
+    // Vertical pipe (using floor vents as markers) left side
+    vline(13, 18, 6, 'RPP');
+
+    // ═══════════════════════════════════════════════
+    //  14. ADDITIONAL DETAIL PROPS
+    // ═══════════════════════════════════════════════
+    // Caution signs near HVAC
+    t[8][24] = '12'; t[8][27] = '12';
+    // Benches / seating near center
+    t[20][20] = 'BN'; t[20][32] = 'BN';
+
+    // Roof access structure — stairwell / lift (top-right corner)
+    // Row 3: lights on corners, wall sections between
+    t[3][43] = 'RAL5'; t[3][44] = 'RAW5'; t[3][45] = 'RAW5';
+    t[3][46] = 'RAW5'; t[3][47] = 'RAL5';
+    // Row 4: walls flanking two doors
+    t[4][43] = 'RAW5'; t[4][44] = 'RAD5'; t[4][45] = 'RAW5';
+    t[4][46] = 'RAD5'; t[4][47] = 'RAW5';
+    // Row 5: wall base
+    t[5][43] = 'RAW5'; t[5][44] = 'RAW5'; t[5][45] = 'RAW5';
+    t[5][46] = 'RAW5'; t[5][47] = 'RAW5';
+
+    // ═══════════════════════════════════════════════
+    //  15. PORTAL (exit point — top center area)
+    // ═══════════════════════════════════════════════
+    t[3][26] = '3';
+
+    // ═══════════════════════════════════════════════
+    //  16. PROTECT KEY POSITIONS
+    // ═══════════════════════════════════════════════
+    const npcPos = { x: 26, y: 18 };
+    const portalPos = { x: 26, y: 3 };
+    const spawnPos = { x: 26, y: 27 };
+
+    [npcPos, spawnPos].forEach((pt) => {
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const py = pt.y + dy;
+                const px = pt.x + dx;
+                if (px <= 2 || py <= 2 || px >= W - 3 || py >= H - 8) continue;
+                const cur = t[py][px];
+                if (['RW5', 'RFN', 'RWT', 'RHV', 'RHF', 'RHR', 'RAC', 'RAN', 'RCR', 'REB', 'RPP', 'RPL', 'RSL', 'RVN', 'RAW5', 'RAD5', 'RAL5', '12', 'BN'].includes(cur)) {
+                    t[py][px] = 'RF';
+                }
+            }
+        }
+    });
+
+    // ═══════════════════════════════════════════════
+    //  17. LEVEL ASSIGNMENT
+    // ═══════════════════════════════════════════════
+    level.width = W;
+    level.height = H;
+    level.tiles = t;
+    level.backgroundFloor = 'RF';
+    level.backgroundWall = 'RW5';
+
+    level.npc = {
+        spriteId: 5,
+        x: npcPos.x,
+        y: npcPos.y,
+        name: 'Principal',
+        questionLevel: 5,
+    };
+    level.portal = { x: portalPos.x, y: portalPos.y, targetLevel: null };
+    level.playerStart = { x: spawnPos.x, y: spawnPos.y };
+
+    level.decorativeNpcs = [
+        { spriteId: 6, x: 8,  y: 16, name: 'npc' },
+        { spriteId: 9, x: 40, y: 20, name: 'npc' },
+    ];
+
+    finalizeCollisions(level, new Set([
+        'RW5', 'RWT', 'RHV', 'RHF', 'RHR', 'RAC', 'RAN', 'RCR', 'REB', 'RSK',
+        'RBF', 'RBW', 'RBD', 'RAW5', 'RAD5', 'RAL5', '12', 'BN',
+    ]));
 }
 
-decorateRooftop(ARENA_LEVELS[5]);
+buildLevel5RooftopLayout(ARENA_LEVELS[5]);
 
 function fillTileRect(tiles, x1, y1, x2, y2, value) {
     for (let y = y1; y <= y2; y++) {
@@ -1329,6 +1575,10 @@ ARENA_LEVELS.forEach((level, index) => {
         buildLevel4ServerRoomLayout(level);
         return;
     }
+    if (level.id === 5) {
+        // already built by buildLevel5RooftopLayout above
+        return;
+    }
     applyLargeWorldLayout(level, size.width, size.height);
 });
 
@@ -1818,7 +2068,15 @@ async function loadArenaAssets() {
         'server_floor', 'server_wall', 'server_console', 'server_pipe',
         'server_grate', 'server_cable', 'server_cable_h', 'server_ups',
         'server_ac', 'server_light', 'server_floor_center', 'server_panel',
-        'server_fan', 'server_wall_blue'
+        'server_fan', 'server_wall_blue',
+        // rooftop tiles (Level 5)
+        'roof_floor', 'roof_wall', 'roof_fence', 'roof_hvac',
+        'roof_water_tank', 'roof_ac_unit', 'roof_spotlight', 'roof_planter',
+        'roof_crate', 'roof_antenna', 'roof_pipe', 'roof_building_facade',
+        'roof_building_window', 'roof_building_door', 'roof_skyline',
+        'roof_vent', 'roof_electrical_box',
+        'roof_hvac_fan', 'roof_hvac_frame',
+        'roof_access_wall', 'roof_access_door', 'roof_access_light'
     ];
     outdoorTiles.forEach((name) => {
         tileUrls.push(`/assets/tiles/${name}.png`);
