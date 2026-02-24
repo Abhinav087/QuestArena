@@ -1147,6 +1147,113 @@ def make_server_light():
     return img
 
 
+def make_server_cable_h():
+    """Horizontal cable tray on light floor — rotated version of vertical cable."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light floor beneath
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c0c6ce"))
+    # Cable tray (dark metallic channel) — horizontal
+    d.rectangle([0, 11, 31, 20], fill=rgba("#505a68"))
+    d.line([(0, 11), (31, 11)], fill=rgba("#6a7484"), width=1)
+    d.line([(0, 20), (31, 20)], fill=rgba("#6a7484"), width=1)
+    # Individual cables (colored)
+    d.line([(0, 13), (31, 13)], fill=rgba("#4466dd"), width=1)
+    d.line([(0, 15), (31, 15)], fill=rgba("#dd4444"), width=1)
+    d.line([(0, 17), (31, 17)], fill=rgba("#44bb44"), width=1)
+    d.line([(0, 19), (31, 19)], fill=rgba("#ddaa22"), width=1)
+    return img
+
+
+def make_server_floor_center():
+    """Lighter raised-floor for center monitoring area with dashed border."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Brighter floor
+    d.rectangle([0, 0, 31, 31], fill=rgba("#d8dde5"))
+    # Panel edge grid
+    d.line([(0, 0), (31, 0)], fill=rgba("#c0c8d2"), width=1)
+    d.line([(0, 31), (31, 31)], fill=rgba("#c0c8d2"), width=1)
+    d.line([(0, 0), (0, 31)], fill=rgba("#c0c8d2"), width=1)
+    d.line([(31, 0), (31, 31)], fill=rgba("#c0c8d2"), width=1)
+    # Inner highlight
+    d.line([(1, 1), (30, 1)], fill=rgba("#e0e5ed"), width=1)
+    d.line([(1, 1), (1, 30)], fill=rgba("#e0e5ed"), width=1)
+    # Corner screws
+    for cx, cy in [(4, 4), (27, 4), (4, 27), (27, 27)]:
+        d.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=rgba("#b0b8c2"))
+    return img
+
+
+def make_server_panel():
+    """Electrical distribution panel on dark wall background."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Wall background
+    d.rectangle([0, 0, 31, 31], fill=rgba("#3a4050"))
+    # Panel cabinet body
+    d.rectangle([3, 3, 28, 28], fill=rgba("#4a5464"), outline=rgba("#3a4050"), width=1)
+    # Inner panel face
+    d.rectangle([5, 5, 26, 26], fill=rgba("#505a6a"))
+    # Circuit breaker rows
+    for y in range(7, 24, 4):
+        for x in range(7, 24, 5):
+            d.rectangle([x, y, x + 3, y + 2], fill=rgba("#2a3040"))
+    # Status LEDs
+    d.ellipse([7, 5, 9, 7], fill=rgba("#33ff33"))
+    d.ellipse([11, 5, 13, 7], fill=rgba("#ff3333"))
+    # Warning stripe at bottom
+    for x in range(5, 25, 4):
+        d.rectangle([x, 25, x + 1, 27], fill=rgba("#ddaa00"))
+    return img
+
+
+def make_server_fan():
+    """Cooling fan / exhaust vent unit on wall."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Wall background
+    d.rectangle([0, 0, 31, 31], fill=rgba("#3a4050"))
+    # Fan housing (square mount)
+    d.rectangle([2, 2, 29, 29], fill=rgba("#2a3040"), outline=rgba("#4a5464"), width=1)
+    # Circular fan opening
+    d.ellipse([4, 4, 27, 27], fill=rgba("#3a4450"), outline=rgba("#5a6474"), width=1)
+    # Fan blades
+    cx, cy = 15, 15
+    d.line([(cx, cy - 9), (cx, cy + 9)], fill=rgba("#6a7488"), width=2)
+    d.line([(cx - 9, cy), (cx + 9, cy)], fill=rgba("#6a7488"), width=2)
+    d.line([(cx - 6, cy - 6), (cx + 6, cy + 6)], fill=rgba("#6a7488"), width=1)
+    d.line([(cx - 6, cy + 6), (cx + 6, cy - 6)], fill=rgba("#6a7488"), width=1)
+    # Center hub
+    d.ellipse([12, 12, 19, 19], fill=rgba("#5a6478"))
+    # Outer grill ring
+    d.ellipse([6, 6, 25, 25], outline=rgba("#5a6478"), width=1)
+    return img
+
+
+def make_server_wall_blue():
+    """Wall panel with blue LED accent strip along edge."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Dark wall base
+    d.rectangle([0, 0, 31, 31], fill=rgba("#3a4050"))
+    # Panel grooves
+    d.rectangle([1, 1, 30, 30], outline=rgba("#4a5464"), width=1)
+    d.rectangle([3, 3, 28, 28], outline=rgba("#2e3644"), width=1)
+    # Blue LED strip along right edge (vertical accent)
+    d.rectangle([29, 0, 31, 31], fill=rgba("#1188ff", 100))
+    d.rectangle([30, 0, 31, 31], fill=rgba("#33aaff", 180))
+    # Blue glow bleed
+    d.rectangle([27, 0, 29, 31], fill=rgba("#2266cc", 35))
+    # Horizontal seam
+    d.line([(0, 15), (28, 15)], fill=rgba("#2e3644"), width=1)
+    d.line([(0, 16), (28, 16)], fill=rgba("#4a5464"), width=1)
+    # Rivets
+    for cx, cy in [(5, 5), (24, 5), (5, 26), (24, 26)]:
+        d.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=rgba("#5a6474"))
+    return img
+
+
 # ---------------------------------------------------------------------------
 #  Generation entry points
 # ---------------------------------------------------------------------------
@@ -1242,6 +1349,12 @@ def generate_tiles():
     save(upscale_tile(make_server_light()), TILES_DIR / "server_light.png")
     # Overwrite the generic server_rack_l4 with our custom rack tile
     save(upscale_tile(make_server_rack()), TILES_DIR / "server_rack_l4.png")
+    # Additional server room tiles for detailed Level 4 layout
+    save(upscale_tile(make_server_cable_h()), TILES_DIR / "server_cable_h.png")
+    save(upscale_tile(make_server_floor_center()), TILES_DIR / "server_floor_center.png")
+    save(upscale_tile(make_server_panel()), TILES_DIR / "server_panel.png")
+    save(upscale_tile(make_server_fan()), TILES_DIR / "server_fan.png")
+    save(upscale_tile(make_server_wall_blue()), TILES_DIR / "server_wall_blue.png")
 
 
 def generate_sprites():
