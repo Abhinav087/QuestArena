@@ -54,6 +54,12 @@ const ARENA_HEIGHT = 1080;
 const ARENA_TILE = 64;
 const CHARACTER_SIZE = 64;
 const CHARACTER_TILE_OFFSET = (ARENA_TILE - CHARACTER_SIZE) / 2;
+const PLAYER_SPRITE_W = 433;
+const PLAYER_SPRITE_H = 717;
+const PLAYER_DRAW_H = CHARACTER_SIZE;
+const PLAYER_DRAW_W = Math.round(PLAYER_DRAW_H * (PLAYER_SPRITE_W / PLAYER_SPRITE_H));
+const PLAYER_OFFSET_X = (ARENA_TILE - PLAYER_DRAW_W) / 2;
+const PLAYER_OFFSET_Y = (ARENA_TILE - PLAYER_DRAW_H) / 2;
 const CAMERA_ZOOM = 1.2;
 const TILE_OVERDRAW = 1 / CAMERA_ZOOM;
 const PLAYER_SPEED = 4.2;
@@ -242,7 +248,7 @@ const ARENA_LEVELS = [
         width: 18,
         height: 14,
         tiles: createEmptyMap(18, 14),
-        npc: { spriteId: 2, x: 9, y: 4, name: 'Reception Aunty', questionLevel: 1 },
+        npc: { spriteId: 2, x: 9, y: 4, name: 'Reception Aunty', questionLevel: 1, scale: 1.25 },
         portal: { x: 9, y: 1, targetLevel: 2 },
         hiddenLift: { x: 14, y: 10, targetLevel: 3 },
         playerStart: { x: 9, y: 11 },
@@ -931,6 +937,7 @@ function buildLevel1LobbyLayout(level) {
         y: 7,
         name: 'Reception Aunty',
         questionLevel: 1,
+        scale: 1.25,
     };
 
     // Portal â€” stairs on far right of divider wall
@@ -3029,13 +3036,16 @@ function drawArena() {
     }
 
     const npcImage = gameState.arena.images.get(`/assets/sprites/npc_${level.npc.spriteId}.png`);
-    const npcX = level.npc.x * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraX;
-    const npcY = level.npc.y * ARENA_TILE + CHARACTER_TILE_OFFSET - renderCameraY;
+    const npcScale = Math.max(0.5, Number(level.npc.scale) || 1);
+    const npcSize = CHARACTER_SIZE * npcScale;
+    const npcOffset = (ARENA_TILE - npcSize) / 2;
+    const npcX = level.npc.x * ARENA_TILE + npcOffset - renderCameraX;
+    const npcY = level.npc.y * ARENA_TILE + npcOffset - renderCameraY;
     if (npcImage) {
-        ctx.drawImage(npcImage, npcX, npcY, CHARACTER_SIZE, CHARACTER_SIZE);
+        ctx.drawImage(npcImage, npcX, npcY, npcSize, npcSize);
     } else {
         ctx.fillStyle = '#ff5ea8';
-        ctx.fillRect(npcX + 8, npcY + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
+        ctx.fillRect(npcX + 8, npcY + 8, npcSize - 16, npcSize - 16);
     }
 
     // â”€â”€ Decorative (non-interactive) NPCs â”€â”€
@@ -3062,13 +3072,13 @@ function drawArena() {
     const playerImage = gameState.arena.images.get(
         `/assets/sprites/player_${gameState.arena.facing}_${gameState.arena.frame}.png`
     );
-    const playerScreenX = gameState.arena.playerX - renderCameraX;
-    const playerScreenY = gameState.arena.playerY - renderCameraY;
+    const playerScreenX = gameState.arena.playerX - renderCameraX + PLAYER_OFFSET_X - CHARACTER_TILE_OFFSET;
+    const playerScreenY = gameState.arena.playerY - renderCameraY + PLAYER_OFFSET_Y - CHARACTER_TILE_OFFSET;
     if (playerImage) {
-        ctx.drawImage(playerImage, playerScreenX, playerScreenY, CHARACTER_SIZE, CHARACTER_SIZE);
+        ctx.drawImage(playerImage, playerScreenX, playerScreenY, PLAYER_DRAW_W, PLAYER_DRAW_H);
     } else {
         ctx.fillStyle = '#00ff88';
-        ctx.fillRect(playerScreenX + 8, playerScreenY + 8, CHARACTER_SIZE - 16, CHARACTER_SIZE - 16);
+        ctx.fillRect(playerScreenX + 8, playerScreenY + 8, PLAYER_DRAW_W - 16, PLAYER_DRAW_H - 16);
     }
 
     ctx.fillStyle = '#f2f2f2';
