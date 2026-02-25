@@ -24,27 +24,27 @@ const DEFAULT_WAITING_HINT = 'The game will begin automatically once the server 
 
 const LEVEL_INTROS = {
     0: {
-        title: 'Level 0 â€” College Gate',
+        title: 'Level 0 - College Gate',
         dialogue: 'Gate Security: "Stop there. No ID card, no entry." Clear the General Knowledge challenge and I will open the way to the college lobby.'
     },
     1: {
-        title: 'Level 1 â€” Lobby',
+        title: 'Level 1 - Lobby',
         dialogue: 'Reception Aunty: "Why are you roaming during class hours?" Prove yourself with English questions.'
     },
     2: {
-        title: 'Level 2 â€” Classroom',
+        title: 'Level 2 - Classroom',
         dialogue: 'Teacher: "Girlfriend, ah? First answer these Aptitude questions and show me your focus."'
     },
     3: {
-        title: 'Level 3 â€” Lab',
+        title: 'Level 3 - Lab',
         dialogue: 'Lab Incharge: "You skipped lab from day one! Solve reasoning questions or forget externals."'
     },
     4: {
-        title: 'Level 4 â€” Server Room',
+        title: 'Level 4 - Server Room',
         dialogue: 'System Admin: "Students are not allowed to touch admin systems. Let us see your technical strength."'
     },
     5: {
-        title: 'Level 5 â€” Top Floor',
+        title: 'Level 5 - Top Floor',
         dialogue: 'Principal: "One final coding question. Clear it, and both of you walk free."'
     },
 };
@@ -863,7 +863,7 @@ function buildLevel1LobbyLayout(level) {
     for (let x = 0; x < W; x++) { t[0][x] = '1'; t[H - 1][x] = '1'; }
     for (let y = 0; y < H; y++) { t[y][0] = '1'; t[y][W - 1] = '1'; }
 
-    // â”€â”€ 3. Upper section (rows 1â€“4) â€” behind divider wall â”€â”€
+    // â”€â”€ 3. Upper section (rows 1â€“4) - behind divider wall â”€â”€
 
     // Lift (elevator) at top-center wall (single tile)
     t[1][19] = '14';
@@ -888,7 +888,7 @@ function buildLevel1LobbyLayout(level) {
     t[5][37] = '13';
 
     // â”€â”€ 5. Reception area (right side, rows 6â€“9) â”€â”€
-    // Reception counter â€” horizontal desk in front of Aunty
+    // Reception counter - horizontal desk in front of Aunty
     t[8][26] = 'RC';  t[8][27] = 'RC';  t[8][28] = 'RC';  t[8][29] = 'RC';  t[8][30] = 'RC';
     // Side returns of desk
     t[7][26] = 'RC';  t[7][30] = 'RC';
@@ -903,7 +903,7 @@ function buildLevel1LobbyLayout(level) {
     t[13][18] = 'DF'; t[13][19] = 'DF'; t[13][20] = 'DF';
     t[14][18] = 'DF'; t[14][19] = 'DF'; t[14][20] = 'DF';
 
-    // Waiting chairs â€” left side (two pairs)
+    // Waiting chairs - left side (two pairs)
     t[10][5] = '10';  t[10][6] = '10';
     t[14][5] = '10';  t[14][6] = '10';
 
@@ -913,7 +913,7 @@ function buildLevel1LobbyLayout(level) {
     // Sofa on bottom-left area
     t[19][3] = 'SF';
 
-    // Plants â€” sparse, natural placement
+    // Plants - sparse, natural placement
     t[6][1]  = '6';   // upper-left corner
     t[16][1] = '6';   // lower-left corner
     t[6][38] = '6';   // upper-right corner
@@ -922,7 +922,7 @@ function buildLevel1LobbyLayout(level) {
     // Door on right wall (lower area exit)
     t[17][W - 1] = '2';
 
-    // â”€â”€ 7. Hidden lift â€” elevator in upper area â”€â”€
+    // â”€â”€ 7. Hidden lift - elevator in upper area â”€â”€
     // (single tile already placed at t[1][19])
 
     // â”€â”€ 8. Assign to level â”€â”€
@@ -930,7 +930,7 @@ function buildLevel1LobbyLayout(level) {
     level.height = H;
     level.tiles  = t;
 
-    // Reception Aunty â€” behind the counter desk
+    // Reception Aunty - behind the counter desk
     level.npc = {
         spriteId: 2,
         x: 28,
@@ -940,27 +940,27 @@ function buildLevel1LobbyLayout(level) {
         scale: 1.25,
     };
 
-    // Portal â€” stairs on far right of divider wall
+    // Portal - stairs on far right of divider wall
     level.portal = {
         x: 36,
         y: 5,
         targetLevel: 2,
     };
 
-    // Hidden lift â€” elevator in upper area
+    // Hidden lift - elevator in upper area
     level.hiddenLift = {
         x: 19,
         y: 1,
         targetLevel: 3,
     };
 
-    // Player spawn â€” lower lobby
+    // Player spawn - lower lobby
     level.playerStart = {
         x: 19,
         y: 18,
     };
 
-    // Decorative NPCs â€” students placed naturally
+    // Decorative NPCs - students placed naturally
     level.decorativeNpcs = [
         { spriteId: 6, x: 2,  y: 10, name: 'npc' },   // boy near left chairs
         { spriteId: 7, x: 8,  y: 16, name: 'npc' },   // girl, lower-left
@@ -993,9 +993,9 @@ function buildLevel2ClassroomLayout(level) {
     for (let x = 0; x < W; x++) { t[0][x] = 'CW'; t[H - 1][x] = 'CW'; }
     for (let y = 0; y < H; y++) { t[y][0] = 'CW'; t[y][W - 1] = 'CW'; }
 
-    // â”€â”€ 3. Top interior wall (rows 1â€“2) â€” classroom front â”€â”€
+    // â”€â”€ 3. Top interior wall (rows 1â€“2) - classroom front â”€â”€
     for (let x = 1; x < W - 1; x++) { t[1][x] = 'CW'; }
-    // Row 2 wall behind chalkboard area (x=3..10) â€” keeps collision solid
+    // Row 2 wall behind chalkboard area (x=3..10) - keeps collision solid
     for (let x = 3; x <= 10; x++) { t[2][x] = 'CW'; }
 
     // â”€â”€ 4. Chalkboard rendered as a single combined overlay (8w Ã— 2h) â”€â”€
@@ -1041,7 +1041,7 @@ function buildLevel2ClassroomLayout(level) {
     level.backgroundFloor = 'CF';
     level.backgroundWall = 'CW';
 
-    // Teacher NPC â€” behind the teacher desk
+    // Teacher NPC - behind the teacher desk
     level.npc = {
         spriteId: 3,
         x: 15,
@@ -1050,14 +1050,14 @@ function buildLevel2ClassroomLayout(level) {
         questionLevel: 2,
     };
 
-    // Portal â€” door at top right of classroom
+    // Portal - door at top right of classroom
     level.portal = {
         x: 26,
         y: 1,
         targetLevel: 3,
     };
 
-    // Player spawn â€” bottom center (in front of entrance)
+    // Player spawn - bottom center (in front of entrance)
     level.playerStart = {
         x: 14,
         y: 17,
@@ -1105,10 +1105,10 @@ function buildLevel3LabLayout(level) {
     // Chalkboard area (wall tiles stay LX; overlay drawn on top)
     // â†’ chalkboard overlay at x=7..11, y=1 (5 tiles wide, 1 tile tall)
 
-    // Teacher desk (instructorâ€™s desk with laptop) â€” row 3, center
+    // Teacher desk (instructorâ€™s desk with laptop) - row 3, center
     t[3][12] = 'LT';
 
-    // Door / portal to next level â€” right side of top wall
+    // Door / portal to next level - right side of top wall
     t[1][21] = '2';
 
     // Small shelf on far right of top wall
@@ -1127,17 +1127,17 @@ function buildLevel3LabLayout(level) {
     const deskRow = ['LI', 'LM', 'LM', 'LI', 'LM', 'LM', 'LI', 'LM', 'LM', 'LI', 'LI'];
 
     for (const sy of clusterYs) {
-        // Row A â€” partition (back wall of cubicle)
+        // Row A - partition (back wall of cubicle)
         for (let x = leftStart; x <= leftEnd; x++) { t[sy][x] = 'LP'; }
         for (let x = rightStart; x <= rightEnd; x++) { t[sy][x] = 'LP'; }
 
-        // Row B â€” desks with monitors / items
+        // Row B - desks with monitors / items
         for (let i = 0; i <= leftEnd - leftStart; i++) {
             t[sy + 1][leftStart + i]  = deskRow[i];
             t[sy + 1][rightStart + i] = deskRow[i];
         }
 
-        // Row C â€” office chairs (every other tile)
+        // Row C - office chairs (every other tile)
         for (let i = 0; i <= leftEnd - leftStart; i++) {
             if (i % 2 === 1) {
                 t[sy + 2][leftStart + i]  = 'LO';
@@ -1166,7 +1166,7 @@ function buildLevel3LabLayout(level) {
     level.backgroundFloor = 'LF';
     level.backgroundWall  = 'LX';
 
-    // Lab Incharge NPC â€” behind the teacher desk
+    // Lab Incharge NPC - behind the teacher desk
     level.npc = {
         spriteId: 4,
         x: 12,
@@ -1175,7 +1175,7 @@ function buildLevel3LabLayout(level) {
         questionLevel: 3,
     };
 
-    // Portal â€” door at top-right
+    // Portal - door at top-right
     level.portal = {
         x: 21,
         y: 1,
@@ -1189,7 +1189,7 @@ function buildLevel3LabLayout(level) {
         targetLevel: null,
     };
 
-    // Player spawn â€” bottom centre
+    // Player spawn - bottom centre
     level.playerStart = {
         x: 12,
         y: 17,
@@ -1969,7 +1969,7 @@ function updateArenaLevelTitle() {
     const level = currentArenaLevel();
     const titleNode = document.getElementById('arena-level-title');
     if (level && titleNode) {
-        titleNode.textContent = `Level ${level.id} â€” ${level.name}`;
+        titleNode.textContent = `Level ${level.id} - ${level.name}`;
     }
 }
 
