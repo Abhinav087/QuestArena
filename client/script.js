@@ -161,6 +161,11 @@ function getTileImageName(tileType, visualLevel) {
         'GP': 'gate_pillar.png',
         'T': 'tree.png',
         'PK': 'parking.png',
+        'CR': 'car_red.png',
+        'CG': 'car_green.png',
+        'CW2': 'car_white.png',
+        'CY': 'car_yellow.png',
+        'CB2': 'car_blue.png',
         'BL': 'building.png',
         'BW': 'building_window.png',
         'BD': 'building_door.png',
@@ -690,6 +695,22 @@ function buildLevel0CampusLayout(level) {
         t[y][PARK_R + 1] = 'SW';
     }
 
+    // -- 6b. Place parked cars randomly in the parking lot --
+    const carTypes = ['CR', 'CB2', 'CW2', 'CY', 'CG'];
+    // Seed-based pseudo-random for deterministic placement
+    let carSeed = 42;
+    function carRng() { carSeed = (carSeed * 1103515245 + 12345) & 0x7fffffff; return carSeed; }
+    // Create parking rows: cars sit in every other row, spaced 3 apart
+    for (let y = YARD_TOP + 3; y <= FENCE_Y - 5; y += 3) {
+        for (let x = PARK_L + 1; x <= PARK_R - 1; x += 3) {
+            // ~65% chance to place a car in each spot
+            if (carRng() % 100 < 65) {
+                const carTile = carTypes[carRng() % carTypes.length];
+                t[y][x] = carTile;
+            }
+        }
+    }
+
     // â”€â”€ 7. Garden area with trees (right side) â”€â”€
     for (let y = YARD_TOP + 1; y <= FENCE_Y - 2; y += 3) {
         for (let x = GARDEN_L; x <= GARDEN_R; x += 4) {
@@ -763,9 +784,10 @@ function buildLevel0CampusLayout(level) {
         y: spawnPos.y,
     };
 
-    // solid tiles: fence, gate pillar, kiosk, building, tree, parking edges, gate (blocked until cleared)
+    // solid tiles: fence, gate pillar, kiosk, building, tree, cars, parking edges, gate (blocked until cleared)
     finalizeCollisions(level, new Set([
         'F', 'GP', 'KS', 'BL', 'BW', 'T', 'GO',
+        'CR', 'CB2', 'CW2', 'CY', 'CG',
         // keep original indoor solids for other levels that share this fn
         '1', '4', '6', '7', '8', '9', '11'
     ]));
@@ -2063,6 +2085,8 @@ async function loadArenaAssets() {
         'grass', 'road', 'road_dash', 'sidewalk', 'fence', 'gate_pillar',
         'tree', 'parking', 'building', 'building_window', 'building_door',
         'kiosk', 'flower', 'gate_open', 'buildingblock',
+        // car tiles
+        'car_red', 'car_blue', 'car_white', 'car_yellow', 'car_green',
         // lobby furniture tiles
         'sofa', 'notice_board', 'reception_counter', 'diamond_floor', 'bench',
         // classroom tiles

@@ -4,76 +4,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuestArena v2 — Admin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00ff00;
-            --accent: #ff00ff;
+            --primary: #ffd300;
+            --accent: #4a7cff;
             --danger: #ff3b3b;
             --warning: #ffaa00;
-            --bg: #0a0a0a;
-            --card-bg: rgba(255,255,255,0.04);
-            --border: rgba(0,255,0,0.25);
+            --bg: #1a1a2e;
+            --card-bg: #0d0d1a;
+            --border: #555555;
+            --border-light: #c7c7c7;
             --text: #e0e0e0;
             --muted: #888;
-            --font-heading: 'Orbitron', sans-serif;
-            --font-body: 'Roboto', sans-serif;
+            --btn-blue: #3f63b8;
+            --btn-blue-hover: #557ce0;
+            --btn-blue-shadow: #22356a;
+            --font-heading: 'Press Start 2P', monospace;
+            --font-body: 'Press Start 2P', monospace;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: var(--font-body); padding: 20px; }
-        h1, h2, h3 { font-family: var(--font-heading); text-transform: uppercase; letter-spacing: 1.5px; }
+        body {
+            background: var(--bg);
+            background-image:
+                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 4px 4px;
+            color: var(--text); font-family: var(--font-body); padding: 20px;
+            image-rendering: pixelated;
+        }
+        h1, h2, h3 { font-family: var(--font-heading); text-transform: uppercase; letter-spacing: 1.5px; color: var(--primary); text-shadow: 2px 2px 0 #000; }
         .login-overlay {
             position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
             background: var(--bg); z-index: 1000;
         }
         .login-overlay.hidden { display: none; }
         .login-box {
-            width: 100%; max-width: 420px; padding: 32px; border-radius: 10px;
-            border: 1px solid var(--border); background: var(--card-bg);
+            width: 100%; max-width: 420px; padding: 32px; border-radius: 0;
+            border: 4px solid var(--border-light); background: var(--card-bg);
+            box-shadow:
+                inset 0 0 0 2px var(--card-bg),
+                inset 0 0 0 4px var(--border),
+                0 0 0 2px var(--border),
+                0 0 0 4px #000;
         }
-        .login-box h2 { margin-bottom: 10px; color: var(--primary); }
-        .login-box p { margin-bottom: 16px; color: var(--muted); }
+        .login-box h2 { margin-bottom: 10px; color: var(--primary); font-size: 0.9rem; }
+        .login-box p { margin-bottom: 16px; color: var(--muted); font-size: 0.6rem; line-height: 1.6; }
         .login-box input {
             width: 100%; margin-bottom: 10px; padding: 10px;
-            border: 1px solid var(--accent); border-radius: 6px;
-            background: #111; color: #fff;
+            border: 3px solid var(--border-light); border-radius: 0;
+            background: #111122; color: #fff; font-family: var(--font-body); font-size: 0.65rem;
+            box-shadow: inset 0 0 0 2px var(--border), inset 2px 2px 0 rgba(0,0,0,0.5);
         }
-        .error { color: var(--danger); min-height: 20px; font-size: 0.9rem; margin-bottom: 8px; }
+        .error { color: var(--danger); min-height: 20px; font-size: 0.6rem; margin-bottom: 8px; text-shadow: 1px 1px 0 #000; }
         .btn {
-            background: transparent; border: 1px solid var(--primary); color: var(--primary);
-            padding: 8px 12px; border-radius: 6px; cursor: pointer; font-family: var(--font-heading);
-            font-size: 0.75rem; text-transform: uppercase;
+            background: var(--btn-blue); border: 3px solid var(--border-light); color: #f4f7ff;
+            padding: 8px 12px; border-radius: 0; cursor: pointer; font-family: var(--font-heading);
+            font-size: 0.6rem; text-transform: uppercase;
+            box-shadow:
+                inset -2px -2px 0 var(--btn-blue-shadow),
+                inset 2px 2px 0 rgba(255,255,255,0.15),
+                0 3px 0 var(--btn-blue-shadow),
+                0 4px 0 #000;
         }
-        .btn:hover { background: var(--primary); color: #000; }
-        .btn-danger { border-color: var(--danger); color: var(--danger); }
-        .btn-danger:hover { background: var(--danger); color: #000; }
-        .btn-warning { border-color: var(--warning); color: var(--warning); }
-        .btn-warning:hover { background: var(--warning); color: #000; }
+        .btn:hover { background: var(--btn-blue-hover); color: #fff; transform: translateY(-1px); }
+        .btn:active { transform: translateY(2px); box-shadow: inset -2px -2px 0 var(--btn-blue-shadow), 0 1px 0 var(--btn-blue-shadow); }
+        .btn-danger {
+            background: #6b1a1a; border-color: #ff4444; color: #ff4444;
+            box-shadow: inset -2px -2px 0 #3d0e0e, inset 2px 2px 0 rgba(255,255,255,0.1), 0 3px 0 #3d0e0e, 0 4px 0 #000;
+        }
+        .btn-danger:hover { background: #872222; color: #fff; }
+        .btn-warning {
+            background: #6b5a1a; border-color: var(--warning); color: var(--warning);
+            box-shadow: inset -2px -2px 0 #3d330e, inset 2px 2px 0 rgba(255,255,255,0.1), 0 3px 0 #3d330e, 0 4px 0 #000;
+        }
+        .btn-warning:hover { background: #877022; color: #fff; }
         .dashboard { display: none; }
         .dashboard.visible { display: block; }
-        .header { margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .header h1 { color: var(--primary); font-size: 1.5rem; }
+        .header {
+            margin-bottom: 16px; border-bottom: 4px solid var(--border-light); padding-bottom: 10px;
+            box-shadow: 0 2px 0 var(--border);
+        }
+        .header h1 { color: var(--primary); font-size: 1rem; }
         .row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-bottom: 16px; }
         .card {
-            border: 1px solid var(--border); border-radius: 10px;
+            border: 3px solid var(--border-light); border-radius: 0;
             background: var(--card-bg); padding: 14px;
+            box-shadow:
+                inset 0 0 0 2px var(--card-bg),
+                inset 0 0 0 3px var(--border),
+                0 0 0 2px #000;
         }
-        .card h3 { font-size: 0.95rem; margin-bottom: 10px; color: var(--primary); }
-        .meta { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 0.9rem; }
+        .card h3 { font-size: 0.65rem; margin-bottom: 10px; color: var(--primary); text-shadow: 1px 1px 0 #000; }
+        .meta { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 0.55rem; }
         .meta strong { color: var(--text); }
         .inline { display: flex; gap: 8px; flex-wrap: wrap; }
         input, select {
-            width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);
-            background: #111; color: var(--text);
+            width: 100%; padding: 8px; border-radius: 0; border: 3px solid var(--border-light);
+            background: #111122; color: var(--text); font-family: var(--font-body); font-size: 0.55rem;
+            box-shadow: inset 0 0 0 2px var(--border), inset 2px 2px 0 rgba(0,0,0,0.5);
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th, td { padding: 8px; border-top: 1px solid rgba(255,255,255,0.06); text-align: left; }
-        th { color: var(--primary); font-size: 0.7rem; text-transform: uppercase; }
-        tr { transition: transform 0.2s ease; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.55rem; font-family: var(--font-body); }
+        th, td { padding: 8px; border-top: 2px solid var(--border); text-align: left; text-shadow: 1px 1px 0 #000; }
+        th { color: var(--primary); font-size: 0.5rem; text-transform: uppercase; }
+        tr { transition: transform 0.1s ease; }
         tr.rank-bump { transform: translateY(-2px); }
         .actions { display: flex; gap: 6px; flex-wrap: wrap; }
-        .small { font-size: 0.8rem; color: var(--muted); }
-        pre { white-space: pre-wrap; font-size: 0.8rem; color: var(--text); }
+        .small { font-size: 0.55rem; color: var(--muted); text-shadow: 1px 1px 0 #000; }
+        pre { white-space: pre-wrap; font-size: 0.55rem; color: var(--text); font-family: 'Courier New', monospace; text-shadow: 1px 1px 0 #000; }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--card-bg); border-left: 2px solid var(--border); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border: 2px solid var(--card-bg); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
     </style>
 </head>
 <body>

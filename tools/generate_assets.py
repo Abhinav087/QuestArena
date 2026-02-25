@@ -1766,6 +1766,73 @@ def generate_rooftop_tiles_from_image():
 #  Generation entry points
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+#  Car tiles for parking lot
+# ---------------------------------------------------------------------------
+
+def make_car(body_color: str, roof_color: str, glass_color: str = "#4a7a9a"):
+    """Top-down view of a parked car (facing up) on parking asphalt."""
+    # Start with parking lot base
+    img = make_parking()
+    d = ImageDraw.Draw(img)
+    # Car body (vertical rectangle, centered)
+    d.rounded_rectangle([7, 3, 24, 28], radius=4, fill=rgba(body_color))
+    # Roof / cabin area
+    d.rounded_rectangle([9, 9, 22, 20], radius=3, fill=rgba(roof_color))
+    # Windshield (front)
+    d.rounded_rectangle([10, 6, 21, 10], radius=2, fill=rgba(glass_color, 180))
+    # Rear window
+    d.rounded_rectangle([10, 21, 21, 25], radius=2, fill=rgba(glass_color, 160))
+    # Side mirrors
+    d.rectangle([5, 10, 7, 12], fill=rgba(body_color))
+    d.rectangle([24, 10, 26, 12], fill=rgba(body_color))
+    # Headlights
+    d.ellipse([10, 3, 13, 5], fill=rgba("#f0e870", 220))
+    d.ellipse([18, 3, 21, 5], fill=rgba("#f0e870", 220))
+    # Tail lights
+    d.ellipse([10, 26, 13, 28], fill=rgba("#e03030", 200))
+    d.ellipse([18, 26, 21, 28], fill=rgba("#e03030", 200))
+    # Subtle outline
+    d.rounded_rectangle([7, 3, 24, 28], radius=4, outline=rgba("#1a1a1a", 140), width=1)
+    return img
+
+
+def make_car_red():
+    return make_car("#c0392b", "#962d22")
+
+
+def make_car_blue():
+    return make_car("#2e6db4", "#235590")
+
+
+def make_car_white():
+    return make_car("#d8d8d8", "#b8b8b8", "#4a7a9a")
+
+
+def make_car_yellow():
+    return make_car("#d4a017", "#b08810")
+
+
+def make_car_green():
+    return make_car("#27864a", "#1e6b3a")
+
+
+def generate_cars_only():
+    """Generate ONLY car tile assets – does NOT touch any other files."""
+    print("Generating car tiles only...")
+    save(upscale_tile(make_car_red()), TILES_DIR / "car_red.png")
+    save(upscale_tile(make_car_blue()), TILES_DIR / "car_blue.png")
+    save(upscale_tile(make_car_white()), TILES_DIR / "car_white.png")
+    save(upscale_tile(make_car_yellow()), TILES_DIR / "car_yellow.png")
+    save(upscale_tile(make_car_green()), TILES_DIR / "car_green.png")
+    print("  car_red.png")
+    print("  car_blue.png")
+    print("  car_white.png")
+    print("  car_yellow.png")
+    print("  car_green.png")
+    print("Car tiles generated successfully!")
+
+
 def generate_tiles():
     level_palettes = {
         1: ("#5c4a35", "#a47a4d", "#2a1f14"),
@@ -1928,4 +1995,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "--cars-only":
+        generate_cars_only()
+    else:
+        main()
