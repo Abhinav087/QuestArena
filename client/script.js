@@ -1635,6 +1635,8 @@ let gameState = {
     currentScreen: 'login',
     pendingAfterIntro: null,
     shownLevelIntros: {},
+    introCutsceneCompleted: false,
+    introCutscenePlaying: false,
     hiddenRouteAttempted: false,
     hiddenRouteActive: false,
     hiddenRouteLiftReady: false,
@@ -1683,6 +1685,312 @@ let gameState = {
         },
     },
 };
+
+/* =============================================
+   CUTSCENE MANAGER — Visual‑Novel Intro Engine
+   ============================================= */
+const CutsceneManager = (() => {
+    /* ---- DOM refs ---- */
+    const layer        = document.getElementById('cutscene-layer');
+    const fadePlane    = document.getElementById('cutscene-fade');
+    const bgA          = document.getElementById('cutscene-bg-a');
+    const bgB          = document.getElementById('cutscene-bg-b');
+    const dialogueBox  = document.getElementById('cutscene-dialogue-box');
+    const speakerNode  = document.getElementById('cutscene-speaker');
+    const textNode     = document.getElementById('cutscene-text');
+
+    let activeBg = 'a';        // which <img> is currently "on top"
+    let _typewriterAbort = null; // AbortController for current typewriter
+
+    /* ---- helpers ---- */
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    function show() {
+        layer.classList.remove('hidden');
+        fadePlane.style.transition = 'none';
+        fadePlane.style.opacity = '1';
+    }
+
+    function hide() {
+        hideDialogue();
+        bgA.classList.remove('cutscene-bg-active');
+        bgB.classList.remove('cutscene-bg-active');
+        bgA.src = '';
+        bgB.src = '';
+        layer.classList.add('hidden');
+    }
+
+    /* ---- fade (black overlay) ---- */
+    function fade(direction, speed = 800) {
+        return new Promise((resolve) => {
+            const target = direction === 'in' ? '0' : '1';
+            fadePlane.style.transition = `opacity ${speed}ms ease`;
+            // Force reflow so the transition triggers even if we just changed it
+            void fadePlane.offsetWidth;
+            fadePlane.style.opacity = target;
+            setTimeout(resolve, speed + 20);
+        });
+    }
+
+    /* ---- set_bg (instant) ---- */
+    function setBg(src) {
+        const current = activeBg === 'a' ? bgA : bgB;
+        const other   = activeBg === 'a' ? bgB : bgA;
+        other.classList.remove('cutscene-bg-active');
+        current.style.transition = 'none';
+        current.src = src;
+        current.classList.add('cutscene-bg-active');
+    }
+
+    /* ---- crossfade_bg ---- */
+    function crossfadeBg(src, duration = 1000) {
+        return new Promise((resolve) => {
+            const incoming = activeBg === 'a' ? bgB : bgA;
+            const outgoing = activeBg === 'a' ? bgA : bgB;
+
+            incoming.src = src;
+            incoming.style.transition = `opacity ${duration}ms ease`;
+            outgoing.style.transition = `opacity ${duration}ms ease`;
+            void incoming.offsetWidth;
+
+            incoming.classList.add('cutscene-bg-active');
+            outgoing.classList.remove('cutscene-bg-active');
+
+            activeBg = activeBg === 'a' ? 'b' : 'a';
+            setTimeout(resolve, duration + 20);
+        });
+    }
+
+    /* ---- typewriter ---- */
+    function typewrite(text, charDelay = 35) {
+        return new Promise((resolve) => {
+            if (_typewriterAbort) _typewriterAbort.abort();
+            const controller = new AbortController();
+            _typewriterAbort = controller;
+
+            textNode.innerHTML = '<span class="tw-caret"></span>';
+            let i = 0;
+
+            function tick() {
+                if (controller.signal.aborted) { resolve(); return; }
+                if (i < text.length) {
+                    // Insert character before the caret span
+                    const caret = textNode.querySelector('.tw-caret');
+                    if (caret) {
+                        caret.insertAdjacentText('beforebegin', text[i]);
+                    } else {
+                        textNode.textContent += text[i];
+                    }
+                    i++;
+                    setTimeout(tick, charDelay);
+                } else {
+                    // Remove the caret once typing is done
+                    const caret = textNode.querySelector('.tw-caret');
+                    if (caret) caret.remove();
+                    resolve();
+                }
+            }
+            tick();
+        });
+    }
+
+    /* ---- dialogue / narration ---- */
+    function showDialogue(speaker, text, duration, charDelay) {
+        return new Promise(async (resolve) => {
+            speakerNode.textContent = speaker || '';
+            speakerNode.style.display = speaker ? 'block' : 'none';
+            textNode.textContent = '';
+            dialogueBox.classList.add('visible');
+            await typewrite(text, charDelay);
+            await sleep(duration);
+            resolve();
+        });
+    }
+
+    function hideDialogue() {
+        if (_typewriterAbort) { _typewriterAbort.abort(); _typewriterAbort = null; }
+        dialogueBox.classList.remove('visible');
+        speakerNode.textContent = '';
+        textNode.textContent = '';
+    }
+
+    /* ---- async runner ---- */
+    async function run(sequence) {
+        for (const step of sequence) {
+            switch (step.type) {
+                case 'fade':
+                    await fade(step.direction, step.speed || 800);
+                    break;
+                case 'set_bg':
+                    setBg(step.src);
+                    break;
+                case 'crossfade_bg':
+                    await crossfadeBg(step.src, step.duration || 1000);
+                    break;
+                case 'dialogue':
+                    await showDialogue(step.speaker, step.text, step.hold || 1200, step.charDelay || 35);
+                    break;
+                case 'narration':
+                    await showDialogue(null, step.text, step.hold || 1200, step.charDelay || 35);
+                    break;
+                case 'wait':
+                    await sleep(step.duration || 1000);
+                    break;
+                case 'hide_dialogue':
+                    hideDialogue();
+                    break;
+                default:
+                    console.warn('CutsceneManager: unknown step type', step.type);
+            }
+        }
+    }
+
+    return { show, hide, fade, setBg, crossfadeBg, showDialogue, hideDialogue, run };
+})();
+
+/* ---- Intro Sequence Data ---- */
+const INTRO_SEQUENCE = [
+    // -- Shot 1: Opening --
+    { type: 'set_bg',   src: '/assets/intro/shot1.png' },
+    { type: 'fade',     direction: 'in',  speed: 1600 },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Third year\u2026 College \u2026 Assignments\u2026 And somehow I found love. This is my first Valentine\u2019s Day. Let\u2019s make it memorable.',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    // -- Shot 2: Crossfade --
+    { type: 'crossfade_bg', src: '/assets/intro/shot2.png', duration: 1000 },
+    { type: 'wait', duration: 1500 },
+
+    // -- Shot 3: Valentine's scene --
+    { type: 'fade', direction: 'out', speed: 600 },
+    { type: 'set_bg', src: '/assets/intro/shot3.png' },
+    { type: 'fade', direction: 'in',  speed: 600 },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Happy valentines day, Mithravindha',
+      hold: 1200 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Mithravindha',
+      text: 'Only wishes !? Such an unromantic fellow you are.',
+      hold: 1500 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Why would I come with empty hands? Let\u2019s meet in the classroom after the college hours. I have a surprise for you.',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    // -- Time skip --
+    { type: 'fade', direction: 'out', speed: 800 },
+    { type: 'narration', text: '(2 hours later\u2026\u2026)', hold: 1500, charDelay: 50 },
+    { type: 'hide_dialogue' },
+    { type: 'wait', duration: 1500 },
+
+    // -- Shot 4: Classroom --
+    { type: 'fade', direction: 'out', speed: 600 },
+    { type: 'set_bg', src: '/assets/intro/shot4.png' },
+    { type: 'fade', direction: 'in',  speed: 600 },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Ahh My jade beauty.. It\u2019s been 2 hours since I saw you, but it felt like eternity.',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Mithravindha',
+      text: 'Chi\u2026\u2026You are such a Flirt.',
+      hold: 1200 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Well I am. Before I show your surpirse, what am I getting for this valentines day.',
+      hold: 1500 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Mithravindha',
+      text: 'What do you want?',
+      hold: 1000 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Well a Little Hug I guess.',
+      hold: 1200 },
+    { type: 'hide_dialogue' },
+
+    // -- Shot 5: Principal entrance --
+    { type: 'fade', direction: 'out', speed: 600 },
+    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+    { type: 'fade', direction: 'in',  speed: 300 },
+
+    { type: 'dialogue', speaker: 'Principal',
+      text: 'What are you two doing here in the classroom after the college hours?',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    // -- Shot 6: Mithravindha reaction --
+    { type: 'set_bg', src: '/assets/intro/shot6.png' },
+
+    { type: 'dialogue', speaker: 'Mithravindha',
+      text: 'Sir\u2026.',
+      hold: 800 },
+    { type: 'hide_dialogue' },
+
+    // -- Shot 5 again: Principal angry --
+    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+
+    { type: 'dialogue', speaker: 'Principal',
+      text: 'Shut up. I overheard your conversation. Is this why you are coming to college?',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    // -- Shot 7: Bhairava close-up + narration --
+    { type: 'set_bg', src: '/assets/intro/shot7.png' },
+
+    { type: 'narration', text: 'Bhairava stares at principal', hold: 1500, charDelay: 40 },
+    { type: 'hide_dialogue' },
+    { type: 'wait', duration: 1500 },
+
+    // -- Shot 5: Principal final lines --
+    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+
+    { type: 'dialogue', speaker: 'Principal',
+      text: '2 hours\u2026? Eternity\u2026? What if I separate you for eternity\u2026?',
+      hold: 2200 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Principal',
+      text: 'Security! Throw this Scum out of my sacred college.',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    // -- Final fade out --
+    { type: 'fade', direction: 'out', speed: 1600 },
+    { type: 'wait', duration: 400 },
+    { type: 'fade', direction: 'in',  speed: 300 },
+];
+
+async function playIntroCutscene() {
+    gameState.introCutscenePlaying = true;
+
+    /* Hide all game screens while cutscene plays */
+    const allScreens = getAvailableScreens();
+    allScreens.forEach((s) => { s.classList.add('hidden'); s.classList.remove('active'); });
+    hud.classList.add('hidden');
+
+    CutsceneManager.show();
+    await CutsceneManager.run(INTRO_SEQUENCE);
+    CutsceneManager.hide();
+
+    gameState.introCutscenePlaying = false;
+    gameState.introCutsceneCompleted = true;
+    persistProgress();
+
+    /* Proceed to story screen → level 0 */
+    hud.classList.remove('hidden');
+    showScreen('story');
+}
 
 const screens = {
     login: document.getElementById('login-screen'),
@@ -1893,6 +2201,7 @@ function persistProgress() {
         currentQuestionIndex: gameState.currentQuestionIndex,
         pathChoice: gameState.pathChoice,
         currentScreen: gameState.currentScreen,
+        introCutsceneCompleted: gameState.introCutsceneCompleted,
         hiddenRouteAttempted: gameState.hiddenRouteAttempted,
         hiddenRouteActive: gameState.hiddenRouteActive,
         hiddenRouteLiftReady: gameState.hiddenRouteLiftReady,
@@ -3404,20 +3713,24 @@ async function pollGameStatus() {
                 return;
             }
             if (!gameState.gameActive) {
+                if (gameState.introCutscenePlaying) return;
                 gameState.gameActive = true;
                 hud.classList.remove('hidden');
                 await restorePlayerProgress('running');
             }
         } else if (data.status === 'paused') {
+            if (gameState.introCutscenePlaying) return;
             if (gameState.username) {
                 gameState.gameActive = false;
                 showScreen('waiting', { persist: false });
             }
         } else if (data.status === 'waiting') {
+            if (gameState.introCutscenePlaying) return;
             if (gameState.username && !gameState.gameActive) {
                 showScreen('waiting');
             }
         } else if (data.status === 'ended' && gameState.gameActive) {
+            if (gameState.introCutscenePlaying) return;
             endGame('Session ended');
         }
     } catch (err) {
@@ -3492,15 +3805,18 @@ function connectLiveSocket() {
                     return;
                 }
                 if (payload.status === 'running' && !gameState.gameActive && gameState.username) {
+                    if (gameState.introCutscenePlaying) return;
                     gameState.gameActive = true;
                     hud.classList.remove('hidden');
                     await restorePlayerProgress('running');
                 }
                 if (payload.status === 'paused' && gameState.username) {
+                    if (gameState.introCutscenePlaying) return;
                     gameState.gameActive = false;
                     showScreen('waiting', { persist: false });
                 }
                 if (payload.status === 'ended' && gameState.gameActive) {
+                    if (gameState.introCutscenePlaying) return;
                     endGame('Session ended');
                 }
             }
@@ -3574,6 +3890,9 @@ async function validateStoredToken() {
 }
 
 async function restorePlayerProgress(sessionStatus) {
+    /* ── Hard block: never re-enter while cutscene is running ── */
+    if (gameState.introCutscenePlaying) return;
+
     const progress = getStoredProgress();
 
     if (
@@ -3603,6 +3922,18 @@ async function restorePlayerProgress(sessionStatus) {
         return;
     }
 
+    /* ── Restore the cutscene flag from any existing progress ── */
+    if (progress && progress.username === gameState.username && Number(progress.sessionId) === Number(gameState.sessionId)) {
+        gameState.introCutsceneCompleted = Boolean(progress.introCutsceneCompleted);
+    }
+
+    /* ── Cutscene gate: must play before ANY game screen shows ── */
+    if (!gameState.introCutsceneCompleted) {
+        await playIntroCutscene();
+        return;
+    }
+
+    /* ── No usable progress → story screen ── */
     if (!progress || progress.username !== gameState.username || Number(progress.sessionId) !== Number(gameState.sessionId)) {
         showScreen('story');
         return;
@@ -4071,7 +4402,7 @@ async function boot() {
         const targetTag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : '';
         const typingInInput = targetTag === 'input' || targetTag === 'textarea';
 
-        if (gameState.currentScreen !== 'arena') {
+        if (gameState.introCutscenePlaying || gameState.currentScreen !== 'arena') {
             return;
         }
 
