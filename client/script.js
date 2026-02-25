@@ -591,7 +591,7 @@ function buildLevel0CampusLayout(level) {
     // â”€â”€ horizontal zones â”€â”€
     const PARK_L = 4;  const PARK_R = 26;  // parking area
     const GARDEN_L = 54; const GARDEN_R = 86; // garden/tree area
-    const GATE_HALF = 3; // gate opening half-width
+    const GATE_HALF = 2; // gate opening half-width
 
     // â”€â”€ 1. Fill everything with grass â”€â”€
     const t = [];
@@ -646,11 +646,11 @@ function buildLevel0CampusLayout(level) {
     for (let x = CX - GATE_HALF; x <= CX + GATE_HALF; x++) {
         t[FENCE_Y][x] = 'GO';
     }
-    // watchman kiosks flanking the gate
-    t[FENCE_Y - 2][CX - GATE_HALF - 3] = 'KS';
-    t[FENCE_Y - 1][CX - GATE_HALF - 3] = 'KS';
-    t[FENCE_Y - 2][CX + GATE_HALF + 3] = 'KS';
-    t[FENCE_Y - 1][CX + GATE_HALF + 3] = 'KS';
+    // watchman kiosks flanking the gate (on walkpath edge)
+    t[FENCE_Y - 2][CX - GATE_HALF - 2] = 'KS';
+    t[FENCE_Y - 1][CX - GATE_HALF - 2] = 'KS';
+    t[FENCE_Y - 2][CX + GATE_HALF + 2] = 'KS';
+    t[FENCE_Y - 1][CX + GATE_HALF + 2] = 'KS';
 
     // â”€â”€ 5. College building â”€â”€
     for (let y = BLDG_TOP; y <= BLDG_BOT; y++) {
@@ -717,7 +717,7 @@ function buildLevel0CampusLayout(level) {
     }
 
     // â”€â”€ 10. Protect key points (clear 3x3 area around NPC, portal, spawn) â”€â”€
-    const npcPos   = { x: CX, y: FENCE_Y - 4 };
+    const npcPos   = { x: CX, y: FENCE_Y + 1 };
     const portalPos = { x: CX, y: BLDG_BOT + 1 };
     const spawnPos  = { x: CX, y: SPAWN_Y };
 
@@ -763,9 +763,9 @@ function buildLevel0CampusLayout(level) {
         y: spawnPos.y,
     };
 
-    // solid tiles: fence, gate pillar, kiosk, building, tree, parking edges
+    // solid tiles: fence, gate pillar, kiosk, building, tree, parking edges, gate (blocked until cleared)
     finalizeCollisions(level, new Set([
-        'F', 'GP', 'KS', 'BL', 'BW', 'T',
+        'F', 'GP', 'KS', 'BL', 'BW', 'T', 'GO',
         // keep original indoor solids for other levels that share this fn
         '1', '4', '6', '7', '8', '9', '11'
     ]));
@@ -2113,11 +2113,18 @@ function isBlocked(level, x, y) {
         { x: x + CHARACTER_SIZE - collisionPadding, y: y + CHARACTER_SIZE - collisionPadding },
     ];
 
+    // If Level 0 challenge is cleared, gate tiles become passable
+    const gateOpen = level.id === 0 && gameState.arena.challengeCleared[0];
+
     for (const point of corners) {
         const tx = Math.floor(point.x / ARENA_TILE);
         const ty = Math.floor(point.y / ARENA_TILE);
         if (tx < 0 || ty < 0 || tx >= level.width || ty >= level.height) return true;
-        if (level.collisions[ty][tx]) return true;
+        if (level.collisions[ty][tx]) {
+            // Allow walking through gate opening once challenge is cleared
+            if (gateOpen && level.tiles[ty][tx] === 'GO') continue;
+            return true;
+        }
     }
     return false;
 }
