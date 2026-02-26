@@ -39,6 +39,7 @@ class Player(Base):
     is_banned = Column(Boolean, nullable=False, default=False)
     auth_token = Column(Text, nullable=True)
     completed_at = Column(DateTime, nullable=True)
+    code_attempted = Column(Boolean, nullable=False, default=False)
 
     session = relationship("SessionModel", back_populates="players")
     logs = relationship("Log", back_populates="player", cascade="all, delete-orphan")

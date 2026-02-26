@@ -168,6 +168,17 @@ async def submit_code(
     if session.status != "running":
         raise HTTPException(status_code=403, detail="Session is not currently running")
 
+    # One-shot enforcement: block retries if already attempted or completed.
+    if player.completed_at is not None:
+        return {"status": "CORRECT", "new_score": player.score, "already_completed": True}
+    if player.code_attempted:
+        return {"status": "WRONG", "already_attempted": True}
+
+    # Mark attempt immediately so retries are blocked even if the request crashes.
+    player.code_attempted = True
+    player.last_active = datetime.utcnow()
+    db.commit()
+
     # Pull the coding question text so the model has full context.
     from routes.session import QUESTIONS
     question_text = (
@@ -178,12 +189,6 @@ async def submit_code(
 
     # Ask Ollama (qwen2.5-coder:1.5b) to judge the submission.
     correct = await judge_code(question_text, body.code)
-
-    player.last_active = datetime.utcnow()
-
-    if player.completed_at is not None:
-        db.commit()
-        return {"status": "CORRECT", "new_score": player.score, "already_completed": True}
 
     if correct:
         player.score += 100
@@ -197,8 +202,15 @@ async def submit_code(
                 details=f"Coding challenge solved; remaining_seconds={session.remaining_seconds}",
             )
         )
-        db.commit()
-        return {"status": "CORRECT", "new_score": player.score}
+    else:
+        db.add(
+            Log(
+                session_id=player.session_id,
+                player_id=player.id,
+                action_type="final_challenge_failed",
+                details="Coding challenge submission judged WRONG",
+            )
+        )
 
     db.commit()
-    return {"status": "WRONG"}
+    return {"status": "CORRECT" if correct else "WRONG", "new_score": player.score}
