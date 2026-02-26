@@ -2091,6 +2091,142 @@ const LEVEL_0_START_SEQUENCE = [
     { type: 'hide_dialogue' },
 ];
 
+/* ══════════════════════════════════════════════════════════════
+   Level 5 Outro Sequences (triggered after final code submit)
+   ══════════════════════════════════════════════════════════════ */
+
+const SUCCESS_OUTRO = [
+    // --- Shot 1: Mithravindha in cage ---
+    { type: 'set_bg',  src: '/assets/outro/sucess/Sucess_shot1.png' },
+    { type: 'fade',    direction: 'in', speed: 800 },
+    { type: 'wait',    duration: 500 },
+
+    // --- Shot 2: Mithravindha outside ---
+    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot2.png', duration: 800 },
+    { type: 'wait',    duration: 600 },
+
+    // --- Shot 3: Bhairava & Mithravindha close ---
+    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot3.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Oh my love\u2026 I finally found you. No one can separate us.',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Mithravindha',
+      text: 'It really felt like an eternity.',
+      hold: 1500 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Here\u2019s your Valentine surprise, Mithravindha.',
+      hold: 1500 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot 4: Unknown Silhouette ---
+    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot4.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Unknown',
+      text: 'Valentine surprise!?',
+      hold: 1500 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot 2 again: Mithravindha reaction ---
+    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot2.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Mithravindha',
+      text: 'Brother!?',
+      hold: 1200 },
+    { type: 'hide_dialogue' },
+
+    // --- Fade out to black ---
+    { type: 'fade', direction: 'out', speed: 1600 },
+];
+
+const FAILURE_OUTRO = [
+    // --- Shot: Principal ---
+    { type: 'set_bg',  src: '/assets/outro/fail/Fail_shot2.png' },
+    { type: 'fade',    direction: 'in', speed: 800 },
+
+    { type: 'dialogue', speaker: 'Principal',
+      text: 'Why are you coming to college? To study, or to make love?',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot: Both in cage (no dialogue) ---
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.png', duration: 800 },
+    { type: 'wait',    duration: 1200 },
+
+    // --- Shot: Principal ---
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Principal',
+      text: 'Now, I\u2019m gonna call your parents and tell them about you.',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot: Both in cage ---
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Mithravindha',
+      text: 'No sir please\u2026\u2026 my brother will kill us!',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: '[Stares at Principal]',
+      hold: 1200 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot: Principal ---
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Phone',
+      text: 'Ringing\u2026. Ringing\u2026\u2026',
+      hold: 1500 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Principal',
+      text: 'Hello, are you the parents of Mithravindha?',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot: Unknown Silhouette ---
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot3.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Brother',
+      text: 'Hello, this is her brother speaking. Is there any problem?',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot: Mithravindha ---
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Mithravindha',
+      text: '(Completely terrified) No, no, no...!',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot: Principal ---
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Principal',
+      text: 'Your sister is playing around with her boyfriend in college instead of studying.',
+      hold: 2200 },
+    { type: 'hide_dialogue' },
+
+    // --- Shot: Unknown Silhouette ---
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot3.png', duration: 800 },
+
+    { type: 'dialogue', speaker: 'Brother',
+      text: '(Low, scary voice) I\u2019m coming... (Hangs Up)',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    // --- Fade out to black ---
+    { type: 'fade', direction: 'out', speed: 1600 },
+];
+
 async function playIntroCutscene() {
     gameState.introCutscenePlaying = true;
 
@@ -4474,6 +4610,8 @@ function nextQuestion() {
 async function submitCode() {
     const code = document.getElementById('code-editor').value;
     const button = document.querySelector('#coding-screen button');
+
+    /* ── One-shot finale: disable button permanently ── */
     button.textContent = 'COMPILING...';
     button.disabled = true;
 
@@ -4484,46 +4622,49 @@ async function submitCode() {
             body: JSON.stringify({ code }),
         });
 
-        button.textContent = 'COMPILE & EXECUTE';
-        button.disabled = false;
-
         if (response.status === 403) {
             await handleLockedSessionState();
             return;
         }
 
         const data = await response.json();
-        if (data.status === 'CORRECT') {
+        const isCorrect = data.status === 'CORRECT';
+
+        if (isCorrect) {
             gameState.score = data.new_score;
             scoreDisplay.textContent = gameState.score;
-            persistProgress();
-            closeArenaModals();
+        }
+        persistProgress();
+        closeArenaModals();
 
-            /* Outro dialogue for coding challenge NPC, then unlock */
-            const levelData = ARENA_LEVELS[gameState.arena.currentLevel];
-            const outroEntries = levelData?.npc?.outro;
+        /* ── Launch the appropriate outro cutscene ── */
+        const allScreens = getAvailableScreens();
+        allScreens.forEach((s) => { s.classList.add('hidden'); s.classList.remove('active'); });
+        hud.classList.add('hidden');
 
-            if (outroEntries && outroEntries.length) {
-                openArenaDialogue(outroEntries, () => {
-                    gameState.arena.challengeCleared[levelData.npc.questionLevel] = true;
-                    setHudStatus('Final challenge cleared. Enter portal to finish.');
-                    persistProgress();
-                });
-            } else {
-                gameState.arena.challengeCleared[5] = true;
-                setHudStatus('Final challenge cleared. Enter portal to finish.');
-            }
-            return;
+        const bgContainer = document.getElementById('cutscene-bg-container');
+        if (bgContainer) bgContainer.style.display = '';
+
+        CutsceneManager.show();
+        await CutsceneManager.run(isCorrect ? SUCCESS_OUTRO : FAILURE_OUTRO);
+        /* Sequence ends faded-to-black — hand off to manual post-credit work */
+
+        CutsceneManager.hide();
+        if (bgContainer) bgContainer.style.display = '';
+
+        /* Stop the arena render loop so Level 5 is fully unloaded */
+        if (gameState.arena.loopId) {
+            cancelAnimationFrame(gameState.arena.loopId);
+            gameState.arena.loopId = null;
         }
 
-        const resultDiv = document.getElementById('code-result');
-        resultDiv.textContent = 'OUTPUT: WRONG ANSWER';
-        resultDiv.style.color = 'red';
-        gameState.score = Math.max(0, gameState.score - 10);
-        scoreDisplay.textContent = gameState.score;
-        setHudStatus('Wrong code. -10 score.');
+        endGame(
+            isCorrect ? 'Mission complete!' : 'Mission failed.',
+            true,   /* lockCompleted for BOTH outcomes — prevents poll race restoring arena */
+        );
     } catch (err) {
         console.error(err);
+        /* On network error, re-enable so the player can retry */
         button.disabled = false;
         button.textContent = 'COMPILE & EXECUTE';
     }
