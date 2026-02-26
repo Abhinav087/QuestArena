@@ -80,7 +80,7 @@ async def get_questions(level: int, path: str | None = None):
 
     level_data = QUESTIONS[key]
 
-    if level in (2, 3):
+    if "easy" in level_data and "hard" in level_data:
         if path in ("easy", "hard"):
             return {"questions": level_data[path], "title": level_data["title"]}
         return {

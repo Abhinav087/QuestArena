@@ -4,53 +4,94 @@
         "questions": [
             {
                 "id": "q0_1",
-                "text": "Which planet is known as the Red Planet?",
+                "text": "You kids are always on your phones. Tell me this... What does the 'G' in ChatGPT stand for?",
                 "options": [
-                    "Venus",
-                    "Mars",
-                    "Jupiter",
-                    "Mercury"
+                    "General",
+                    "Generative",
+                    "Global",
+                    "Generated"
                 ],
-                "answer": "Mars"
+                "answer": "Generative"
             },
             {
                 "id": "q0_2",
-                "text": "Who wrote the Indian national anthem?",
+                "text": "I was watching the match on my phone yesterday. Who won the ICC Men's Cricket World Cup in 2023?",
                 "options": [
-                    "Bankim Chandra Chatterjee",
-                    "Rabindranath Tagore",
-                    "Sarojini Naidu",
-                    "Subramania Bharati"
+                    "India",
+                    "Australia",
+                    "England",
+                    "South Africa"
                 ],
-                "answer": "Rabindranath Tagore"
+                "answer": "Australia"
+            },
+            {
+                "id": "q0_3",
+                "text": "Which Indian city is widely known as the 'Silicon Valley of India'?",
+                "options": [
+                    "Hyderabad",
+                    "Pune",
+                    "Bengaluru",
+                    "Chennai"
+                ],
+                "answer": "Bengaluru"
+            },
+            {
+                "id": "q0_4",
+                "text": "You say you study here, right? Let's see if you even know what your grades are called. What does 'CGPA' stand for?",
+                "options": [
+                    "College Grade Percentage Average",
+                    "Cumulative Grade Point Average",
+                    "Calculated General Performance Assessment",
+                    "Current Grade Point Aggregate"
+                ],
+                "answer": "Cumulative Grade Point Average"
+            },
+            {
+                "id": "q0_5",
+                "text": "If you roam around so much, you must go to the movies. In the blockbuster movie 'Pushpa: The Rise', what is the main item being smuggled by the protagonist?",
+                "options": [
+                    "Gold",
+                    "Red Sandalwood",
+                    "Diamonds",
+                    "Weapons"
+                ],
+                "answer": "Red Sandalwood"
             }
         ]
     },
     "1": {
         "title": "Level 1 — Lobby (English)",
         "questions": [
-            {
-                "id": "q1_1",
-                "text": "Choose the correct sentence:",
-                "options": [
-                    "He don't like coffee.",
-                    "He doesn't likes coffee.",
-                    "He doesn't like coffee.",
-                    "He not like coffee."
-                ],
-                "answer": "He doesn't like coffee."
-            },
-            {
-                "id": "q1_2",
-                "text": "Pick the word closest in meaning to 'resilient'.",
-                "options": [
-                    "Fragile",
-                    "Adaptable",
-                    "Silent",
-                    "Anxious"
-                ],
-                "answer": "Adaptable"
-            }
+           {
+            "id": "q1_1",
+            "text": "Identify the correctly spelled word often used in corporate emails:",
+            "options": ["Occurred", "Ocurred", "Occured", "Occurede"],
+            "answer": "Occurred"
+        },
+        {
+            "id": "q1_2",
+            "text": "Complete the professional idiom: 'In the corporate world, you must be able to hit the ground _______.'",
+            "options": ["Walking", "Running", "Jumping", "Working"],
+            "answer": "Running"
+        },
+        {
+            "id": "q1_3",
+            "text": "Which of these is a synonym for 'Meticulous', a trait every engineer should have?",
+            "options": ["Careless", "Thorough", "Fast", "Humble"],
+            "answer": "Thorough"
+        },
+        {
+            "id": "q1_4",
+            "text": "Choose the correct preposition: 'The team will comply ____ the new security protocols.'",
+            "options": ["with", "by", "to", "for"],
+            "answer": "with"
+        },
+        {
+            "id": "q1_5",
+            "text": "What does the phrase 'To touch base' mean in a business context?",
+            "options": ["To play baseball", "To briefly connect/contact", "To quit a job", "To build a foundation"],
+            "answer": "To briefly connect/contact"
+        }
         ],
         "hidden_route": {
             "trigger": "backlog_king",
@@ -71,42 +112,37 @@
     },
     "2": {
         "title": "Level 2 — Classroom (Aptitude)",
-        "easy": [
-            {
-                "id": "q2_e1",
-                "text": "If a train covers 120 km in 2 hours, what is its speed?",
-                "options": [
-                    "50 km/h",
-                    "60 km/h",
-                    "70 km/h",
-                    "80 km/h"
-                ],
-                "answer": "60 km/h"
-            },
-            {
-                "id": "q2_e2",
-                "text": "What is 25% of 320?",
-                "options": [
-                    "60",
-                    "70",
-                    "80",
-                    "90"
-                ],
-                "answer": "80"
-            }
-        ],
-        "hard": [
-            {
-                "id": "q2_h1",
-                "text": "A sum doubles in 5 years at simple interest. In how many years will it become 4 times?",
-                "options": [
-                    "10",
-                    "12",
-                    "15",
-                    "20"
-                ],
-                "answer": "15"
-            }
+        "questions" :[
+           {
+            "id": "q2_1",
+            "text": "You kids can never finish your assignments on time. If Student A can complete a project in 10 days, and Student B takes 15 days, how many days will it take if they work together?",
+            "options": ["5 days", "6 days", "8 days", "12 days"],
+            "answer": "6 days"
+        },
+        {
+            "id": "q2_2",
+            "text": "You all act like you are 5 years old. The ratio of the present ages of two students is 3:4. After 4 years, the ratio will become 4:5. What is the present age of the younger student?",
+            "options": ["12 years", "15 years", "16 years", "20 years"],
+            "answer": "12 years"
+        },
+        {
+            "id": "q2_3",
+            "text": "Let's see if you have any business sense. You bought a used textbook for ₹500 and sold it to a junior for ₹600. What is your profit percentage?",
+            "options": ["10%", "15%", "20%", "25%"],
+            "answer": "20%"
+        },
+        {
+            "id": "q2_4",
+            "text": "Your class average is dragging the whole college down. The average weight of 10 students is 60 kg. When a new student joins, the average becomes 62 kg. What is the weight of the new student?",
+            "options": ["62 kg", "70 kg", "80 kg", "82 kg"],
+            "answer": "82 kg"
+        },
+        {
+            "id": "q2_5",
+            "text": "What is the probability that you actually study tonight? Zero. But try this: Two dice are thrown simultaneously. What is the probability of getting a sum of 9?",
+            "options": ["1/6", "1/9", "1/12", "1/8"],
+            "answer": "1/9"
+        }
         ]
     },
     "3": {
@@ -151,28 +187,41 @@
     },
     "4": {
         "title": "Level 4 — Server Room (Technical MCQs)",
-        "questions": [
+        "easy": [
             {
-                "id": "q4_1",
-                "text": "Which HTTP status code means 'Unauthorized'?",
+                "id": "q4_e1",
+                "text": "Find the next number: 2, 6, 12, 20, ?",
                 "options": [
-                    "200",
-                    "401",
-                    "403",
-                    "500"
+                    "28",
+                    "30",
+                    "32",
+                    "36"
                 ],
-                "answer": "401"
+                "answer": "30"
             },
             {
-                "id": "q4_2",
-                "text": "Which SQL command is used to remove a table and all its data?",
+                "id": "q4_e2",
+                "text": "If all roses are flowers and some flowers fade quickly, which statement is definitely true?",
                 "options": [
-                    "DELETE TABLE",
-                    "REMOVE TABLE",
-                    "TRUNCATE TABLE",
-                    "DROP TABLE"
+                    "All roses fade quickly",
+                    "Some roses are flowers",
+                    "No flower is a rose",
+                    "All flowers are roses"
                 ],
-                "answer": "DROP TABLE"
+                "answer": "Some roses are flowers"
+            }
+        ],
+        "hard": [
+            {
+                "id": "q4_h1",
+                "text": "Statement: All coders are gamers. Some gamers are designers. Conclusion: Some coders are designers.",
+                "options": [
+                    "Definitely true",
+                    "Definitely false",
+                    "Cannot be determined",
+                    "Both true and false"
+                ],
+                "answer": "Cannot be determined"
             }
         ]
     },

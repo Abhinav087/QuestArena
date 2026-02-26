@@ -10,6 +10,30 @@ from services.security import get_current_player
 
 router = APIRouter(prefix="/api", tags=["player"])
 
+# Per-level scoring: maps (level, path_hint) -> points for correct answer
+# path_hint is derived from question_id prefix: "e" for easy, "h" for hard, None for flat
+SCORE_TABLE = {
+    (0, None): 10,
+    (1, None): 15,
+    (2, None): 20,
+    (3, "e"): 10,
+    (3, "h"): 40,
+    (4, "e"): 15,
+    (4, "h"): 60,
+}
+
+
+def _path_hint_from_qid(question_id: str) -> str | None:
+    """Detect easy/hard from question ID convention: q3_e1 -> 'e', q3_h1 -> 'h'."""
+    parts = question_id.split("_")
+    if len(parts) >= 2:
+        tag = parts[1]
+        if tag.startswith("e"):
+            return "e"
+        if tag.startswith("h"):
+            return "h"
+    return None
+
 
 def _normalize_answer(value: str | None) -> str:
     if value is None:
@@ -114,7 +138,9 @@ async def submit_answer(
                 level=body.level,
             )
         )
-        player.score += 10
+        hint = _path_hint_from_qid(body.question_id)
+        points = SCORE_TABLE.get((body.level, hint), 10)
+        player.score += points
         player.current_level = max(player.current_level, body.level)
         db.add(
             Log(
@@ -151,7 +177,7 @@ async def submit_code(
         return {"status": "CORRECT", "new_score": player.score, "already_completed": True}
 
     if correct:
-        player.score += 50
+        player.score += 100
         player.current_level = max(player.current_level, 6)
         player.completed_at = datetime.utcnow()
         db.add(

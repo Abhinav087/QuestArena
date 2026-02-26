@@ -243,7 +243,14 @@ const ARENA_LEVELS = [
         width: 15,
         height: 12,
         tiles: createEmptyMap(15, 12),
-        npc: { spriteId: 1, x: 7, y: 5, name: 'Security', questionLevel: 0 },
+        npc: {
+            spriteId: 1, x: 7, y: 5, name: 'Security', questionLevel: 0,
+            dialogue: [
+                { speaker: 'Security', text: 'ID card Where? No ID No Entry.' },
+                { speaker: 'Bhairava', text: 'My ID card is with the Principal.' },
+                { speaker: 'Security', text: 'No ID, No entry. Answer question, Then Go.' },
+            ],
+        },
         portal: { x: 7, y: 1, targetLevel: 1 },
         playerStart: { x: 7, y: 9 },
     },
@@ -253,7 +260,14 @@ const ARENA_LEVELS = [
         width: 18,
         height: 14,
         tiles: createEmptyMap(18, 14),
-        npc: { spriteId: 2, x: 9, y: 4, name: 'Reception Aunty', questionLevel: 1, scale: 1.25 },
+        npc: {
+            spriteId: 2, x: 9, y: 4, name: 'Reception Aunty', questionLevel: 1, scale: 1.25,
+            dialogue: [
+                { speaker: 'Reception Aunty', text: 'Why are you roaming here during class hours?' },
+                { speaker: 'Bhairava', text: 'I’m looking for the Principal. He isn’t in his cabin.Where is he?' },
+                { speaker: 'Reception Aunty', text: 'I dont know where he is. But he gave me this paper and asked you to answer them.' },
+            ],
+        },
         portal: { x: 9, y: 1, targetLevel: 2 },
         hiddenLift: { x: 14, y: 10, targetLevel: 3 },
         playerStart: { x: 9, y: 11 },
@@ -264,7 +278,14 @@ const ARENA_LEVELS = [
         width: 16,
         height: 12,
         tiles: createEmptyMap(16, 12),
-        npc: { spriteId: 3, x: 8, y: 5, name: 'Teacher', questionLevel: 2 },
+        npc: {
+            spriteId: 3, x: 8, y: 5, name: 'Teacher', questionLevel: 2,
+            dialogue: [
+                { speaker: 'Teacher', text: 'What are you doing without attending class?' },
+                { speaker: 'Bhairava', text: 'I’m looking for my girlfriend.' },
+                { speaker: 'Teacher', text: 'Huh!? Girlfriend? For you? First answer these questions and let’s see if you even deserve her.' },
+            ],
+        },
         portal: { x: 8, y: 1, targetLevel: 3 },
         playerStart: { x: 8, y: 9 },
     },
@@ -274,7 +295,17 @@ const ARENA_LEVELS = [
         width: 18,
         height: 14,
         tiles: createEmptyMap(18, 14),
-        npc: { spriteId: 4, x: 9, y: 4, name: 'Lab Incharge', questionLevel: 3 },
+        npc: {
+            spriteId: 4, x: 9, y: 4, name: 'Lab Incharge', questionLevel: 3,
+            dialogue: [
+                { speaker: 'Lab Incharge', text: 'You scoundrel! You haven’t come to the lab since day one!' },
+                { speaker: 'Bhairava', text: 'So?' },
+                { speaker: 'Lab Incharge', text: 'Answer my questions or you won’t write your externals.' },
+            ],
+            outro: [
+            { speaker: 'Teacher', text: 'Hmm. You have some brains after all. Go, but don\u2019t skip my class again.' },
+        ],
+        },
         portal: { x: 9, y: 1, targetLevel: 4 },
         hiddenLift: { x: 3, y: 11, targetLevel: null },
         playerStart: { x: 9, y: 11 },
@@ -285,7 +316,14 @@ const ARENA_LEVELS = [
         width: 46,
         height: 32,
         tiles: createEmptyMap(46, 32),
-        npc: { spriteId: 5, x: 22, y: 15, name: 'System Admin', questionLevel: 4 },
+        npc: {
+            spriteId: 5, x: 22, y: 15, name: 'System Admin', questionLevel: 4,
+            dialogue: [
+                { speaker: 'System Admin', text: ' This is the server room. No one has access here.' },
+                { speaker: 'Bhairava', text: ' I know, so what?' },
+                { speaker: 'System Admin', text: 'Huh So Full of yourself. Lets see what you can do.' },
+            ],
+        },
         portal: { x: 22, y: 1, targetLevel: 5 },
         playerStart: { x: 22, y: 30 },
     },
@@ -542,6 +580,11 @@ function buildLevel5RooftopLayout(level) {
         y: npcPos.y,
         name: 'Principal',
         questionLevel: 5,
+        dialogue: [
+            { speaker: 'Principal', text: 'Ahhh… the lover boy who fought security, aunties, teachers, and even the WiFi. Impressive… but stupidity is not a skill. You broke rules, disturbed discipline, and messed up my server room.' },
+            { speaker: 'Principal', text: 'Fine… I’ll let you go. But on one condition. Answer this question and you both are free, if not your love story is going to become a case study!' },
+            { speaker: 'Bhairava', text: 'Anthing For Mithravindha' },
+        ],
     };
     level.portal = { x: portalPos.x, y: portalPos.y, targetLevel: null };
     level.playerStart = { x: spawnPos.x, y: spawnPos.y };
@@ -773,6 +816,14 @@ function buildLevel0CampusLayout(level) {
         y: npcPos.y,
         name: 'Gate Security',
         questionLevel: 0,
+        dialogue: [
+            { speaker: 'Security', text: 'ID card Where? No ID No Entry.' },
+            { speaker: 'Bhairava', text: 'My ID card is with the Principal.' },
+            { speaker: 'Security', text: 'No ID, No entry. Answer question, Then Go.' },
+        ],
+        outro: [
+            { speaker: 'Security', text: 'Ha tek hai chalo chalo!' },
+        ],
     };
     level.portal = {
         x: portalPos.x,
@@ -960,6 +1011,14 @@ function buildLevel1LobbyLayout(level) {
         name: 'Reception Aunty',
         questionLevel: 1,
         scale: 1.25,
+        dialogue: [
+            { speaker: 'Reception Aunty', text: 'Why are you roaming here during class hours?' },
+                { speaker: 'Bhairava', text: 'I’m looking for the Principal. He isn’t in his cabin.Where is he?' },
+                { speaker: 'Reception Aunty', text: 'I dont know where he is. But he gave me this paper and asked you to answer them.' },
+        ],
+        outro: [
+            { speaker: 'Reception Aunty', text: 'He maybe on rounds' },
+        ],
     };
 
     // Portal - stairs on far right of divider wall
@@ -1070,6 +1129,14 @@ function buildLevel2ClassroomLayout(level) {
         y: 4,
         name: 'Teacher',
         questionLevel: 2,
+        dialogue: [
+            { speaker: 'Teacher', text: 'What are you doing without attending class?' },
+                { speaker: 'Bhairava', text: 'I’m looking for my girlfriend.' },
+                { speaker: 'Teacher', text: 'Huh!? Girlfriend? For you? First answer these questions and let’s see if you even deserve her.' },
+        ],
+        outro: [
+            { speaker: 'Teacher', text: 'Aha… so you’ll answer the questions if it’s for your Girlfriend!' },
+        ],
     };
 
     // Portal - door at top right of classroom
@@ -1195,6 +1262,15 @@ function buildLevel3LabLayout(level) {
         y: 2,
         name: 'Lab Incharge',
         questionLevel: 3,
+        dialogue: [
+           { speaker: 'Lab Incharge', text: 'You scoundrel! You haven’t come to the lab since day one!' },
+                { speaker: 'Bhairava', text: 'So?' },
+                { speaker: 'Lab Incharge', text: 'Answer my questions or you won’t write your externals.' },
+        ],
+        outro: [
+            { speaker: 'Lab Incharge', text: 'Well You are better than you look' },
+            { speaker: 'Bhairava', text: 'I know, Outta my way' },
+        ],
     };
 
     // Portal - door at top-right
@@ -1557,6 +1633,14 @@ function buildLevel4ServerRoomLayout(level) {
         y: 15,
         name: 'System Admin',
         questionLevel: 4,
+        dialogue: [
+           { speaker: 'System Admin', text: ' This is the server room. No one has access here.' },
+                { speaker: 'Bhairava', text: ' I know, so what?' },
+                { speaker: 'System Admin', text: 'Huh So Full of yourself. Lets see what you can do.' },
+        ],
+        outro: [
+            { speaker: 'System Admin', text: 'You must be understanding systems better than the guy who set ‘password123’ as the admin password. You are free to go.' },
+        ],
     };
     level.portal = { x: 22, y: 1, targetLevel: 5 };
     level.playerStart = { x: 22, y: 30 };
@@ -1661,8 +1745,7 @@ let gameState = {
         challengeCleared: {},
         dialogue: {
             open: false,
-            speaker: '',
-            lines: [],
+            entries: [],
             index: 0,
             onComplete: null,
         },
@@ -1839,6 +1922,16 @@ const CutsceneManager = (() => {
                 case 'hide_dialogue':
                     hideDialogue();
                     break;
+                case 'hide_bg_container': {
+                    const bgContainer = document.getElementById('cutscene-bg-container');
+                    if (bgContainer) bgContainer.style.display = 'none';
+                    break;
+                }
+                case 'show_bg_container': {
+                    const bgContainer = document.getElementById('cutscene-bg-container');
+                    if (bgContainer) bgContainer.style.display = '';
+                    break;
+                }
                 default:
                     console.warn('CutsceneManager: unknown step type', step.type);
             }
@@ -1916,13 +2009,13 @@ const INTRO_SEQUENCE = [
 
     { type: 'dialogue', speaker: 'Bhairava',
       text: 'Well a Little Hug I guess.',
-      hold: 1200 },
+      hold: 1000 },
     { type: 'hide_dialogue' },
 
     // -- Shot 5: Principal entrance --
-    { type: 'fade', direction: 'out', speed: 600 },
+    // { type: 'fade', direction: 'out', speed: 600 },
     { type: 'set_bg', src: '/assets/intro/shot5.png' },
-    { type: 'fade', direction: 'in',  speed: 300 },
+    // { type: 'fade', direction: 'in',  speed: 300 },
 
     { type: 'dialogue', speaker: 'Principal',
       text: 'What are you two doing here in the classroom after the college hours?',
@@ -1950,7 +2043,7 @@ const INTRO_SEQUENCE = [
 
     { type: 'narration', text: 'Bhairava stares at principal', hold: 1500, charDelay: 40 },
     { type: 'hide_dialogue' },
-    { type: 'wait', duration: 1500 },
+    { type: 'wait', duration: 1000 },
 
     // -- Shot 5: Principal final lines --
     { type: 'set_bg', src: '/assets/intro/shot5.png' },
@@ -1965,10 +2058,37 @@ const INTRO_SEQUENCE = [
       hold: 2000 },
     { type: 'hide_dialogue' },
 
-    // -- Final fade out --
+    // -- Final fade out (stays black — Level 0 sequence takes over) --
     { type: 'fade', direction: 'out', speed: 1600 },
-    { type: 'wait', duration: 400 },
-    { type: 'fade', direction: 'in',  speed: 300 },
+];
+
+/* ---- Level 0 Start Mini-Sequence ---- */
+const LEVEL_0_START_SEQUENCE = [
+    // Hide the static intro backgrounds so the live canvas is visible
+    { type: 'hide_bg_container' },
+
+    // Reveal the Level 0 canvas underneath
+    { type: 'fade', direction: 'in', speed: 1000 },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'How dare this moron separate me from my Mithrabindha. He truly doesn\u2019t know the depth of hell.',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'System',
+      text: 'Back to the single life, are we? Not a surprise really.',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'System',
+      text: 'Go get your girl back before Valentine\u2019s Day ends.',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'System',
+      text: 'Use WASD or Arrow keys to move. Press E to interact with people.',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
 ];
 
 async function playIntroCutscene() {
@@ -1979,17 +2099,28 @@ async function playIntroCutscene() {
     allScreens.forEach((s) => { s.classList.add('hidden'); s.classList.remove('active'); });
     hud.classList.add('hidden');
 
+    /* ── Phase 1: Play the main intro cinematic ── */
     CutsceneManager.show();
     await CutsceneManager.run(INTRO_SEQUENCE);
+    /* INTRO_SEQUENCE ends faded-to-black; cutscene layer stays up */
+
+    /* ── Phase 2: Initialize Level 0 canvas BEHIND the black overlay ── */
+    hud.classList.remove('hidden');
+    enterArenaLevel(0);
+    /* Canvas is now live but invisible (cutscene fade plane covers it) */
+
+    /* ── Phase 3: Run the Level 0 mini-sequence over the canvas ── */
+    await CutsceneManager.run(LEVEL_0_START_SEQUENCE);
+
+    /* ── Teardown: remove cutscene layer, unlock controls ── */
     CutsceneManager.hide();
+    /* Restore the bg-container display for any future cutscene reuse */
+    const bgContainer = document.getElementById('cutscene-bg-container');
+    if (bgContainer) bgContainer.style.display = '';
 
     gameState.introCutscenePlaying = false;
     gameState.introCutsceneCompleted = true;
     persistProgress();
-
-    /* Proceed to story screen → level 0 */
-    hud.classList.remove('hidden');
-    showScreen('story');
 }
 
 const screens = {
@@ -2247,7 +2378,7 @@ function showLevelIntro(level) {
 function continueLevelIntro() {
     const next = gameState.pendingAfterIntro;
     if (!next) {
-        showScreen('story');
+        enterArenaLevel(gameState.level || 0);
         return;
     }
 
@@ -2269,7 +2400,7 @@ function continueLevelIntro() {
         return;
     }
 
-    showScreen('story');
+    enterArenaLevel(gameState.level || 0);
 }
 
 function startMission() {
@@ -2320,14 +2451,22 @@ function placePlayerAtTile(tileX, tileY) {
 
 function hideArenaDialogue() {
     gameState.arena.dialogue.open = false;
-    gameState.arena.dialogue.lines = [];
+    gameState.arena.dialogue.entries = [];
     gameState.arena.dialogue.index = 0;
     gameState.arena.dialogue.onComplete = null;
     const dialogueBox = document.getElementById('arena-dialogue');
     if (dialogueBox) dialogueBox.classList.add('hidden');
 }
 
-function openArenaDialogue(speaker, lines, onComplete = null) {
+/**
+ * Open the arena dialogue box.
+ * @param {Array<{speaker:string, text:string}>|string} speakerOrEntries
+ *   - Array of {speaker, text} objects for multi-speaker conversations
+ *   - OR a plain string speaker name (legacy single-speaker mode)
+ * @param {string[]|null} lines  - only used in legacy mode
+ * @param {Function|null} onComplete - called after the last line is dismissed
+ */
+function openArenaDialogue(speakerOrEntries, lines, onComplete = null) {
     closeArenaModals();
     clearMovementKeys();
     const dialogueBox = document.getElementById('arena-dialogue');
@@ -2335,26 +2474,46 @@ function openArenaDialogue(speaker, lines, onComplete = null) {
     const textNode = document.getElementById('arena-dialogue-text');
     if (!dialogueBox || !speakerNode || !textNode) return;
 
+    /* Normalise into {speaker, text}[] regardless of call style */
+    let entries;
+    if (Array.isArray(speakerOrEntries) && speakerOrEntries.length && typeof speakerOrEntries[0] === 'object') {
+        /* New multi-speaker format: [{speaker, text}, …] */
+        entries = speakerOrEntries;
+        /* onComplete may be the second arg when called new-style */
+        if (typeof lines === 'function') {
+            onComplete = lines;
+            lines = null;
+        }
+    } else {
+        /* Legacy single-speaker format: (speaker, [line1, line2, …], cb) */
+        entries = (lines || []).map((l) => ({ speaker: speakerOrEntries, text: l }));
+    }
+
     gameState.arena.dialogue.open = true;
-    gameState.arena.dialogue.speaker = speaker;
-    gameState.arena.dialogue.lines = lines;
+    gameState.arena.dialogue.entries = entries;
     gameState.arena.dialogue.index = 0;
     gameState.arena.dialogue.onComplete = onComplete;
 
-    speakerNode.textContent = speaker;
-    textNode.textContent = lines[0] || '';
-    setHudStatus(`Dialogue: ${speaker}`);
+    /* Show the first line instantly */
+    speakerNode.textContent = entries[0].speaker;
+    textNode.textContent = entries[0].text;
+    setHudStatus(`Dialogue: ${entries[0].speaker}`);
     dialogueBox.classList.remove('hidden');
 }
 
 function continueArenaDialogue() {
     if (!gameState.arena.dialogue.open) return;
+    const speakerNode = document.getElementById('arena-dialogue-speaker');
     const textNode = document.getElementById('arena-dialogue-text');
     const state = gameState.arena.dialogue;
+    const entries = state.entries || [];
 
-    if (state.index < state.lines.length - 1) {
+    if (state.index < entries.length - 1) {
         state.index += 1;
-        if (textNode) textNode.textContent = state.lines[state.index];
+        const entry = entries[state.index];
+        if (speakerNode) speakerNode.textContent = entry.speaker;
+        if (textNode) textNode.textContent = entry.text;
+        setHudStatus(`Dialogue: ${entry.speaker}`);
         return;
     }
 
@@ -3093,15 +3252,20 @@ function interactInArena() {
 
     if (target.type === 'npc') {
         if (gameState.arena.challengeCleared[level.npc.questionLevel]) {
-            openArenaDialogue(level.npc.name, ['You already cleared this floor. The portal is active.']);
+            openArenaDialogue([
+                { speaker: level.npc.name, text: 'You already cleared this floor. The portal is active.' },
+            ]);
             setHudStatus('Portal unlocked. Press E near the portal to enter.');
             return;
         }
 
-        openArenaDialogue(level.npc.name, [
-            `You reached ${level.name}.`,
-            'Clear my challenge to unlock the portal.'
-        ], () => {
+        /* Use the NPC's multi-speaker dialogue array; fall back to generic lines */
+        const npcDialogue = level.npc.dialogue || [
+            { speaker: level.npc.name, text: `You reached ${level.name}.` },
+            { speaker: level.npc.name, text: 'Clear my challenge to unlock the portal.' },
+        ];
+
+        openArenaDialogue(npcDialogue, () => {
             loadLevel(level.npc.questionLevel, null, null, { skipIntro: true });
         });
         return;
@@ -3933,14 +4097,14 @@ async function restorePlayerProgress(sessionStatus) {
         return;
     }
 
-    /* ── No usable progress → story screen ── */
+    /* ── No usable progress → drop straight into Level 0 ── */
     if (!progress || progress.username !== gameState.username || Number(progress.sessionId) !== Number(gameState.sessionId)) {
-        showScreen('story');
+        enterArenaLevel(0);
         return;
     }
 
     if (!Object.prototype.hasOwnProperty.call(progress, 'arenaChallengeCleared')) {
-        showScreen('story');
+        enterArenaLevel(0);
         return;
     }
 
@@ -3981,11 +4145,11 @@ async function restorePlayerProgress(sessionStatus) {
     }
 
     if (screen === 'levelIntro') {
-        showScreen('story');
+        enterArenaLevel(gameState.level || 0);
         return;
     }
 
-    showScreen('story');
+    enterArenaLevel(gameState.level || 0);
 }
 
 async function handleLockedSessionState() {
@@ -4191,9 +4355,18 @@ async function submitAnswer() {
             nextQuestion();
             return;
         }
-        gameState.score = Math.max(0, gameState.score - 5);
+        const PENALTY_TABLE = {
+            '0': 1, '1': 2, '2': 5,
+            '3_easy': 5, '3_hard': 20,
+            '4_easy': 8, '4_hard': 32,
+            '5': 0,
+        };
+        const penaltyKey = (gameState.level >= 3 && gameState.level <= 4 && gameState.pathChoice)
+            ? `${gameState.level}_${gameState.pathChoice}` : String(gameState.level);
+        const penalty = PENALTY_TABLE[penaltyKey] ?? 5;
+        gameState.score = Math.max(0, gameState.score - penalty);
         scoreDisplay.textContent = gameState.score;
-        setHudStatus('Wrong answer. -5 score.');
+        setHudStatus(`Wrong answer. -${penalty} score.`);
         alert('Incorrect! Try again.');
     } catch (err) {
         console.error(err);
@@ -4232,13 +4405,41 @@ function nextQuestion() {
     }
 
     if (gameState.level >= 5) {
-        endGame('Mission complete!', true);
+        /* Level 5 MCQ outro (Principal) then end game */
+        const level5 = ARENA_LEVELS[gameState.arena.currentLevel];
+        const outroEntries = level5?.npc?.outro;
+        if (outroEntries && outroEntries.length) {
+            enterArenaLevel(gameState.level, { preservePlayerPosition: true });
+            openArenaDialogue(outroEntries, () => {
+                endGame('Mission complete!', true);
+            });
+        } else {
+            endGame('Mission complete!', true);
+        }
         return;
     }
 
-    gameState.arena.challengeCleared[gameState.level] = true;
-    setHudStatus('Challenge cleared. Portal unlocked (press E near portal).');
-    enterArenaLevel(gameState.level, { preservePlayerPosition: true });
+    /* ── Outro dialogue: show NPC's closing lines, THEN unlock ── */
+    const levelData = ARENA_LEVELS[gameState.arena.currentLevel];
+    const outroEntries = levelData?.npc?.outro;
+
+    if (outroEntries && outroEntries.length) {
+        /* Return to the arena canvas so the dialogue box renders over it */
+        enterArenaLevel(gameState.level, { preservePlayerPosition: true });
+
+        /* Show outro; the onComplete callback fires when the player
+           dismisses the final line with Enter / Continue */
+        openArenaDialogue(outroEntries, () => {
+            gameState.arena.challengeCleared[gameState.level] = true;
+            setHudStatus('Challenge cleared. Portal unlocked (press E near portal).');
+            persistProgress();
+        });
+    } else {
+        /* No outro defined — unlock immediately (fallback) */
+        gameState.arena.challengeCleared[gameState.level] = true;
+        setHudStatus('Challenge cleared. Portal unlocked (press E near portal).');
+        enterArenaLevel(gameState.level, { preservePlayerPosition: true });
+    }
 }
 
 async function submitCode() {
@@ -4268,8 +4469,21 @@ async function submitCode() {
             scoreDisplay.textContent = gameState.score;
             persistProgress();
             closeArenaModals();
-            gameState.arena.challengeCleared[5] = true;
-            setHudStatus('Final challenge cleared. Enter portal to finish.');
+
+            /* Outro dialogue for coding challenge NPC, then unlock */
+            const levelData = ARENA_LEVELS[gameState.arena.currentLevel];
+            const outroEntries = levelData?.npc?.outro;
+
+            if (outroEntries && outroEntries.length) {
+                openArenaDialogue(outroEntries, () => {
+                    gameState.arena.challengeCleared[levelData.npc.questionLevel] = true;
+                    setHudStatus('Final challenge cleared. Enter portal to finish.');
+                    persistProgress();
+                });
+            } else {
+                gameState.arena.challengeCleared[5] = true;
+                setHudStatus('Final challenge cleared. Enter portal to finish.');
+            }
             return;
         }
 
