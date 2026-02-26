@@ -2,6 +2,7 @@ fastapi
 uvicorn[standard]
 wsproto
 requests
+httpx
 python-multipart
 sqlalchemy
 PyJWT

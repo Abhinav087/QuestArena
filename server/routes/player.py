@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Log, Player, PlayerQuestionClear, SessionModel
 from schemas import PlayerEventRequest, SubmitAnswerRequest, SubmitCodeRequest
+from services.ollama_judge import judge_code
 from services.security import get_current_player
 
 router = APIRouter(prefix="/api", tags=["player"])
@@ -167,8 +168,16 @@ async def submit_code(
     if session.status != "running":
         raise HTTPException(status_code=403, detail="Session is not currently running")
 
-    # Simple placeholder validation; replace with real evaluator if needed.
-    correct = "return" in body.code and ("a + b" in body.code or "a+b" in body.code)
+    # Pull the coding question text so the model has full context.
+    from routes.session import QUESTIONS
+    question_text = (
+        QUESTIONS.get("5", {})
+        .get("question", {})
+        .get("text", "Solve the given programming problem.")
+    )
+
+    # Ask Ollama (qwen2.5-coder:1.5b) to judge the submission.
+    correct = await judge_code(question_text, body.code)
 
     player.last_active = datetime.utcnow()
 
