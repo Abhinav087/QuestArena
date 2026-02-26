@@ -112,6 +112,7 @@
         .actions { display: flex; gap: 6px; flex-wrap: wrap; }
         .small { font-size: 0.55rem; color: var(--muted); text-shadow: 1px 1px 0 #000; }
         pre { white-space: pre-wrap; font-size: 0.55rem; color: var(--text); font-family: 'Courier New', monospace; text-shadow: 1px 1px 0 #000; }
+        #analytics { font-size: 0.72rem; line-height: 1.65; }
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: var(--card-bg); border-left: 2px solid var(--border); }
         ::-webkit-scrollbar-thumb { background: var(--border); border: 2px solid var(--card-bg); }
@@ -141,6 +142,7 @@
                 <div class="meta"><span>Name</span><strong id="session-name">-</strong></div>
                 <div class="meta"><span>Status</span><strong id="session-status">waiting</strong></div>
                 <div class="meta"><span>Time Remaining</span><strong id="timer">00:00</strong></div>
+                <div class="meta"><span>Players Connected</span><strong id="session-player-count">0</strong></div>
                 <div class="meta"><span>Leaderboard Frozen</span><strong id="freeze-state">No</strong></div>
             </div>
 
@@ -349,6 +351,7 @@
             document.getElementById('session-name').textContent = data.name || '-';
             document.getElementById('session-status').textContent = data.status || 'waiting';
             document.getElementById('timer').textContent = toTimer(data.remaining_seconds || 0);
+            document.getElementById('session-player-count').textContent = Number(data.player_count || 0);
         }
 
         async function fetchLeaderboard() {
@@ -615,6 +618,7 @@
                         const payload = message.payload || {};
                         document.getElementById('session-status').textContent = payload.status || 'waiting';
                         document.getElementById('timer').textContent = toTimer(payload.remaining_seconds || 0);
+                        fetchStatus();
                     }
                     if (message.event === 'leaderboard_update') {
                         currentFrozen = !!(message.payload && message.payload.frozen);

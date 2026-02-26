@@ -1,19 +1,52 @@
 import json
+import re
 from datetime import datetime
 
 from models import Player, SessionModel
 
 
-def _player_time_taken_seconds(player: Player, session: SessionModel) -> int:
-    if not session.start_time:
+def _session_total_seconds(session: SessionModel) -> int:
+    return max(0, int((session.duration_minutes or 0) * 60))
+
+
+def _clamp_remaining(session: SessionModel, remaining_seconds: int | None) -> int:
+    total = _session_total_seconds(session)
+    if remaining_seconds is None:
+        return max(0, min(total, int(session.remaining_seconds or 0)))
+    return max(0, min(total, int(remaining_seconds)))
+
+
+def _extract_completion_remaining_from_logs(player: Player, session: SessionModel) -> int | None:
+    # Expected details format (new): "Coding challenge solved; remaining_seconds=1234"
+    for log in sorted(player.logs or [], key=lambda row: row.timestamp or datetime.min, reverse=True):
+        if log.session_id != session.id:
+            continue
+        if log.action_type != "final_challenge_complete":
+            continue
+        details = log.details or ""
+        match = re.search(r"remaining_seconds\s*=\s*(\d+)", details)
+        if match:
+            return int(match.group(1))
+    return None
+
+
+def compute_time_taken_seconds(player: Player, session: SessionModel) -> int:
+    total = _session_total_seconds(session)
+    if total <= 0:
         return 0
 
-    end_time = player.completed_at if player.completed_at else datetime.utcnow()
-    return max(0, int((end_time - session.start_time).total_seconds()))
+    if player.completed_at:
+        completion_remaining = _extract_completion_remaining_from_logs(player, session)
+        if completion_remaining is not None:
+            return max(0, total - _clamp_remaining(session, completion_remaining))
+
+    # Fallback for active players (and legacy completed rows without snapshot):
+    # Time spent = configured session total - current remaining.
+    return max(0, total - _clamp_remaining(session, None))
 
 
 def _serialize_player(player: Player, session: SessionModel) -> dict:
-    time_taken_seconds = _player_time_taken_seconds(player, session)
+    time_taken_seconds = compute_time_taken_seconds(player, session)
 
     return {
         "player_id": player.id,
@@ -66,7 +99,7 @@ def analytics_for_session(session: SessionModel) -> dict:
         {
             "username": player.username,
             "score": player.score,
-            "time_taken_seconds": _player_time_taken_seconds(player, session),
+            "time_taken_seconds": compute_time_taken_seconds(player, session),
         }
         for player in players
     ]

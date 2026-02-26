@@ -185,7 +185,7 @@ async def submit_code(
                 session_id=player.session_id,
                 player_id=player.id,
                 action_type="final_challenge_complete",
-                details="Coding challenge solved",
+                details=f"Coding challenge solved; remaining_seconds={session.remaining_seconds}",
             )
         )
         db.commit()

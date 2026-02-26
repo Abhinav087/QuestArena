@@ -2898,6 +2898,8 @@ function getInteractionCandidates() {
     const staticNpcCenterY = tileToWorldY(level.npc.y) + CHARACTER_SIZE / 2;
 
     const targetLimit = ARENA_TILE * 1.28;
+    const isReceptionNpc = level.id === 1 && level.npc.name === 'Reception Aunty';
+    const npcTargetLimit = isReceptionNpc ? ARENA_TILE * 2.6 : targetLimit;
     const npcDistance = distanceToPoint(playerX, playerY, staticNpcCenterX, staticNpcCenterY);
     const portalDistance = distanceToTile(playerX, playerY, level.portal.x, level.portal.y);
     const liftDistance = level.hiddenLift
@@ -2906,7 +2908,7 @@ function getInteractionCandidates() {
 
     const candidates = [];
 
-    if (npcDistance < targetLimit) {
+    if (npcDistance < npcTargetLimit) {
         candidates.push({
             type: 'npc',
             distance: npcDistance,
@@ -3025,46 +3027,23 @@ function updateInteractionPrompt() {
     }
 
     if (candidates.length === 1 || !promptListNode) {
-        const anchorX = target.worldX ?? (target.tileX * ARENA_TILE + ARENA_TILE / 2);
-        const anchorY = target.worldY ?? (target.tileY * ARENA_TILE + ARENA_TILE / 2);
-        const screenX = (anchorX - gameState.arena.cameraX) * CAMERA_ZOOM;
-        const screenY = (anchorY - CHARACTER_SIZE / 2 - gameState.arena.cameraY) * CAMERA_ZOOM - 10;
-
         promptNode.textContent = target.prompt;
-        promptNode.style.left = `${Math.round(screenX)}px`;
-        promptNode.style.top = `${Math.round(screenY)}px`;
+        promptNode.style.left = '';
+        promptNode.style.top = '';
         promptNode.classList.remove('hidden');
 
         hidePromptList();
         return;
     }
 
-    const anchorX = target.worldX ?? (target.tileX * ARENA_TILE + ARENA_TILE / 2);
-    const anchorY = target.worldY ?? (target.tileY * ARENA_TILE + ARENA_TILE / 2);
-    const rawScreenX = (anchorX - gameState.arena.cameraX) * CAMERA_ZOOM;
-    const rawScreenY = (anchorY - CHARACTER_SIZE / 2 - gameState.arena.cameraY) * CAMERA_ZOOM - 10;
-
     promptNode.classList.add('hidden');
     promptListNode.innerHTML = `${candidates.map((candidate, index) => {
         const activeClass = index === gameState.arena.promptSelectionIndex ? ' active' : '';
-        const marker = index === gameState.arena.promptSelectionIndex ? 'â–¶' : 'â€¢';
+        const marker = index === gameState.arena.promptSelectionIndex ? '>' : '-';
         return `<div class="arena-prompt-item${activeClass}">${marker} ${candidate.prompt}</div>`;
     }).join('')}<div class="arena-prompt-hint">Tab / Shift+Tab to switch interaction</div>`;
-
-    const viewportPadding = 16;
-    const listWidth = promptListNode.offsetWidth || 360;
-    const listHeight = promptListNode.offsetHeight || 140;
-    const clampedX = Math.max(
-        viewportPadding + listWidth / 2,
-        Math.min(window.innerWidth - viewportPadding - listWidth / 2, rawScreenX)
-    );
-    const clampedY = Math.max(
-        viewportPadding + listHeight,
-        Math.min(window.innerHeight - viewportPadding, rawScreenY)
-    );
-
-    promptListNode.style.left = `${Math.round(clampedX)}px`;
-    promptListNode.style.top = `${Math.round(clampedY)}px`;
+    promptListNode.style.left = '';
+    promptListNode.style.top = '';
     promptListNode.classList.remove('hidden');
 }
 
@@ -3128,12 +3107,16 @@ function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
     const objective = getArenaObjective();
     if (!objective) return;
 
-    const accent = '#61d9ff';
+    const accent = '#ffd300';
+    const accentStrong = '#fff08a';
     const softBg = 'rgba(0, 0, 0, 0.58)';
     const safeTop = 138;
     const sideMargin = 56;
     const targetX = (objective.worldX - cameraX) * CAMERA_ZOOM;
     const targetY = (objective.worldY - cameraY) * CAMERA_ZOOM;
+    const now = performance.now();
+    const pulseSlow = (Math.sin(now / 220) + 1) / 2;
+    const pulseFast = (Math.sin(now / 95) + 1) / 2;
 
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -3162,34 +3145,56 @@ function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
     );
 
     if (onScreen) {
-        const pulse = 6 + Math.sin(performance.now() / 220) * 2.2;
         const markerX = targetX;
-        const markerY = Math.max(safeTop + boxHeight + 24, targetY - 26);
+        const markerY = Math.max(safeTop + boxHeight + 30, targetY - 38);
+        const beaconX = markerX;
+        const beaconY = markerY + 24;
+
+        for (let index = 0; index < 3; index += 1) {
+            const ringBase = 12 + index * 8;
+            const ringRadius = ringBase + pulseSlow * 15;
+            const ringAlpha = Math.max(0.12, 0.5 - index * 0.12 - pulseSlow * 0.1);
+            ctx.beginPath();
+            ctx.arc(beaconX, beaconY, ringRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 211, 0, ${ringAlpha})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
 
         ctx.beginPath();
-        ctx.moveTo(markerX, markerY - pulse);
-        ctx.lineTo(markerX - 10, markerY + 8);
-        ctx.lineTo(markerX + 10, markerY + 8);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(9, 23, 33, 0.95)';
-        ctx.fill();
-        ctx.strokeStyle = accent;
-        ctx.lineWidth = 2;
+        ctx.arc(beaconX, beaconY, 12 + pulseFast * 2, 0, Math.PI * 2);
+        ctx.strokeStyle = accentStrong;
+        ctx.lineWidth = 3;
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.moveTo(markerX, markerY - pulse);
-        ctx.lineTo(markerX - 10, markerY + 8);
-        ctx.lineTo(markerX + 10, markerY + 8);
+        ctx.arc(beaconX, beaconY, 5 + pulseFast * 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = accentStrong;
+        ctx.fill();
+
+        const tipY = markerY + 7 + pulseFast * 3;
+        ctx.beginPath();
+        ctx.moveTo(markerX, tipY);
+        ctx.lineTo(markerX - 16, tipY - 22);
+        ctx.lineTo(markerX - 7, tipY - 22);
+        ctx.lineTo(markerX - 7, tipY - 38);
+        ctx.lineTo(markerX + 7, tipY - 38);
+        ctx.lineTo(markerX + 7, tipY - 22);
+        ctx.lineTo(markerX + 16, tipY - 22);
         ctx.closePath();
         ctx.fillStyle = accent;
         ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(targetX, Math.max(safeTop + boxHeight + 32, targetY), 13, 0, Math.PI * 2);
-        ctx.strokeStyle = accent;
+        ctx.strokeStyle = '#3f2e00';
         ctx.lineWidth = 2;
         ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(markerX, tipY - 14);
+        ctx.lineTo(markerX - 9, tipY - 27);
+        ctx.lineTo(markerX + 9, tipY - 27);
+        ctx.closePath();
+        ctx.fillStyle = accentStrong;
+        ctx.fill();
     } else {
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
@@ -3203,23 +3208,47 @@ function drawObjectivePointer(ctx, canvas, cameraX, cameraY) {
         const ay = Math.max(safeTop + boxHeight + 28, Math.min(canvas.height - sideMargin, rawAy));
 
         ctx.translate(ax, ay);
-        ctx.rotate(angle + Math.PI / 2);
+        ctx.rotate(angle);
+
+        const badgeRadius = 19;
+        const outerPulseRadius = badgeRadius + 6 + pulseSlow * 12;
+
         ctx.beginPath();
-        ctx.arc(0, 0, 18, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(5, 14, 22, 0.75)';
+        ctx.arc(0, 0, outerPulseRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 211, 0, ${0.28 + pulseSlow * 0.38})`;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, badgeRadius + pulseFast * 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(10, 25, 36, ${0.62 + pulseFast * 0.2})`;
         ctx.fill();
 
         ctx.beginPath();
-        ctx.moveTo(0, -16);
-        ctx.lineTo(-12, 10);
-        ctx.lineTo(12, 10);
+        ctx.arc(0, 0, badgeRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(17, 0);
+        ctx.lineTo(-5, -13);
+        ctx.lineTo(-5, -6);
+        ctx.lineTo(-17, -6);
+        ctx.lineTo(-17, 6);
+        ctx.lineTo(-5, 6);
+        ctx.lineTo(-5, 13);
         ctx.closePath();
         ctx.fillStyle = accent;
         ctx.fill();
 
-        ctx.strokeStyle = '#173040';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(11, 0);
+        ctx.lineTo(-2, -8);
+        ctx.lineTo(-2, 8);
+        ctx.closePath();
+        ctx.fillStyle = accentStrong;
+        ctx.fill();
     }
 
     ctx.restore();
@@ -3620,14 +3649,14 @@ function drawArena() {
         }
     }
 
-    // "WAY TO CLASSROOM â†’" sign for lobby level
+    // "WAY TO CLASSROOM ->" sign for lobby level
     if (level.id === 1) {
         const signX = level.portal.x * ARENA_TILE - renderCameraX;
         const signY = level.portal.y * ARENA_TILE - renderCameraY;
         if (signX > -120 && signX < cameraViewWidth + 40 && signY > -40 && signY < cameraViewHeight + 40) {
             ctx.fillStyle = '#8b6914';
             ctx.font = 'bold 13px Arial';
-            ctx.fillText('WAY TO CLASSROOM â†’', signX - 60, signY - 8);
+            ctx.fillText('WAY TO CLASSROOM ->', signX - 60, signY - 8);
         }
     }
 

@@ -1,71 +1,122 @@
 # QuestArena
 
-QuestArena is a LAN-ready multiplayer challenge game with a FastAPI backend and a fullscreen vanilla JS runtime client.
+QuestArena is a LAN-ready multiplayer challenge game with a FastAPI backend, SQLite persistence, and a fullscreen vanilla JavaScript client.
 
-## Runtime highlights
+It supports player login, admin-controlled live sessions, real-time leaderboard updates, NPC-driven level challenges, and a final coding challenge.
 
-- Fullscreen overworld canvas that covers the entire webpage.
+## Highlights
+
+- Fullscreen overworld exploration with modal-based challenges.
 - Fixed arena render resolution: `1920 x 1080`.
 - Tile scale: `64 x 64`.
-- Character scale: `32 x 32`.
-- Camera follow with smoothing, slight zoom-in, center follow, and world-border clamping.
-- Large exploration-focused maps with NPC interactions, challenge modals, and portal transitions.
+- WebSocket realtime updates for timer/session/leaderboard.
+- Session-managed multiplayer flow for college events / hackfest rounds.
 
-## Gameplay loop
+## Gameplay Flow
 
-1. Join game as player.
-2. Wait until admin starts the session.
-3. Enter mission and explore overworld.
-4. Talk to NPC (`E` / `Enter`) to open challenge.
-5. Clear challenge to unlock portal and progress.
+1. Player joins using team name.
+2. Player waits in lobby until admin starts session.
+3. Intro cutscene and mission starts.
+4. Player explores level, interacts with NPCs (`E` / `Enter`).
+5. Player solves MCQs / coding challenge to unlock portals and progress.
+6. Session ends on completion or timer expiry.
 
 ## Controls
 
 - Move: `WASD` or arrow keys
-- Interact / Continue dialogue: `E` or `Enter`
-- Submit MCQ: `Enter` (while question modal is active)
+- Interact / continue dialogue: `E` or `Enter`
+- Submit selected MCQ: `Enter`
+- Cycle interaction targets: `Tab`
 
-## Tech stack
+## Tech Stack
 
 - Backend: FastAPI, SQLAlchemy, SQLite
-- Frontend: HTML, CSS, vanilla JavaScript
-- Realtime/Auth: WebSocket + JWT
+- Frontend: HTML, CSS, vanilla JavaScript (Canvas)
+- Auth: JWT
+- Realtime: WebSocket
 
-## Setup
+## Local Setup
 
-1. Install dependencies:
+1. Install Python dependencies:
 
 ```bash
 pip install -r server/requirements.txt
 ```
 
-2. (Optional) Regenerate runtime assets (64px tiles / 32px sprites):
+2. (Optional) Regenerate sprites/tiles:
 
 ```bash
 python tools/generate_assets.py
 ```
 
-3. Start backend:
+3. Start server:
 
 ```bash
 python server/main.py
 ```
 
-## Run URLs
+Alternative one-click Windows run:
 
-- Player: `http://localhost:8000/`
-- Admin: `http://localhost:8000/admin`
+```bash
+run_server.bat
+```
 
-For LAN play, replace `localhost` with the host machine IPv4 address.
+## URLs
 
-## Configuration points
+- Player app: `http://localhost:8000/`
+- Admin dashboard: `http://localhost:8000/admin`
+
+For LAN play, replace `localhost` with host machine IPv4.
+
+## Project Structure
+
+- `client/` - Player runtime, arena engine, UI, assets
+- `server/` - FastAPI app, routes, DB models, services
+- `tools/` - Utility scripts (asset generation)
+
+## Backend API Overview
+
+### Auth & Player
+
+- `POST /api/player/register` - Register or rejoin player
+- `POST /api/validate-token` - Restore session from stored token
+- `POST /api/player/heartbeat` - Keep activity alive
+- `POST /api/player/activity` - Client activity events
+- `POST /api/submit_answer` - Validate MCQ answer
+- `POST /api/submit_code` - Validate final coding challenge
+
+### Session & Realtime
+
+- `GET /api/game_status` - Current session status/timer/player count
+- `GET /api/questions/{level}` - Fetch level challenge payload
+- `GET /api/leaderboard` - Ranked leaderboard for active session
+- `GET /ws/live` - WebSocket channel for live updates
+
+### Admin
+
+- `POST /api/admin_login`
+- `POST /api/admin/session/create|start|pause|resume|end`
+- `POST /api/admin/session/add_time|subtract_time`
+- `GET /api/admin/sessions`
+- `DELETE /api/admin/sessions/{session_id}`
+- `GET /api/admin/players/live`
+- `POST /api/admin/player/{player_id}/kick|ban|reset|move-level|adjust-score`
+- `POST /api/admin/leaderboard/freeze`
+- `GET /api/admin/analytics/{session_id}`
+- `GET /api/admin/export/{session_id}`
+
+## Data & Configuration
 
 - Questions and level content: `server/questions.json`
-- Admin password: `server/routes/auth.py` (`ADMIN_PASSWORD`)
-- JWT secret: environment variable `QUESTARENA_JWT_SECRET`
+- DB file: `questarena.db` (SQLite)
+- Admin password constant: `server/routes/auth.py` (`ADMIN_PASSWORD`)
+- JWT secret env var: `QUESTARENA_JWT_SECRET`
 
-## Project folders
+## Chat Context File (for future sessions)
 
-- `client/` — runtime player client and generated assets
-- `server/` — backend API, auth, session, admin, realtime services
-- `tools/` — utility scripts such as asset generation
+Use `CHAT_CONTEXT.md` as a persistent summary file for AI/chat handoff across sessions.
+
+Whenever architecture, API contracts, or game flow changes, update:
+
+- `README.md` (developer-facing docs)
+- `CHAT_CONTEXT.md` (conversation context memory)

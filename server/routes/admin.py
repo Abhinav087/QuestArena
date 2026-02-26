@@ -16,7 +16,12 @@ from schemas import (
     TimeAdjustRequest,
 )
 from services.anti_cheat import duplicate_ip_map
-from services.leaderboard import analytics_for_session, get_leaderboard, set_leaderboard_freeze
+from services.leaderboard import (
+    analytics_for_session,
+    compute_time_taken_seconds,
+    get_leaderboard,
+    set_leaderboard_freeze,
+)
 from services.realtime import manager
 from services.security import require_admin
 
@@ -319,19 +324,13 @@ async def live_players(
     dup_map = duplicate_ip_map(players)
     now = datetime.utcnow()
 
-    def compute_time_taken_seconds(player: Player) -> int:
-        if not session.start_time:
-            return 0
-        end_time = player.completed_at if player.completed_at else now
-        return max(0, int((end_time - session.start_time).total_seconds()))
-
     return [
         {
             "id": player.id,
             "username": player.username,
             "score": player.score,
             "current_level": player.current_level,
-            "time_taken_seconds": compute_time_taken_seconds(player),
+            "time_taken_seconds": compute_time_taken_seconds(player, session),
             "is_completed": bool(player.completed_at),
             "last_active_seconds_ago": (
                 max(0, int((now - player.last_active).total_seconds()))
