@@ -1724,6 +1724,7 @@ let gameState = {
     hiddenRouteAttempted: false,
     hiddenRouteActive: false,
     hiddenRouteLiftReady: false,
+    gameStartedAt: null,
     arena: {
         currentLevel: 0,
         playerX: 0,
@@ -3510,7 +3511,7 @@ async function transitionToLevel(targetLevel) {
     if (targetLevel === null || targetLevel === undefined) {
         await fadeTo(0);
         gameState.arena.transitioning = false;
-        endGame('YOU SAVED THE PARTNER!', true);
+        launchCinematicCredits();
         return;
     }
 
@@ -3527,7 +3528,7 @@ async function transitionToLevelWithOptions(targetLevel, options = {}) {
     if (targetLevel === null || targetLevel === undefined) {
         await fadeTo(0);
         gameState.arena.transitioning = false;
-        endGame('YOU SAVED THE PARTNER!', true);
+        launchCinematicCredits();
         return;
     }
 
@@ -4044,6 +4045,7 @@ async function pollGameStatus() {
             if (!gameState.gameActive) {
                 if (gameState.introCutscenePlaying) return;
                 gameState.gameActive = true;
+                if (!gameState.gameStartedAt) gameState.gameStartedAt = Date.now();
                 hud.classList.remove('hidden');
                 await restorePlayerProgress('running');
             }
@@ -4136,6 +4138,7 @@ function connectLiveSocket() {
                 if (payload.status === 'running' && !gameState.gameActive && gameState.username) {
                     if (gameState.introCutscenePlaying) return;
                     gameState.gameActive = true;
+                    if (!gameState.gameStartedAt) gameState.gameStartedAt = Date.now();
                     hud.classList.remove('hidden');
                     await restorePlayerProgress('running');
                 }
@@ -4206,6 +4209,7 @@ async function validateStoredToken() {
 
         if (data.session_status === 'running') {
             gameState.gameActive = true;
+            if (!gameState.gameStartedAt) gameState.gameStartedAt = Date.now();
             hud.classList.remove('hidden');
         }
         updateTimerDisplay(data.remaining_seconds);
@@ -4235,10 +4239,8 @@ async function restorePlayerProgress(sessionStatus) {
         stopPolling();
         stopHeartbeat();
         hud.classList.add('hidden');
-        showScreen('end');
-        document.getElementById('final-score').textContent = gameState.score;
-        document.getElementById('end-message').textContent = progress.endMessage || 'MISSION COMPLETE';
-        persistProgress();
+        /* Show cinematic credits instead of old end-screen */
+        launchCinematicCredits();
         return;
     }
 
@@ -4369,6 +4371,7 @@ async function startGame() {
 
         if (data.status === 'running') {
             gameState.gameActive = true;
+            if (!gameState.gameStartedAt) gameState.gameStartedAt = Date.now();
             hud.classList.remove('hidden');
             await restorePlayerProgress('running');
         } else {
@@ -4393,6 +4396,55 @@ function endGame(message, lockCompleted = false) {
     document.getElementById('end-message').textContent = message;
     document.getElementById('final-score').textContent = gameState.score;
     hud.classList.add('hidden');
+    persistProgress();
+}
+
+/**
+ * Launch the cinematic Marvel-style credits. This fully unloads the
+ * game and shows only the CSS-animated credits overlay.
+ */
+function launchCinematicCredits() {
+    /* Terminate game state */
+    gameState.gameActive = false;
+    gameState.isCompleted = true;
+    stopPolling();
+    stopHeartbeat();
+
+    /* Stop the arena render loop */
+    if (gameState.arena.loopId) {
+        cancelAnimationFrame(gameState.arena.loopId);
+        gameState.arena.loopId = null;
+    }
+
+    /* Hide every UI layer so only pure black remains */
+    const allScreens = getAvailableScreens();
+    allScreens.forEach((s) => { s.classList.add('hidden'); s.classList.remove('active'); });
+    hud.classList.add('hidden');
+    document.getElementById('cutscene-layer').classList.add('hidden');
+    document.getElementById('modal-backdrop').classList.add('hidden');
+    closeArenaModals();
+
+    /* Populate the Game-Over summary that appears after credits end */
+    document.getElementById('summary-score').textContent = gameState.score;
+    const elapsed = gameState.gameStartedAt
+        ? Math.round((Date.now() - gameState.gameStartedAt) / 1000)
+        : 0;
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    document.getElementById('summary-time').textContent =
+        `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+    /* Show the summary panel (CSS animation-delay handles the timing) */
+    const summaryEl = document.getElementById('game-over-summary');
+    summaryEl.classList.remove('hidden');
+
+    /* Launch cinematic credits (CSS-animated) */
+    const creditsEl = document.getElementById('cinematic-credits');
+    creditsEl.classList.remove('hidden');
+
+    /* Restart CSS animations in case the element was previously shown */
+    creditsEl.offsetWidth; /* force reflow */
+
     persistProgress();
 }
 
@@ -4570,16 +4622,16 @@ function nextQuestion() {
     }
 
     if (gameState.level >= 5) {
-        /* Level 5 MCQ outro (Principal) then end game */
+        /* Level 5 MCQ outro (Principal) then cinematic credits */
         const level5 = ARENA_LEVELS[gameState.arena.currentLevel];
         const outroEntries = level5?.npc?.outro;
         if (outroEntries && outroEntries.length) {
             enterArenaLevel(gameState.level, { preservePlayerPosition: true });
             openArenaDialogue(outroEntries, () => {
-                endGame('Mission complete!', true);
+                launchCinematicCredits();
             });
         } else {
-            endGame('Mission complete!', true);
+            launchCinematicCredits();
         }
         return;
     }
@@ -4652,16 +4704,8 @@ async function submitCode() {
         CutsceneManager.hide();
         if (bgContainer) bgContainer.style.display = '';
 
-        /* Stop the arena render loop so Level 5 is fully unloaded */
-        if (gameState.arena.loopId) {
-            cancelAnimationFrame(gameState.arena.loopId);
-            gameState.arena.loopId = null;
-        }
-
-        endGame(
-            isCorrect ? 'Mission complete!' : 'Mission failed.',
-            true,   /* lockCompleted for BOTH outcomes — prevents poll race restoring arena */
-        );
+        /* ── Launch cinematic credits (replaces old endGame) ── */
+        launchCinematicCredits();
     } catch (err) {
         console.error(err);
         /* On network error, re-enable so the player can retry */
