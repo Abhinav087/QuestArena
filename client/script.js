@@ -1797,7 +1797,7 @@ const CutsceneManager = (() => {
 /* ---- Intro Sequence Data ---- */
 const INTRO_SEQUENCE = [
     // -- Shot 1: Opening --
-    { type: 'set_bg',   src: '/assets/intro/shot1.png' },
+    { type: 'set_bg',   src: '/assets/intro/shot1.jpeg' },
     { type: 'fade',     direction: 'in',  speed: 1600 },
 
     { type: 'dialogue', speaker: 'Bhairava',
@@ -1806,12 +1806,12 @@ const INTRO_SEQUENCE = [
     { type: 'hide_dialogue' },
 
     // -- Shot 2: Crossfade --
-    { type: 'crossfade_bg', src: '/assets/intro/shot2.png', duration: 1000 },
+    { type: 'crossfade_bg', src: '/assets/intro/shot2.jpeg', duration: 1000 },
     { type: 'wait', duration: 1500 },
 
     // -- Shot 3: Valentine's scene --
     { type: 'fade', direction: 'out', speed: 600 },
-    { type: 'set_bg', src: '/assets/intro/shot3.png' },
+    { type: 'set_bg', src: '/assets/intro/shot3.jpeg' },
     { type: 'fade', direction: 'in',  speed: 600 },
 
     { type: 'dialogue', speaker: 'Bhairava',
@@ -1837,7 +1837,7 @@ const INTRO_SEQUENCE = [
 
     // -- Shot 4: Classroom --
     { type: 'fade', direction: 'out', speed: 600 },
-    { type: 'set_bg', src: '/assets/intro/shot4.png' },
+    { type: 'set_bg', src: '/assets/intro/shot4.jpeg' },
     { type: 'fade', direction: 'in',  speed: 600 },
 
     { type: 'dialogue', speaker: 'Bhairava',
@@ -1867,7 +1867,7 @@ const INTRO_SEQUENCE = [
 
     // -- Shot 5: Principal entrance --
     // { type: 'fade', direction: 'out', speed: 600 },
-    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+    { type: 'set_bg', src: '/assets/intro/shot5.jpeg' },
     // { type: 'fade', direction: 'in',  speed: 300 },
 
     { type: 'dialogue', speaker: 'Principal',
@@ -1876,7 +1876,7 @@ const INTRO_SEQUENCE = [
     { type: 'hide_dialogue' },
 
     // -- Shot 6: Mithravindha reaction --
-    { type: 'set_bg', src: '/assets/intro/shot6.png' },
+    { type: 'set_bg', src: '/assets/intro/shot6.jpeg' },
 
     { type: 'dialogue', speaker: 'Mithravindha',
       text: 'Sir\u2026.',
@@ -1884,7 +1884,7 @@ const INTRO_SEQUENCE = [
     { type: 'hide_dialogue' },
 
     // -- Shot 5 again: Principal angry --
-    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+    { type: 'set_bg', src: '/assets/intro/shot5.jpeg' },
 
     { type: 'dialogue', speaker: 'Principal',
       text: 'Shut up. I overheard your conversation. Is this why you are coming to college?',
@@ -1892,14 +1892,14 @@ const INTRO_SEQUENCE = [
     { type: 'hide_dialogue' },
 
     // -- Shot 7: Bhairava close-up + narration --
-    { type: 'set_bg', src: '/assets/intro/shot7.png' },
+    { type: 'set_bg', src: '/assets/intro/shot7.jpeg' },
 
     { type: 'narration', text: 'Bhairava stares at principal', hold: 1500, charDelay: 40 },
     { type: 'hide_dialogue' },
     { type: 'wait', duration: 1000 },
 
     // -- Shot 5: Principal final lines --
-    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+    { type: 'set_bg', src: '/assets/intro/shot5.jpeg' },
 
     { type: 'dialogue', speaker: 'Principal',
       text: '2 hours\u2026? Eternity\u2026? What if I separate you for eternity\u2026?',
