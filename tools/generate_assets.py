@@ -1255,6 +1255,126 @@ def make_server_wall_blue():
 
 
 # ---------------------------------------------------------------------------
+#  Extra Server Room furniture / prop tiles (Level 4)
+#  Additional tiles to match detailed server-room reference image
+# ---------------------------------------------------------------------------
+
+def make_server_crate():
+    """Stacked cardboard boxes on server floor — bottom-left of reference."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light server floor beneath
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c8cdd5"))
+    # Bottom box (large)
+    d.rectangle([2, 14, 28, 29], fill=rgba("#a07840"), outline=rgba("#785830"), width=1)
+    # Box tape stripe
+    d.line([(15, 14), (15, 29)], fill=rgba("#c0a060"), width=2)
+    # Top flaps shadow
+    d.polygon([(2, 14), (15, 11), (28, 14)], fill=rgba("#b08848"), outline=rgba("#785830"))
+    # Smaller box stacked on top
+    d.rectangle([6, 4, 22, 14], fill=rgba("#b08848"), outline=rgba("#886838"), width=1)
+    d.line([(14, 4), (14, 14)], fill=rgba("#c8a860"), width=2)
+    # Tiny box on smaller box
+    d.rectangle([10, 0, 20, 6], fill=rgba("#a88048"), outline=rgba("#886838"), width=1)
+    return img
+
+
+def make_server_toolbox():
+    """Red toolbox on server floor — bottom-right of reference."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Light server floor beneath
+    d.rectangle([0, 0, 31, 31], fill=rgba("#c8cdd5"))
+    # Toolbox body (red)
+    d.rectangle([4, 10, 27, 26], fill=rgba("#cc3333"), outline=rgba("#881111"), width=1)
+    # Toolbox lid (slightly lighter red)
+    d.rectangle([3, 6, 28, 12], fill=rgba("#dd4444"), outline=rgba("#991111"), width=1)
+    # Handle
+    d.rectangle([12, 3, 19, 7], fill=rgba("#444444"), outline=rgba("#222222"), width=1)
+    d.rectangle([14, 4, 17, 6], fill=rgba("#c8cdd5"))  # handle gap
+    # Latch
+    d.rectangle([14, 12, 17, 14], fill=rgba("#cccccc"))
+    # Shadow
+    d.rectangle([6, 26, 25, 28], fill=rgba("#888888", 60))
+    return img
+
+
+def make_server_fire_ext():
+    """Fire extinguisher mounted on dark wall — red cylinder."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Wall background
+    d.rectangle([0, 0, 31, 31], fill=rgba("#3a4050"))
+    # Mounting bracket
+    d.rectangle([10, 4, 21, 28], fill=rgba("#5a6474"), outline=rgba("#4a5464"), width=1)
+    # Extinguisher body (red cylinder)
+    d.rectangle([12, 6, 19, 25], fill=rgba("#cc2222"), outline=rgba("#991111"), width=1)
+    # Top nozzle / valve (black)
+    d.rectangle([13, 3, 18, 7], fill=rgba("#333333"), outline=rgba("#222222"), width=1)
+    # Pressure gauge (small circle)
+    d.ellipse([14, 9, 17, 12], fill=rgba("#eeeeee"), outline=rgba("#888888"), width=1)
+    # Label strip
+    d.rectangle([13, 14, 18, 18], fill=rgba("#ffcc00"))
+    # Nozzle hose
+    d.line([(18, 5), (22, 8), (22, 14)], fill=rgba("#333333"), width=1)
+    d.ellipse([21, 13, 23, 16], fill=rgba("#333333"))
+    return img
+
+
+def make_server_door_double():
+    """Large steel double door on dark wall — center-top of reference."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Wall background (top strip)
+    d.rectangle([0, 0, 31, 3], fill=rgba("#3a4050"))
+    # Door frame (dark steel)
+    d.rectangle([1, 2, 30, 31], fill=rgba("#606a7a"), outline=rgba("#4a5464"), width=1)
+    # Left door panel
+    d.rectangle([3, 4, 15, 29], fill=rgba("#8a94a5"), outline=rgba("#6a7484"), width=1)
+    # Right door panel
+    d.rectangle([16, 4, 28, 29], fill=rgba("#8a94a5"), outline=rgba("#6a7484"), width=1)
+    # Door center seam
+    d.line([(15, 4), (15, 29)], fill=rgba("#505a68"), width=2)
+    # Door handles
+    d.rectangle([12, 14, 14, 18], fill=rgba("#b0b8c2"))
+    d.rectangle([17, 14, 19, 18], fill=rgba("#b0b8c2"))
+    # Panel relief on each door
+    d.rectangle([5, 6, 13, 12], outline=rgba("#7a8494"), width=1)
+    d.rectangle([5, 20, 13, 26], outline=rgba("#7a8494"), width=1)
+    d.rectangle([18, 6, 26, 12], outline=rgba("#7a8494"), width=1)
+    d.rectangle([18, 20, 26, 26], outline=rgba("#7a8494"), width=1)
+    # Small window at top of each door
+    d.rectangle([7, 7, 11, 11], fill=rgba("#5a8aaa", 160))
+    d.rectangle([20, 7, 24, 11], fill=rgba("#5a8aaa", 160))
+    return img
+
+
+def make_server_monitor_wall():
+    """Wall-mounted monitor / screen on dark wall — tech monitoring display."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Wall background
+    d.rectangle([0, 0, 31, 31], fill=rgba("#3a4050"))
+    # Monitor bracket (mount arm)
+    d.rectangle([13, 2, 18, 6], fill=rgba("#5a6474"))
+    # Monitor body (dark grey)
+    d.rectangle([4, 6, 27, 24], fill=rgba("#2a2a30"), outline=rgba("#1a1a20"), width=1)
+    # Screen
+    d.rectangle([6, 8, 25, 22], fill=rgba("#0a1818"))
+    # Screen content (colored data lines / graphs)
+    rng = random.Random(77)
+    for x in range(7, 24):
+        h = rng.randint(10, 16)
+        d.line([(x, h), (x, 16)], fill=rgba("#33ff88", 120), width=1)
+    for sy in range(18, 21, 2):
+        w = rng.randint(4, 14)
+        d.line([(7, sy), (7 + w, sy)], fill=rgba("#33ccff", 160), width=1)
+    # Power LED
+    d.ellipse([5, 23, 7, 25], fill=rgba("#33ff33"))
+    return img
+
+
+# ---------------------------------------------------------------------------
 #  Rooftop tiles (Level 5)
 #  Palette: light grey concrete panels, chain-link fence, HVAC, city skyline
 # ---------------------------------------------------------------------------
@@ -1930,6 +2050,12 @@ def generate_tiles():
     save(upscale_tile(make_server_panel()), TILES_DIR / "server_panel.png")
     save(upscale_tile(make_server_fan()), TILES_DIR / "server_fan.png")
     save(upscale_tile(make_server_wall_blue()), TILES_DIR / "server_wall_blue.png")
+    # Extra server room furniture / prop tiles
+    save(upscale_tile(make_server_crate()), TILES_DIR / "server_crate.png")
+    save(upscale_tile(make_server_toolbox()), TILES_DIR / "server_toolbox.png")
+    save(upscale_tile(make_server_fire_ext()), TILES_DIR / "server_fire_ext.png")
+    save(upscale_tile(make_server_door_double()), TILES_DIR / "server_door_double.png")
+    save(upscale_tile(make_server_monitor_wall()), TILES_DIR / "server_monitor_wall.png")
 
     # ---- Rooftop tiles (used by Level 5) ----
     save(upscale_tile(make_roof_floor()), TILES_DIR / "roof_floor.png")
@@ -1988,6 +2114,22 @@ def generate_sprites():
             save(make_player(direction, frame), SPRITES_DIR / f"player_{direction}_{frame}.png")
 
 
+def generate_server_room_extras():
+    """Generate ONLY the extra server room tiles — does NOT touch any other files."""
+    print("Generating extra server room tiles only...")
+    save(upscale_tile(make_server_crate()), TILES_DIR / "server_crate.png")
+    save(upscale_tile(make_server_toolbox()), TILES_DIR / "server_toolbox.png")
+    save(upscale_tile(make_server_fire_ext()), TILES_DIR / "server_fire_ext.png")
+    save(upscale_tile(make_server_door_double()), TILES_DIR / "server_door_double.png")
+    save(upscale_tile(make_server_monitor_wall()), TILES_DIR / "server_monitor_wall.png")
+    print("  server_crate.png")
+    print("  server_toolbox.png")
+    print("  server_fire_ext.png")
+    print("  server_door_double.png")
+    print("  server_monitor_wall.png")
+    print("Extra server room tiles generated!")
+
+
 def main():
     generate_tiles()
     generate_sprites()
@@ -1998,5 +2140,7 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "--cars-only":
         generate_cars_only()
+    elif len(sys.argv) > 1 and sys.argv[1] == "--server-extras":
+        generate_server_room_extras()
     else:
         main()

@@ -1,4 +1,4 @@
-const API_BASE_URL = window.location.origin;
+﻿const API_BASE_URL = window.location.origin;
 
 const STORAGE = {
     username: "qa_username",
@@ -209,6 +209,15 @@ function getTileImageName(tileType, visualLevel) {
         'SN': 'server_panel.png',
         'SV': 'server_fan.png',
         'SB': 'server_wall_blue.png',
+        // extra server room furniture / prop tiles
+        'SCR': 'server_crate.png',
+        'STB': 'server_toolbox.png',
+        'SFX': 'server_fire_ext.png',
+        'SDD': 'server_door_double.png',
+        'SMW': 'server_monitor_wall.png',
+        'SBK': 'bookshelf_l4.png',
+        'SCH': 'chair_l4.png',
+        'SDK': 'desk_l4.png',
         // rooftop tiles (Level 5)
         'RF': 'roof_floor.png',
         'RW5': 'roof_wall.png',
@@ -264,7 +273,7 @@ const ARENA_LEVELS = [
             spriteId: 2, x: 9, y: 4, name: 'Reception Aunty', questionLevel: 1, scale: 1.25,
             dialogue: [
                 { speaker: 'Reception Aunty', text: 'Why are you roaming here during class hours?' },
-                { speaker: 'Bhairava', text: 'I’m looking for the Principal. He isn’t in his cabin.Where is he?' },
+                { speaker: 'Bhairava', text: 'Iâ€™m looking for the Principal. He isnâ€™t in his cabin.Where is he?' },
                 { speaker: 'Reception Aunty', text: 'I dont know where he is. But he gave me this paper and asked you to answer them.' },
             ],
         },
@@ -282,8 +291,8 @@ const ARENA_LEVELS = [
             spriteId: 3, x: 8, y: 5, name: 'Teacher', questionLevel: 2,
             dialogue: [
                 { speaker: 'Teacher', text: 'What are you doing without attending class?' },
-                { speaker: 'Bhairava', text: 'I’m looking for my girlfriend.' },
-                { speaker: 'Teacher', text: 'Huh!? Girlfriend? For you? First answer these questions and let’s see if you even deserve her.' },
+                { speaker: 'Bhairava', text: 'Iâ€™m looking for my girlfriend.' },
+                { speaker: 'Teacher', text: 'Huh!? Girlfriend? For you? First answer these questions and letâ€™s see if you even deserve her.' },
             ],
         },
         portal: { x: 8, y: 1, targetLevel: 3 },
@@ -298,9 +307,9 @@ const ARENA_LEVELS = [
         npc: {
             spriteId: 4, x: 9, y: 4, name: 'Lab Incharge', questionLevel: 3,
             dialogue: [
-                { speaker: 'Lab Incharge', text: 'You scoundrel! You haven’t come to the lab since day one!' },
+                { speaker: 'Lab Incharge', text: 'You scoundrel! You havenâ€™t come to the lab since day one!' },
                 { speaker: 'Bhairava', text: 'So?' },
-                { speaker: 'Lab Incharge', text: 'Answer my questions or you won’t write your externals.' },
+                { speaker: 'Lab Incharge', text: 'Answer my questions or you wonâ€™t write your externals.' },
             ],
             outro: [
             { speaker: 'Teacher', text: 'Hmm. You have some brains after all. Go, but don\u2019t skip my class again.' },
@@ -313,19 +322,19 @@ const ARENA_LEVELS = [
     {
         id: 4,
         name: 'Server Room',
-        width: 46,
-        height: 32,
-        tiles: createEmptyMap(46, 32),
+        width: 20,
+        height: 18,
+        tiles: createEmptyMap(20, 18),
         npc: {
-            spriteId: 5, x: 22, y: 15, name: 'System Admin', questionLevel: 4,
+            spriteId: 5, x: 9, y: 6, name: 'System Admin', questionLevel: 4,
             dialogue: [
-                { speaker: 'System Admin', text: ' This is the server room. No one has access here.' },
-                { speaker: 'Bhairava', text: ' I know, so what?' },
+                { speaker: 'System Admin', text: 'This is the server room. No one has access here.' },
+                { speaker: 'Bhairava', text: 'I know, so what?' },
                 { speaker: 'System Admin', text: 'Huh So Full of yourself. Lets see what you can do.' },
             ],
         },
-        portal: { x: 22, y: 1, targetLevel: 5 },
-        playerStart: { x: 22, y: 30 },
+        portal: { x: 9, y: 2, targetLevel: 5 },
+        playerStart: { x: 9, y: 15 },
     },
     {
         id: 5,
@@ -350,7 +359,7 @@ ARENA_LEVELS[0].tiles[5][8] = '4';
 ARENA_LEVELS[0].tiles[1][7] = '2';
 finalizeCollisions(ARENA_LEVELS[0], new Set(['1', '7', '4', '6']));
 
-// â”€â”€ Level 1  Lobby (matching lobby sketch) â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ Level 1  Lobby (matching lobby sketch) Ã¢â€â‚¬Ã¢â€â‚¬
 // (now handled by buildLevel1LobbyLayout below)
 
 // (Level 2 - Classroom is now handled by buildLevel2ClassroomLayout below)
@@ -358,7 +367,7 @@ finalizeCollisions(ARENA_LEVELS[0], new Set(['1', '7', '4', '6']));
 // (Level 3 - Lab is now handled by buildLevel3LabLayout below)
 
 // ---------------------------------------------------------------------------
-//  Level 5 — Rooftop  (detailed rooftop layout based on reference image)
+//  Level 5 â€” Rooftop  (detailed rooftop layout based on reference image)
 // ---------------------------------------------------------------------------
 function buildLevel5RooftopLayout(level) {
     const W = 52;
@@ -366,7 +375,7 @@ function buildLevel5RooftopLayout(level) {
     const t = [];
     for (let y = 0; y < H; y++) t.push(Array(W).fill('RF'));
 
-    // ── Helpers ──
+    // â”€â”€ Helpers â”€â”€
     function fill(x1, y1, x2, y2, tile) {
         for (let yy = y1; yy <= y2; yy++)
             for (let xx = x1; xx <= x2; xx++)
@@ -379,33 +388,33 @@ function buildLevel5RooftopLayout(level) {
         for (let yy = y1; yy <= y2; yy++) t[yy][x] = tile;
     }
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  1.  SKYLINE BORDER (top 2 rows + left/right 2 cols)
     //      City skyline wraps around the top and sides
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     fill(0, 0, W - 1, 1, 'RSK');           // top 2 rows skyline
     vline(0, H - 1, 0, 'RSK');             // left column skyline
     vline(0, H - 1, 1, 'RSK');             // left column 2
     vline(0, H - 1, W - 1, 'RSK');         // right column skyline
     vline(0, H - 1, W - 2, 'RSK');         // right column 2
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  2.  PARAPET WALL (inner border around roof area)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     hline(2, W - 3, 2, 'RW5');             // top parapet
     vline(2, H - 8, 2, 'RW5');             // left parapet
     vline(2, H - 8, W - 3, 'RW5');         // right parapet
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  3.  CHAIN-LINK FENCE (lower perimeter before building facade)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     hline(2, W - 3, H - 8, 'RFN');         // fence across bottom of roof area
     // Fence gap for entrance (center, 4 tiles wide)
     for (let x = 24; x <= 28; x++) t[H - 8][x] = 'RF';
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  4.  BUILDING FACADE (bottom zone, rows H-7 to H-1)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Facade with windows
     for (let y = H - 7; y <= H - 1; y++) {
         for (let x = 2; x <= W - 3; x++) {
@@ -423,9 +432,9 @@ function buildLevel5RooftopLayout(level) {
     t[H - 4][26] = 'RBD';
     t[H - 3][26] = 'RBD';
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  5.  WATER TANKS (top-left and bottom-right, like reference)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Top-left water tanks (2 tanks side by side)
     t[3][4] = 'RWT'; t[3][5] = 'RWT';
     t[4][4] = 'RWT'; t[4][5] = 'RWT';
@@ -438,17 +447,17 @@ function buildLevel5RooftopLayout(level) {
     t[H - 10][W - 10] = 'RWT'; t[H - 10][W - 9] = 'RWT';
     t[H - 9][W - 10] = 'RWT'; t[H - 9][W - 9] = 'RWT';
 
-    // ═══════════════════════════════════════════════
-    //  6.  HVAC UNIT — 4 big fans in metal housing
-    // ═══════════════════════════════════════════════
-    // 4×4 grid: frame border with 2×2 fan center (4 big fans)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  6.  HVAC UNIT â€” 4 big fans in metal housing
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 4Ã—4 grid: frame border with 2Ã—2 fan center (4 big fans)
     fill(24, 9, 27, 12, 'RHR');              // fill all with metal frame
     t[10][25] = 'RHF'; t[10][26] = 'RHF';   // top-row fans
     t[11][25] = 'RHF'; t[11][26] = 'RHF';   // bottom-row fans
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  7.  AC UNITS / ELECTRICAL EQUIPMENT (left side)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // AC units along left wall
     t[7][3] = 'RAC'; t[8][3] = 'RAC';
     t[10][3] = 'RAC'; t[11][3] = 'RAC';
@@ -463,15 +472,15 @@ function buildLevel5RooftopLayout(level) {
     t[15][4] = 'REB';
     hline(3, 5, 17, 'RPP');
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  8.  ANTENNA / SATELLITE DISH (top-left area)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     t[6][10] = 'RAN'; t[6][11] = 'RAN';
     t[7][10] = 'RAN'; t[7][11] = 'RAN';
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  9.  PLANTERS (along top-right edge & scattered)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Top-right planter row
     for (let x = W - 8; x <= W - 4; x += 2) {
         t[3][x] = 'RPL';
@@ -485,9 +494,9 @@ function buildLevel5RooftopLayout(level) {
     t[20][4] = 'RPL';
     t[24][4] = 'RPL';
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  10. SPOTLIGHTS (flood lights on poles)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     t[15][14] = 'RSL';
     t[15][37] = 'RSL';
     t[22][14] = 'RSL';
@@ -496,23 +505,23 @@ function buildLevel5RooftopLayout(level) {
     t[H - 9][10] = 'RSL';
     t[H - 9][41] = 'RSL';
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  11. CRATES / BOXES (lower-left area, like reference)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     t[H - 10][4] = 'RCR'; t[H - 10][5] = 'RCR';
     t[H - 11][4] = 'RCR'; t[H - 11][5] = 'RCR';
     t[H - 11][6] = 'RCR';
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  12. ROOF VENTS (scattered across floor)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     t[10][18] = 'RVN'; t[10][33] = 'RVN';
     t[18][10] = 'RVN'; t[18][40] = 'RVN';
     t[24][18] = 'RVN'; t[24][33] = 'RVN';
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  13. PIPE RUNS (connecting equipment)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Horizontal pipes along top (connecting tanks to HVAC)
     hline(9, 21, 4, 'RPP');
     // Pipe from HVAC to right side
@@ -520,15 +529,15 @@ function buildLevel5RooftopLayout(level) {
     // Vertical pipe (using floor vents as markers) left side
     vline(13, 18, 6, 'RPP');
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  14. ADDITIONAL DETAIL PROPS
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Caution signs near HVAC
     t[8][24] = '12'; t[8][27] = '12';
     // Benches / seating near center
     t[20][20] = 'BN'; t[20][32] = 'BN';
 
-    // Roof access structure — stairwell / lift (top-right corner)
+    // Roof access structure â€” stairwell / lift (top-right corner)
     // Row 3: lights on corners, wall sections between
     t[3][43] = 'RAL5'; t[3][44] = 'RAW5'; t[3][45] = 'RAW5';
     t[3][46] = 'RAW5'; t[3][47] = 'RAL5';
@@ -539,14 +548,14 @@ function buildLevel5RooftopLayout(level) {
     t[5][43] = 'RAW5'; t[5][44] = 'RAW5'; t[5][45] = 'RAW5';
     t[5][46] = 'RAW5'; t[5][47] = 'RAW5';
 
-    // ═══════════════════════════════════════════════
-    //  15. PORTAL (exit point — top center area)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  15. PORTAL (exit point â€” top center area)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     t[3][26] = '3';
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  16. PROTECT KEY POSITIONS
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const npcPos = { x: 26, y: 18 };
     const portalPos = { x: 26, y: 3 };
     const spawnPos = { x: 26, y: 27 };
@@ -565,9 +574,9 @@ function buildLevel5RooftopLayout(level) {
         }
     });
 
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  17. LEVEL ASSIGNMENT
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     level.width = W;
     level.height = H;
     level.tiles = t;
@@ -581,8 +590,8 @@ function buildLevel5RooftopLayout(level) {
         name: 'Principal',
         questionLevel: 5,
         dialogue: [
-            { speaker: 'Principal', text: 'Ahhh… the lover boy who fought security, aunties, teachers, and even the WiFi. Impressive… but stupidity is not a skill. You broke rules, disturbed discipline, and messed up my server room.' },
-            { speaker: 'Principal', text: 'Fine… I’ll let you go. But on one condition. Answer this question and you both are free, if not your love story is going to become a case study!' },
+            { speaker: 'Principal', text: 'Ahhhâ€¦ the lover boy who fought security, aunties, teachers, and even the WiFi. Impressiveâ€¦ but stupidity is not a skill. You broke rules, disturbed discipline, and messed up my server room.' },
+            { speaker: 'Principal', text: 'Fineâ€¦ Iâ€™ll let you go. But on one condition. Answer this question and you both are free, if not your love story is going to become a case study!' },
             { speaker: 'Bhairava', text: 'Anthing For Mithravindha' },
         ],
     };
@@ -622,12 +631,12 @@ function strokeTileRect(tiles, x1, y1, x2, y2, value) {
 }
 
 function buildLevel0CampusLayout(level) {
-    // â”€â”€ dimensions â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ dimensions Ã¢â€â‚¬Ã¢â€â‚¬
     const W = 90;
     const H = 60;
     const CX = Math.floor(W / 2); // gate center X = 45
 
-    // â”€â”€ vertical zone boundaries â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ vertical zone boundaries Ã¢â€â‚¬Ã¢â€â‚¬
     const BLDG_TOP     = 4;   // college building top
     const BLDG_BOT     = 16;  // college building bottom
     const YARD_TOP     = BLDG_BOT + 1; // 17  campus yard start
@@ -636,18 +645,18 @@ function buildLevel0CampusLayout(level) {
     const ROAD_BOT     = H - 2; // road zone end
     const SPAWN_Y      = H - 4; // player spawn row
 
-    // â”€â”€ horizontal zones â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ horizontal zones Ã¢â€â‚¬Ã¢â€â‚¬
     const PARK_L = 4;  const PARK_R = 26;  // parking area
     const GARDEN_L = 54; const GARDEN_R = 86; // garden/tree area
     const GATE_HALF = 2; // gate opening half-width
 
-    // â”€â”€ 1. Fill everything with grass â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 1. Fill everything with grass Ã¢â€â‚¬Ã¢â€â‚¬
     const t = [];
     for (let y = 0; y < H; y++) {
         t.push(Array(W).fill('G'));
     }
 
-    // â”€â”€ 2. Road zone (bottom) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 2. Road zone (bottom) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let y = ROAD_TOP; y <= ROAD_BOT; y++) {
         for (let x = 0; x < W; x++) {
             t[y][x] = 'R';
@@ -672,7 +681,7 @@ function buildLevel0CampusLayout(level) {
         }
     }
 
-    // â”€â”€ 3. Campus boundary fence â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 3. Campus boundary fence Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 1; x < W - 1; x++) {
         if (Math.abs(x - CX) <= GATE_HALF) continue; // gate opening
         t[FENCE_Y][x] = 'F';
@@ -687,7 +696,7 @@ function buildLevel0CampusLayout(level) {
         t[BLDG_TOP - 1][x] = 'F';
     }
 
-    // â”€â”€ 4. Gate pillars + kiosks â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 4. Gate pillars + kiosks Ã¢â€â‚¬Ã¢â€â‚¬
     t[FENCE_Y][CX - GATE_HALF - 1] = 'GP';
     t[FENCE_Y][CX + GATE_HALF + 1] = 'GP';
     // gate opening tiles (walkable)
@@ -700,7 +709,7 @@ function buildLevel0CampusLayout(level) {
     t[FENCE_Y - 2][CX + GATE_HALF + 2] = 'KS';
     t[FENCE_Y - 1][CX + GATE_HALF + 2] = 'KS';
 
-    // â”€â”€ 5. College building â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 5. College building Ã¢â€â‚¬Ã¢â€â‚¬
     for (let y = BLDG_TOP; y <= BLDG_BOT; y++) {
         for (let x = 28; x <= 62; x++) {
             t[y][x] = 'BL';
@@ -722,7 +731,7 @@ function buildLevel0CampusLayout(level) {
     // lobby entrance door (this is the portal to Level 1)
     t[BLDG_BOT + 1][CX] = 'BD';
 
-    // â”€â”€ 6. Parking area (left side) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 6. Parking area (left side) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let y = YARD_TOP + 2; y <= FENCE_Y - 3; y++) {
         for (let x = PARK_L; x <= PARK_R; x++) {
             t[y][x] = 'PK';
@@ -754,7 +763,7 @@ function buildLevel0CampusLayout(level) {
         }
     }
 
-    // â”€â”€ 7. Garden area with trees (right side) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 7. Garden area with trees (right side) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let y = YARD_TOP + 1; y <= FENCE_Y - 2; y += 3) {
         for (let x = GARDEN_L; x <= GARDEN_R; x += 4) {
             t[y][x] = 'T';
@@ -767,20 +776,20 @@ function buildLevel0CampusLayout(level) {
         }
     }
 
-    // â”€â”€ 8. Campus walkway (center path from gate to building) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 8. Campus walkway (center path from gate to building) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let y = BLDG_BOT + 2; y < FENCE_Y; y++) {
         for (let x = CX - 2; x <= CX + 2; x++) {
             t[y][x] = 'SW';
         }
     }
 
-    // â”€â”€ 9. Tree rows along walkway â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 9. Tree rows along walkway Ã¢â€â‚¬Ã¢â€â‚¬
     for (let y = BLDG_BOT + 3; y < FENCE_Y - 1; y += 3) {
         t[y][CX - 4] = 'T';
         t[y][CX + 4] = 'T';
     }
 
-    // â”€â”€ 10. Protect key points (clear 3x3 area around NPC, portal, spawn) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 10. Protect key points (clear 3x3 area around NPC, portal, spawn) Ã¢â€â‚¬Ã¢â€â‚¬
     const npcPos   = { x: CX, y: FENCE_Y + 1 };
     const portalPos = { x: CX, y: BLDG_BOT + 1 };
     const spawnPos  = { x: CX, y: SPAWN_Y };
@@ -802,11 +811,11 @@ function buildLevel0CampusLayout(level) {
     // restore portal door
     t[portalPos.y][portalPos.x] = 'BD';
 
-    // â”€â”€ 11. World border (invisible collision wall) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 11. World border (invisible collision wall) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 0; x < W; x++) { t[0][x] = 'F'; t[H - 1][x] = 'F'; }
     for (let y = 0; y < H; y++) { t[y][0] = 'F'; t[y][W - 1] = 'F'; }
 
-    // â”€â”€ Assign to level â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Assign to level Ã¢â€â‚¬Ã¢â€â‚¬
     level.width = W;
     level.height = H;
     level.tiles = t;
@@ -920,23 +929,23 @@ function applyLargeWorldLayout(level, targetWidth, targetHeight) {
 }
 
 // ---------------------------------------------------------------------------
-//  Level 1 â€“ Lobby  (refined lobby / reception layout)
+//  Level 1 Ã¢â‚¬â€œ Lobby  (refined lobby / reception layout)
 // ---------------------------------------------------------------------------
 function buildLevel1LobbyLayout(level) {
     const W = 40;
     const H = 24;
 
-    // â”€â”€ 1. Fill with lobby floor â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 1. Fill with lobby floor Ã¢â€â‚¬Ã¢â€â‚¬
     const t = [];
     for (let y = 0; y < H; y++) {
         t.push(Array(W).fill('0'));
     }
 
-    // â”€â”€ 2. Border walls â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 2. Border walls Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 0; x < W; x++) { t[0][x] = '1'; t[H - 1][x] = '1'; }
     for (let y = 0; y < H; y++) { t[y][0] = '1'; t[y][W - 1] = '1'; }
 
-    // â”€â”€ 3. Upper section (rows 1â€“4) - behind divider wall â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 3. Upper section (rows 1Ã¢â‚¬â€œ4) - behind divider wall Ã¢â€â‚¬Ã¢â€â‚¬
 
     // Lift (elevator) at top-center wall (single tile)
     t[1][19] = '14';
@@ -950,17 +959,17 @@ function buildLevel1LobbyLayout(level) {
     t[1][10] = 'NB';
     t[1][13] = 'NB';
 
-    // â”€â”€ 4. Divider wall (row 5) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 4. Divider wall (row 5) Ã¢â€â‚¬Ã¢â€â‚¬
     // Left section
     for (let x = 1; x <= 16; x++) t[5][x] = '1';
-    // Gap opening at x = 17â€“22 (walk-through to upper area)
+    // Gap opening at x = 17Ã¢â‚¬â€œ22 (walk-through to upper area)
     // Right section
     for (let x = 23; x <= 35; x++) t[5][x] = '1';
     // Door + stairs to classroom on far right
     t[5][36] = '2';
     t[5][37] = '13';
 
-    // â”€â”€ 5. Reception area (right side, rows 6â€“9) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 5. Reception area (right side, rows 6Ã¢â‚¬â€œ9) Ã¢â€â‚¬Ã¢â€â‚¬
     // Reception counter - horizontal desk in front of Aunty
     t[8][26] = 'RC';  t[8][27] = 'RC';  t[8][28] = 'RC';  t[8][29] = 'RC';  t[8][30] = 'RC';
     // Side returns of desk
@@ -969,7 +978,7 @@ function buildLevel1LobbyLayout(level) {
     t[7][25] = '6';
     t[7][31] = '6';
 
-    // â”€â”€ 6. Main lobby open area (rows 6â€“22) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 6. Main lobby open area (rows 6Ã¢â‚¬â€œ22) Ã¢â€â‚¬Ã¢â€â‚¬
 
     // Diamond decorative floor (centre of lobby)
     t[12][18] = 'DF'; t[12][19] = 'DF'; t[12][20] = 'DF';
@@ -995,10 +1004,10 @@ function buildLevel1LobbyLayout(level) {
     // Door on right wall (lower area exit)
     t[17][W - 1] = '2';
 
-    // â”€â”€ 7. Hidden lift - elevator in upper area â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 7. Hidden lift - elevator in upper area Ã¢â€â‚¬Ã¢â€â‚¬
     // (single tile already placed at t[1][19])
 
-    // â”€â”€ 8. Assign to level â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 8. Assign to level Ã¢â€â‚¬Ã¢â€â‚¬
     level.width  = W;
     level.height = H;
     level.tiles  = t;
@@ -1013,7 +1022,7 @@ function buildLevel1LobbyLayout(level) {
         scale: 1.25,
         dialogue: [
             { speaker: 'Reception Aunty', text: 'Why are you roaming here during class hours?' },
-                { speaker: 'Bhairava', text: 'I’m looking for the Principal. He isn’t in his cabin.Where is he?' },
+                { speaker: 'Bhairava', text: 'Iâ€™m looking for the Principal. He isnâ€™t in his cabin.Where is he?' },
                 { speaker: 'Reception Aunty', text: 'I dont know where he is. But he gave me this paper and asked you to answer them.' },
         ],
         outro: [
@@ -1058,41 +1067,41 @@ function buildLevel1LobbyLayout(level) {
 }
 
 // ---------------------------------------------------------------------------
-//  Level 2 â€“ Classroom  (matching classroom reference image)
+//  Level 2 Ã¢â‚¬â€œ Classroom  (matching classroom reference image)
 // ---------------------------------------------------------------------------
 function buildLevel2ClassroomLayout(level) {
     const W = 30;
     const H = 20;
 
-    // â”€â”€ 1. Fill with classroom floor â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 1. Fill with classroom floor Ã¢â€â‚¬Ã¢â€â‚¬
     const t = [];
     for (let y = 0; y < H; y++) {
         t.push(Array(W).fill('CF'));
     }
 
-    // â”€â”€ 2. Border walls (classroom wall tiles) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 2. Border walls (classroom wall tiles) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 0; x < W; x++) { t[0][x] = 'CW'; t[H - 1][x] = 'CW'; }
     for (let y = 0; y < H; y++) { t[y][0] = 'CW'; t[y][W - 1] = 'CW'; }
 
-    // â”€â”€ 3. Top interior wall (rows 1â€“2) - classroom front â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 3. Top interior wall (rows 1Ã¢â‚¬â€œ2) - classroom front Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 1; x < W - 1; x++) { t[1][x] = 'CW'; }
     // Row 2 wall behind chalkboard area (x=3..10) - keeps collision solid
     for (let x = 3; x <= 10; x++) { t[2][x] = 'CW'; }
 
-    // â”€â”€ 4. Chalkboard rendered as a single combined overlay (8w Ã— 2h) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 4. Chalkboard rendered as a single combined overlay (8w Ãƒâ€” 2h) Ã¢â€â‚¬Ã¢â€â‚¬
     // (tiles stay as CW; chalkboard_large.png drawn on top in drawArena)
 
-    // â”€â”€ 5. Teacher desk at center-top â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 5. Teacher desk at center-top Ã¢â€â‚¬Ã¢â€â‚¬
     t[3][14] = 'TD';
     t[3][15] = 'TD';
 
-    // â”€â”€ 6. Computer desk at top right â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 6. Computer desk at top right Ã¢â€â‚¬Ã¢â€â‚¬
     t[1][23] = '5';
 
-    // â”€â”€ 7. Door at top right (portal to next level) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 7. Door at top right (portal to next level) Ã¢â€â‚¬Ã¢â€â‚¬
     t[1][26] = '2';
 
-    // â”€â”€ 8. Student desks: 8 columns Ã— 6 rows â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 8. Student desks: 8 columns Ãƒâ€” 6 rows Ã¢â€â‚¬Ã¢â€â‚¬
     const deskCols = [3, 6, 10, 13, 17, 20, 24, 27];
     const deskRows = [5, 7, 9, 11, 13, 15];
 
@@ -1102,7 +1111,7 @@ function buildLevel2ClassroomLayout(level) {
         }
     }
 
-    // â”€â”€ 9. Bottom entrance (gap in bottom wall) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 9. Bottom entrance (gap in bottom wall) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 13; x <= 16; x++) {
         t[H - 1][x] = 'CF';
     }
@@ -1110,7 +1119,7 @@ function buildLevel2ClassroomLayout(level) {
     t[H - 2][14] = 'CF';
     t[H - 2][15] = 'CF';
 
-    // â”€â”€ 10. Assign to level â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 10. Assign to level Ã¢â€â‚¬Ã¢â€â‚¬
     level.width = W;
     level.height = H;
     level.tiles = t;
@@ -1131,11 +1140,11 @@ function buildLevel2ClassroomLayout(level) {
         questionLevel: 2,
         dialogue: [
             { speaker: 'Teacher', text: 'What are you doing without attending class?' },
-                { speaker: 'Bhairava', text: 'I’m looking for my girlfriend.' },
-                { speaker: 'Teacher', text: 'Huh!? Girlfriend? For you? First answer these questions and let’s see if you even deserve her.' },
+                { speaker: 'Bhairava', text: 'Iâ€™m looking for my girlfriend.' },
+                { speaker: 'Teacher', text: 'Huh!? Girlfriend? For you? First answer these questions and letâ€™s see if you even deserve her.' },
         ],
         outro: [
-            { speaker: 'Teacher', text: 'Aha… so you’ll answer the questions if it’s for your Girlfriend!' },
+            { speaker: 'Teacher', text: 'Ahaâ€¦ so youâ€™ll answer the questions if itâ€™s for your Girlfriend!' },
         ],
     };
 
@@ -1169,32 +1178,32 @@ function buildLevel2ClassroomLayout(level) {
 }
 
 // ---------------------------------------------------------------------------
-//  Level 3 â€“ Lab  (computer lab matching reference image)
+//  Level 3 Ã¢â‚¬â€œ Lab  (computer lab matching reference image)
 // ---------------------------------------------------------------------------
 function buildLevel3LabLayout(level) {
     const W = 26;
     const H = 20;
 
-    // â”€â”€ 1. Fill with lab floor â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 1. Fill with lab floor Ã¢â€â‚¬Ã¢â€â‚¬
     const t = [];
     for (let y = 0; y < H; y++) {
         t.push(Array(W).fill('LF'));
     }
 
-    // â”€â”€ 2. Border walls â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 2. Border walls Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 0; x < W; x++) { t[0][x] = 'LX'; t[H - 1][x] = 'LX'; }
     for (let y = 0; y < H; y++) { t[y][0] = 'LX'; t[y][W - 1] = 'LX'; }
 
-    // â”€â”€ 3. Top interior wall (row 1) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 3. Top interior wall (row 1) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 1; x < W - 1; x++) { t[1][x] = 'LX'; }
 
     // Bookshelf on far left of top wall
     t[1][1] = '7'; t[1][2] = '7';
 
     // Chalkboard area (wall tiles stay LX; overlay drawn on top)
-    // â†’ chalkboard overlay at x=7..11, y=1 (5 tiles wide, 1 tile tall)
+    // Ã¢â€ â€™ chalkboard overlay at x=7..11, y=1 (5 tiles wide, 1 tile tall)
 
-    // Teacher desk (instructorâ€™s desk with laptop) - row 3, center
+    // Teacher desk (instructorÃ¢â‚¬â„¢s desk with laptop) - row 3, center
     t[3][12] = 'LT';
 
     // Door / portal to next level - right side of top wall
@@ -1203,7 +1212,7 @@ function buildLevel3LabLayout(level) {
     // Small shelf on far right of top wall
     t[1][23] = 'LH';
 
-    // â”€â”€ 4. Workstation area (4 clusters, each 3 rows) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 4. Workstation area (4 clusters, each 3 rows) Ã¢â€â‚¬Ã¢â€â‚¬
     const leftStart  = 1;
     const leftEnd    = 11;   // 11 tiles per side
     const rightStart = 14;
@@ -1235,15 +1244,15 @@ function buildLevel3LabLayout(level) {
         }
     }
 
-    // â”€â”€ 5. Hidden lift tile (bottom-left area) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 5. Hidden lift tile (bottom-left area) Ã¢â€â‚¬Ã¢â€â‚¬
     t[17][1] = '14';
 
-    // â”€â”€ 6. Bottom entrance (gap in bottom wall) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 6. Bottom entrance (gap in bottom wall) Ã¢â€â‚¬Ã¢â€â‚¬
     for (let x = 11; x <= 14; x++) {
         t[H - 1][x] = 'LF';
     }
 
-    // â”€â”€ 7. Assign to level â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ 7. Assign to level Ã¢â€â‚¬Ã¢â€â‚¬
     level.width  = W;
     level.height = H;
     level.tiles  = t;
@@ -1263,9 +1272,9 @@ function buildLevel3LabLayout(level) {
         name: 'Lab Incharge',
         questionLevel: 3,
         dialogue: [
-           { speaker: 'Lab Incharge', text: 'You scoundrel! You haven’t come to the lab since day one!' },
+           { speaker: 'Lab Incharge', text: 'You scoundrel! You havenâ€™t come to the lab since day one!' },
                 { speaker: 'Bhairava', text: 'So?' },
-                { speaker: 'Lab Incharge', text: 'Answer my questions or you won’t write your externals.' },
+                { speaker: 'Lab Incharge', text: 'Answer my questions or you wonâ€™t write your externals.' },
         ],
         outro: [
             { speaker: 'Lab Incharge', text: 'Well You are better than you look' },
@@ -1310,55 +1319,28 @@ function buildLevel3LabLayout(level) {
 }
 
 // ---------------------------------------------------------------------------
-//  Level 4 — Server Room  (reference-matching data-center layout)
+//  Level 4 â€” Server Room  (reference-image-matching compact layout)
 //
-//  Reproduces the attached server-room reference image as faithfully as
-//  possible.  The image shows a top-down data center with:
-//    • Control / monitoring station (top-left)  with cyan screen & fans
-//    • 3 rows × 4 columns of dense server-rack bays separated by cable trunks
-//    • Prominent vertical AND horizontal cable-tray infrastructure
-//    • A distinctive lighter rectangular open area in the center
-//    • Floor vent grate (circular) near the bottom center
-//    • Blue LED accent lighting on the right-side wall
-//    • AC / cooling units along the top wall
-//    • Electrical panel (top-right corner)
-//    • UPS battery units in corners
+//  Reproduces the attached server-room reference image:
+//    â€¢ Compact indoor server room with blue-grey tiled floor
+//    â€¢ Top wall: workstation monitors (left), steel double doors (center),
+//      fire extinguisher, bookshelves & panel (right)
+//    â€¢ Two groups of 3 server racks on each side wall (left & right)
+//    â€¢ Open center walkway with lighter floor tiles & ceiling lights
+//    â€¢ Bottom-left: stacked cardboard boxes + old computer
+//    â€¢ Bottom-right: red toolbox, console desk & chair
+//    â€¢ Floor vent grate near bottom center
+//    â€¢ NPC (System Admin) in center, player enters from bottom
 //
-//  Grid: 46 wide × 32 tall  (aspect ≈ 1.44 : 1, close to reference ~1.5 : 1)
-//
-//  Column zones:
-//    0          border wall
-//    1          left pipe
-//    2-8        LEFT zone (control room / bays)
-//    9-10       cable trunk pair (double-wide for visual weight)
-//    11-19      CENTER-LEFT zone (bays)
-//    20         cable trunk
-//    21-24      MAIN CORRIDOR / center open area
-//    25         cable trunk
-//    26-34      CENTER-RIGHT zone (bays)
-//    35-36      cable trunk pair
-//    37-43      RIGHT zone (bays)
-//    44         right pipe / blue-accent wall
-//    45         border wall
-//
-//  Row zones:
-//    0-1        border wall + inner top wall (AC, portal door, fans)
-//    2-8        TOP rack bays
-//    9-10       horizontal cable trunk pair
-//    11-19      MIDDLE rack bays  (center open area rows 13-17)
-//    20-21      horizontal cable trunk pair
-//    22-28      BOTTOM rack bays
-//    29         grate vent strip
-//    30         approach zone
-//    31         border wall (entrance gap)
+//  Grid: 20 wide Ã— 18 tall
 // ---------------------------------------------------------------------------
 function buildLevel4ServerRoomLayout(level) {
-    const W = 46;
-    const H = 32;
+    const W = 20;
+    const H = 18;
     const t = [];
     for (let y = 0; y < H; y++) t.push(Array(W).fill('SF4'));
 
-    // ── Helpers ──
+    // â”€â”€ Helpers â”€â”€
     function fill(x1, y1, x2, y2, tile) {
         for (let yy = y1; yy <= y2; yy++)
             for (let xx = x1; xx <= x2; xx++)
@@ -1371,289 +1353,159 @@ function buildLevel4ServerRoomLayout(level) {
         for (let yy = y1; yy <= y2; yy++) t[yy][x] = tile;
     }
 
-    // ═══════════════════════════════════════════════
-    //  1.  PERIMETER WALLS, PIPES & ACCENT LIGHTING
-    // ═══════════════════════════════════════════════
-    hline(0, W - 1, 0, 'SW4');              // top border
-    hline(0, W - 1, H - 1, 'SW4');          // bottom border
-    vline(0, H - 1, 0, 'SW4');              // left border
-    vline(0, H - 1, W - 1, 'SW4');          // right border
-    hline(1, W - 2, 1, 'SW4');              // inner top wall
-    vline(2, H - 2, 1, 'SP');              // left vertical pipe
-    vline(2, H - 2, W - 2, 'SB');          // right blue-accent wall strip
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  1.  PERIMETER WALLS
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    hline(0, W - 1, 0, 'SW4');              // top outer wall
+    hline(0, W - 1, 1, 'SW4');              // equipment wall (inner top)
+    hline(0, W - 1, H - 1, 'SW4');          // bottom outer wall
+    hline(0, W - 1, H - 2, 'SW4');          // bottom inner wall
+    vline(0, H - 1, 0, 'SW4');              // left wall
+    vline(0, H - 1, W - 1, 'SW4');          // right wall
 
-    // ── Top-wall corner equipment ──
-    t[0][1] = 'SV';                         // fan (top-left corner)
-    t[0][2] = 'SV';                         // fan
-    t[0][W - 2] = 'SN';                     // electrical panel (top-right)
-    t[0][W - 3] = 'SV';                     // fan (top-right corner)
+    // Entrance gap in bottom inner wall (cols 7-12)
+    for (let x = 7; x <= 12; x++) t[H - 2][x] = 'SF4';
 
-    // ── AC units along inner top wall ──
-    t[1][13] = 'SA'; t[1][18] = 'SA';
-    t[1][28] = 'SA'; t[1][33] = 'SA';
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  2.  TOP WALL EQUIPMENT (Row 1)
+    //      Left: monitoring workstation with screens
+    //      Center: steel double doors
+    //      Right: monitors, fire ext, bookshelves, panel
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-    // ── Portal door on inner top wall ──
-    t[1][22] = '2';
+    // Left workstation area (cols 1-4)
+    t[1][1] = 'SMW';                        // wall-mounted monitor
+    t[1][2] = 'SC';                         // console desk 1
+    t[1][3] = 'SC';                         // console desk 2
+    t[1][4] = 'SMW';                        // wall-mounted monitor
 
-    // ═══════════════════════════════════════════════
-    //  2.  PRIMARY CABLE INFRASTRUCTURE
-    //      (double-wide trunks for the heavier look in the reference)
-    // ═══════════════════════════════════════════════
+    // Fan left of doors
+    t[1][6] = 'SV';
 
-    // ── Vertical cable trunks ──
-    vline(2, H - 2, 9,  'SK');  vline(2, H - 2, 10, 'SK');   // left zone divider (2-wide)
-    vline(2, H - 2, 35, 'SK');  vline(2, H - 2, 36, 'SK');   // right zone divider (2-wide)
-    // Corridor edges (only in TOP & BOTTOM sections; gap in middle for open area)
-    vline(2, 10, 20, 'SK');  vline(22, H - 2, 20, 'SK');     // corridor left trunk
-    vline(2, 10, 25, 'SK');  vline(22, H - 2, 25, 'SK');     // corridor right trunk
+    // Double steel doors (4 tiles wide, cols 7-10)
+    t[1][7] = 'SDD'; t[1][8] = 'SDD';
+    t[1][9] = 'SDD'; t[1][10] = 'SDD';
 
-    // ── Horizontal cable trunks (double-row) ──
-    hline(2, W - 3, 9,  'SH'); hline(2, W - 3, 10, 'SH');   // top–mid divider
-    hline(2, W - 3, 20, 'SH'); hline(2, W - 3, 21, 'SH');   // mid–bottom divider
+    // Fan right of doors
+    t[1][11] = 'SV';
 
-    // ── Cross-corridor horizontal cable branches ──
-    hline(20, 25, 4,  'SH');                // top cross
-    hline(20, 25, 7,  'SH');                // top cross 2
-    hline(20, 25, 14, 'SH');                // mid cross
-    hline(20, 25, 17, 'SH');                // mid cross 2
-    hline(20, 25, 24, 'SH');                // bottom cross
-    hline(20, 25, 27, 'SH');                // bottom cross 2
+    // Right side equipment (cols 13-18)
+    t[1][13] = 'SMW';                       // wall monitor
+    t[1][14] = 'SMW';                       // wall monitor
+    t[1][15] = 'SFX';                       // fire extinguisher
+    t[1][16] = 'SBK';                       // bookshelf
+    t[1][17] = 'SBK';                       // bookshelf
+    t[1][18] = 'SN';                        // electrical panel
 
-    // ═══════════════════════════════════════════════
-    //  3.  CONTROL ROOM (top-left corner: cols 2-8, rows 2-8)
-    //      Matching the monitoring station visible in the reference image
-    // ═══════════════════════════════════════════════
-    // Walls enclosing the control room
-    fill(2, 2, 8, 2, 'SW4');                // top wall of room
-    vline(2, 8, 2, 'SW4');                  // left wall
-    vline(2, 8, 8, 'SW4');                  // right wall
-    fill(2, 8, 8, 8, 'SW4');                // bottom wall
-    fill(3, 3, 7, 7, 'SF4');               // clear interior floor
-    t[8][5] = 'SF4'; t[8][6] = 'SF4';     // door gap at bottom
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  3.  PORTAL (in front of double doors, Row 2)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    t[2][9] = '3';                           // portal tile
 
-    // Monitoring console desk with cyan screen (top of room)
-    t[3][3] = 'SC'; t[3][4] = 'SC'; t[3][5] = 'SC';
-    t[4][4] = '10';                        // operator chair
-    // UPS units flanking
-    t[6][3] = 'SU'; t[7][3] = 'SU';
-    t[6][7] = 'SU'; t[7][7] = 'SU';
-    // Status light & shelf
-    t[3][7] = 'SL';
-    t[5][7] = 'SL';
+    // Chair at workstation (top-left, Row 2)
+    t[2][2] = 'SCH';
 
-    // ═══════════════════════════════════════════════
-    //  4.  TOP ROW BAYS  (rows 2-8)
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  4.  CENTER FLOOR (lighter floor for open walkway)
+    //      Creates the visual contrast from the reference image
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    fill(4, 3, 15, 14, 'SFC');
 
-    // Bay T1: cols 11-19, rows 2-8  (9w × 7h)
-    fill(11, 2, 11, 8, 'SK'); fill(19, 2, 19, 8, 'SK');  // side cables
-    hline(11, 19, 2, 'SK');   hline(11, 19, 8, 'SK');     // top/bottom cables
-    hline(12, 18, 5, 'SH');                                // internal h-cable
-    fill(12, 3, 18, 4, 'SR');              // upper rack band  (7×2)
-    fill(12, 6, 18, 8, 'SR');              // lower rack band  (7×3)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  5.  SERVER RACKS â€” LEFT SIDE (cols 1-2)
+    //      Two groups of 3 rows each, matching the reference
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    fill(1, 4, 2, 6, 'SR');                 // upper group (rows 4-6)
+    fill(1, 8, 2, 10, 'SR');                // lower group (rows 8-10)
 
-    // Bay T2: cols 26-34, rows 2-8  (9w × 7h)
-    fill(26, 2, 26, 8, 'SK'); fill(34, 2, 34, 8, 'SK');
-    hline(26, 34, 2, 'SK');   hline(26, 34, 8, 'SK');
-    hline(27, 33, 4, 'SH');
-    hline(27, 33, 6, 'SH');
-    fill(27, 3, 33, 3, 'SR');              // top rack row  (7×1)
-    fill(27, 5, 33, 5, 'SR');              // mid rack row  (7×1)
-    fill(27, 7, 33, 8, 'SR');              // bottom racks  (7×2)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  6.  SERVER RACKS â€” RIGHT SIDE (cols 17-18)
+    //      Mirror of left side
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    fill(17, 4, 18, 6, 'SR');               // upper group
+    fill(17, 8, 18, 10, 'SR');              // lower group
 
-    // Bay T3: cols 37-43, rows 2-8  (7w × 7h)
-    fill(37, 2, 37, 8, 'SK'); fill(43, 2, 43, 8, 'SK');
-    hline(37, 43, 2, 'SK');   hline(37, 43, 8, 'SK');
-    hline(38, 42, 5, 'SH');
-    fill(38, 3, 42, 4, 'SR');              // upper racks  (5×2)
-    fill(38, 6, 42, 8, 'SR');              // lower racks  (5×3)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  7.  CABLE TRAYS (vertical runs beside racks)
+    //      Adds infrastructure detail visible in reference
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    vline(4, 10, 3, 'SK');                  // cable run along left racks
+    vline(4, 10, 16, 'SK');                 // cable run along right racks
 
-    // ── Top-row cable branch connections ──
-    hline(8, 11, 4, 'SH');                  // control room → T1
-    hline(8, 11, 6, 'SH');
-    hline(19, 20, 5, 'SH');                 // T1 → corridor
-    hline(25, 26, 5, 'SH');                 // corridor → T2
-    hline(34, 37, 4, 'SH');                 // T2 → T3
-    hline(34, 37, 7, 'SH');
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  8.  CEILING LIGHTS
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    t[3][9] = 'SL';                          // light near portal
+    t[5][6] = 'SL';   t[5][13] = 'SL';     // lights flanking upper racks
+    t[9][6] = 'SL';   t[9][13] = 'SL';     // lights flanking lower racks
+    t[14][9] = 'SL';                         // light near player spawn
 
-    // ═══════════════════════════════════════════════
-    //  5.  MIDDLE ROW BAYS  (rows 11-19)
-    //      Center open area (SFC) replaces corridor cols 20-25
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  9.  BOTTOM AREA EQUIPMENT
+    //      Left: stacked cardboard boxes + old computer
+    //      Center: floor vent grate
+    //      Right: red toolbox, console desk & chair
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-    // Bay M1: cols 2-8, rows 11-19  (7w × 9h)
-    fill(2, 11, 2, 19, 'SK'); fill(8, 11, 8, 19, 'SK');
-    hline(2, 8, 11, 'SK');    hline(2, 8, 19, 'SK');
-    hline(3, 7, 14, 'SH');   hline(3, 7, 17, 'SH');
-    fill(3, 12, 7, 13, 'SR');              // upper rack pair  (5×2)
-    fill(3, 15, 7, 16, 'SR');              // mid racks        (5×2)
-    fill(3, 18, 7, 19, 'SR');              // lower racks      (5×2)
+    // Cardboard boxes (bottom-left, matching reference)
+    t[12][1] = 'SCR'; t[12][2] = 'SCR';
+    t[13][1] = 'SCR';
 
-    // Bay M2: cols 11-19, rows 11-19  (9w × 9h — DENSE)
-    fill(11, 11, 11, 19, 'SK'); fill(19, 11, 19, 19, 'SK');
-    hline(11, 19, 11, 'SK');   hline(11, 19, 19, 'SK');
-    hline(12, 18, 13, 'SH');
-    hline(12, 18, 15, 'SH');
-    hline(12, 18, 17, 'SH');
-    fill(12, 12, 18, 12, 'SR');            // row 1  (7×1)
-    fill(12, 14, 18, 14, 'SR');            // row 2  (7×1)
-    fill(12, 16, 18, 16, 'SR');            // row 3  (7×1)
-    fill(12, 18, 18, 19, 'SR');            // row 4  (7×2)
+    // Old computer / monitor near crates
+    t[13][3] = 'SC';
 
-    // ── CENTER OPEN AREA (lighter floor, matching the dashed rectangle in ref) ──
-    fill(19, 12, 26, 18, 'SFC');
+    // Floor vent grate (bottom center)
+    t[13][9] = 'SG'; t[13][10] = 'SG';
 
-    // Bay M3: cols 26-34, rows 11-19  (9w × 9h)
-    fill(26, 11, 26, 19, 'SK'); fill(34, 11, 34, 19, 'SK');
-    hline(26, 34, 11, 'SK');   hline(26, 34, 19, 'SK');
-    hline(27, 33, 14, 'SH');
-    hline(27, 33, 16, 'SH');
-    fill(27, 12, 33, 13, 'SR');            // upper racks  (7×2)
-    fill(27, 15, 33, 15, 'SR');            // mid row      (7×1)
-    fill(27, 17, 33, 19, 'SR');            // lower racks  (7×3)
+    // Red toolbox (bottom-right)
+    t[12][16] = 'STB';
 
-    // Bay M4: cols 37-43, rows 11-19  (7w × 9h)
-    fill(37, 11, 37, 19, 'SK'); fill(43, 11, 43, 19, 'SK');
-    hline(37, 43, 11, 'SK');   hline(37, 43, 19, 'SK');
-    hline(38, 42, 14, 'SH');
-    hline(38, 42, 17, 'SH');
-    fill(38, 12, 42, 13, 'SR');            // upper racks  (5×2)
-    fill(38, 15, 42, 16, 'SR');            // mid racks    (5×2)
-    fill(38, 18, 40, 19, 'SR');            // lower-left   (3×2) – L-shape
+    // Console desk (bottom-right)
+    t[12][17] = 'SC';
 
-    // ── Middle-row branch connections ──
-    hline(8, 11, 13, 'SH');                 // M1 → M2
-    hline(8, 11, 16, 'SH');
-    hline(34, 37, 13, 'SH');                // M3 → M4
-    hline(34, 37, 16, 'SH');
-    vline(13, 19, 15, 'SK');                // vertical drop M2 interior
+    // Desk & chair (bottom-right corner)
+    t[13][17] = 'SDK';
+    t[13][18] = 'SCH';
 
-    // ── Center area lights ──
-    t[13][22] = 'SL'; t[13][23] = 'SL';
-    t[17][22] = 'SL'; t[17][23] = 'SL';
-    t[15][20] = 'SL'; t[15][25] = 'SL';
-
-    // ═══════════════════════════════════════════════
-    //  6.  BOTTOM ROW BAYS  (rows 22-28)
-    // ═══════════════════════════════════════════════
-
-    // Bay B1: cols 2-8, rows 22-28  (7w × 7h)
-    fill(2, 22, 2, 28, 'SK'); fill(8, 22, 8, 28, 'SK');
-    hline(2, 8, 22, 'SK');    hline(2, 8, 28, 'SK');
-    hline(3, 7, 25, 'SH');
-    fill(3, 23, 7, 24, 'SR');              // upper racks  (5×2)
-    fill(3, 26, 7, 28, 'SR');              // lower racks  (5×3)
-
-    // Bay B2: cols 11-19, rows 22-28  (9w × 7h — HOT AISLE)
-    fill(11, 22, 11, 28, 'SK'); fill(19, 22, 19, 28, 'SK');
-    hline(11, 19, 22, 'SK');   hline(11, 19, 28, 'SK');
-    hline(12, 18, 25, 'SH');
-    // Hot aisle gap at col 15
-    fill(12, 23, 14, 24, 'SR');            // left upper   (3×2)
-    fill(16, 23, 18, 24, 'SR');            // right upper  (3×2)
-    fill(12, 26, 14, 28, 'SR');            // left lower   (3×3)
-    fill(16, 26, 18, 28, 'SR');            // right lower  (3×3)
-
-    // Bay B3: cols 26-34, rows 22-28  (9w × 7h)
-    fill(26, 22, 26, 28, 'SK'); fill(34, 22, 34, 28, 'SK');
-    hline(26, 34, 22, 'SK');   hline(26, 34, 28, 'SK');
-    hline(27, 33, 24, 'SH');
-    hline(27, 33, 26, 'SH');
-    fill(27, 23, 33, 23, 'SR');            // row 1  (7×1)
-    fill(27, 25, 33, 25, 'SR');            // row 2  (7×1)
-    fill(27, 27, 33, 28, 'SR');            // row 3  (7×2)
-
-    // Bay B4: cols 37-43, rows 22-28  (7w × 7h)
-    fill(37, 22, 37, 28, 'SK'); fill(43, 22, 43, 28, 'SK');
-    hline(37, 43, 22, 'SK');   hline(37, 43, 28, 'SK');
-    hline(38, 42, 25, 'SH');
-    fill(38, 23, 42, 24, 'SR');            // upper racks  (5×2)
-    fill(38, 26, 42, 28, 'SR');            // lower racks  (5×3)
-
-    // ── Bottom-row branch connections ──
-    hline(8, 11, 24, 'SH');                 // B1 → B2
-    hline(8, 11, 27, 'SH');
-    hline(34, 37, 24, 'SH');                // B3 → B4
-    hline(34, 37, 27, 'SH');
-    vline(19, 22, 15, 'SK');                // vertical drop M2 → B2
-
-    // ═══════════════════════════════════════════════
-    //  7.  CORRIDOR FLOOR DETAILS
-    // ═══════════════════════════════════════════════
-    // Grate patches at corridor ends (top & bottom)
-    fill(21, 2, 24, 2, 'SG');
-    fill(21, 3, 24, 3, 'SG');
-    // Corridor lights (top section)
-    t[5][22] = 'SL'; t[5][23] = 'SL';
-    t[8][22] = 'SL'; t[8][23] = 'SL';
-    // Corridor lights (bottom section)
-    t[22][22] = 'SL'; t[22][23] = 'SL';
-    t[26][22] = 'SL'; t[26][23] = 'SL';
-
-    // ═══════════════════════════════════════════════
-    //  8.  BOTTOM VENT & APPROACH ZONE
-    // ═══════════════════════════════════════════════
-    // Full-width grate vent strip (row 29)
-    hline(2, W - 3, 29, 'SG');
-
-    // Circular floor grate (center, rows 29-30 area)
-    // Diamond-shaped cluster of grate tiles to suggest circular vent
-    t[28][22] = 'SG'; t[28][23] = 'SG';
-    fill(21, 29, 24, 29, 'SG');
-    t[30][22] = 'SG'; t[30][23] = 'SG';
-
-    // ═══════════════════════════════════════════════
-    //  9.  EQUIPMENT & DETAIL PROPS
-    // ═══════════════════════════════════════════════
-    // UPS in approach zone corners
-    t[30][2] = 'SU';  t[30][3] = 'SU';
-    t[30][42] = 'SU'; t[30][43] = 'SU';
-    // Second monitoring station (bottom-right of approach)
-    t[30][40] = 'SC'; t[30][41] = 'SC';
-    // Caution signs near entrance
-    t[30][20] = '12'; t[30][25] = '12';
-
-    // ═══════════════════════════════════════════════
-    //  10. ENTRANCE (gap in bottom wall)
-    // ═══════════════════════════════════════════════
-    for (let x = 21; x <= 24; x++) t[H - 1][x] = 'SF4';
-
-    // ═══════════════════════════════════════════════
-    //  11. LEVEL ASSIGNMENT
-    // ═══════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  10. LEVEL ASSIGNMENT
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     level.width  = W;
     level.height = H;
     level.tiles  = t;
     level.backgroundFloor = 'SF4';
     level.backgroundWall  = 'SW4';
 
+    const npcX = 9, npcY = 6;
+    const portalX = 9, portalY = 2;
+    const spawnX = 9, spawnY = 15;
+
     level.npc = {
         spriteId: 5,
-        x: 22,
-        y: 15,
+        x: npcX,
+        y: npcY,
         name: 'System Admin',
         questionLevel: 4,
         dialogue: [
-           { speaker: 'System Admin', text: ' This is the server room. No one has access here.' },
-                { speaker: 'Bhairava', text: ' I know, so what?' },
-                { speaker: 'System Admin', text: 'Huh So Full of yourself. Lets see what you can do.' },
+            { speaker: 'System Admin', text: 'This is the server room. No one has access here.' },
+            { speaker: 'Bhairava', text: 'I know, so what?' },
+            { speaker: 'System Admin', text: 'Huh, so full of yourself. Let\u2019s see what you can do.' },
         ],
         outro: [
-            { speaker: 'System Admin', text: 'You must be understanding systems better than the guy who set ‘password123’ as the admin password. You are free to go.' },
+            { speaker: 'System Admin', text: 'You understand systems better than the guy who set \u2018password123\u2019 as the admin password. You are free to go.' },
         ],
     };
-    level.portal = { x: 22, y: 1, targetLevel: 5 };
-    level.playerStart = { x: 22, y: 30 };
+    level.portal = { x: portalX, y: portalY, targetLevel: 5 };
+    level.playerStart = { x: spawnX, y: spawnY };
 
     level.decorativeNpcs = [
-        { spriteId: 6, x: 5,  y: 5,  name: 'npc' },   // control room operator
-        { spriteId: 8, x: 23, y: 5,  name: 'npc' },   // corridor technician (top)
-        { spriteId: 7, x: 5,  y: 15, name: 'npc' },   // bay M1 tech
-        { spriteId: 9, x: 40, y: 15, name: 'npc' },   // bay M4 tech (right)
+        { spriteId: 6, x: 4,  y: 3,  name: 'npc' },   // near workstation
+        { spriteId: 8, x: 15, y: 12, name: 'npc' },   // near right desks
     ];
 
     finalizeCollisions(level, new Set([
         'SW4', 'SR', 'SC', 'SU', 'SA', 'SN', 'SV', 'SB', '12',
+        'SCR', 'STB', 'SFX', 'SDD', 'SMW', 'SBK', 'SDK',
     ]));
 }
 
@@ -1771,7 +1623,7 @@ let gameState = {
 };
 
 /* =============================================
-   CUTSCENE MANAGER — Visual‑Novel Intro Engine
+   CUTSCENE MANAGER â€” Visualâ€‘Novel Intro Engine
    ============================================= */
 const CutsceneManager = (() => {
     /* ---- DOM refs ---- */
@@ -2059,7 +1911,7 @@ const INTRO_SEQUENCE = [
       hold: 2000 },
     { type: 'hide_dialogue' },
 
-    // -- Final fade out (stays black — Level 0 sequence takes over) --
+    // -- Final fade out (stays black â€” Level 0 sequence takes over) --
     { type: 'fade', direction: 'out', speed: 1600 },
 ];
 
@@ -2092,9 +1944,9 @@ const LEVEL_0_START_SEQUENCE = [
     { type: 'hide_dialogue' },
 ];
 
-/* ══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    Level 5 Outro Sequences (triggered after final code submit)
-   ══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 const SUCCESS_OUTRO = [
     // --- Shot 1: Mithravindha in cage ---
@@ -2236,20 +2088,20 @@ async function playIntroCutscene() {
     allScreens.forEach((s) => { s.classList.add('hidden'); s.classList.remove('active'); });
     hud.classList.add('hidden');
 
-    /* ── Phase 1: Play the main intro cinematic ── */
+    /* â”€â”€ Phase 1: Play the main intro cinematic â”€â”€ */
     CutsceneManager.show();
     await CutsceneManager.run(INTRO_SEQUENCE);
     /* INTRO_SEQUENCE ends faded-to-black; cutscene layer stays up */
 
-    /* ── Phase 2: Initialize Level 0 canvas BEHIND the black overlay ── */
+    /* â”€â”€ Phase 2: Initialize Level 0 canvas BEHIND the black overlay â”€â”€ */
     hud.classList.remove('hidden');
     enterArenaLevel(0);
     /* Canvas is now live but invisible (cutscene fade plane covers it) */
 
-    /* ── Phase 3: Run the Level 0 mini-sequence over the canvas ── */
+    /* â”€â”€ Phase 3: Run the Level 0 mini-sequence over the canvas â”€â”€ */
     await CutsceneManager.run(LEVEL_0_START_SEQUENCE);
 
-    /* ── Teardown: remove cutscene layer, unlock controls ── */
+    /* â”€â”€ Teardown: remove cutscene layer, unlock controls â”€â”€ */
     CutsceneManager.hide();
     /* Restore the bg-container display for any future cutscene reuse */
     const bgContainer = document.getElementById('cutscene-bg-container');
@@ -2614,7 +2466,7 @@ function openArenaDialogue(speakerOrEntries, lines, onComplete = null) {
     /* Normalise into {speaker, text}[] regardless of call style */
     let entries;
     if (Array.isArray(speakerOrEntries) && speakerOrEntries.length && typeof speakerOrEntries[0] === 'object') {
-        /* New multi-speaker format: [{speaker, text}, …] */
+        /* New multi-speaker format: [{speaker, text}, â€¦] */
         entries = speakerOrEntries;
         /* onComplete may be the second arg when called new-style */
         if (typeof lines === 'function') {
@@ -2622,7 +2474,7 @@ function openArenaDialogue(speakerOrEntries, lines, onComplete = null) {
             lines = null;
         }
     } else {
-        /* Legacy single-speaker format: (speaker, [line1, line2, …], cb) */
+        /* Legacy single-speaker format: (speaker, [line1, line2, â€¦], cb) */
         entries = (lines || []).map((l) => ({ speaker: speakerOrEntries, text: l }));
     }
 
@@ -2705,6 +2557,8 @@ async function loadArenaAssets() {
         'server_grate', 'server_cable', 'server_cable_h', 'server_ups',
         'server_ac', 'server_light', 'server_floor_center', 'server_panel',
         'server_fan', 'server_wall_blue',
+        'server_crate', 'server_toolbox', 'server_fire_ext',
+        'server_door_double', 'server_monitor_wall',
         // rooftop tiles (Level 5)
         'roof_floor', 'roof_wall', 'roof_fence', 'roof_hvac',
         'roof_water_tank', 'roof_ac_unit', 'roof_spotlight', 'roof_planter',
@@ -3615,7 +3469,7 @@ function drawArena() {
         }
     }
 
-    // â”€â”€ Chalkboard overlay (classroom / lab) â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Chalkboard overlay (classroom / lab) Ã¢â€â‚¬Ã¢â€â‚¬
     if (level.chalkboard) {
         const cbPath = level.chalkboardImage || '/assets/tiles/chalkboard_large.png';
         const cbImg = gameState.arena.images.get(cbPath);
@@ -3718,7 +3572,7 @@ function drawArena() {
         ctx.fillRect(npcX + 8, npcY + 8, npcSize - 16, npcSize - 16);
     }
 
-    // â”€â”€ Decorative (non-interactive) NPCs â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Decorative (non-interactive) NPCs Ã¢â€â‚¬Ã¢â€â‚¬
     if (level.decorativeNpcs) {
         for (const dnpc of level.decorativeNpcs) {
             const dImg = gameState.arena.images.get(`/assets/sprites/npc_${dnpc.spriteId}.png`);
@@ -4223,7 +4077,7 @@ async function validateStoredToken() {
 }
 
 async function restorePlayerProgress(sessionStatus) {
-    /* ── Hard block: never re-enter while cutscene is running ── */
+    /* â”€â”€ Hard block: never re-enter while cutscene is running â”€â”€ */
     if (gameState.introCutscenePlaying) return;
 
     const progress = getStoredProgress();
@@ -4253,18 +4107,18 @@ async function restorePlayerProgress(sessionStatus) {
         return;
     }
 
-    /* ── Restore the cutscene flag from any existing progress ── */
+    /* â”€â”€ Restore the cutscene flag from any existing progress â”€â”€ */
     if (progress && progress.username === gameState.username && Number(progress.sessionId) === Number(gameState.sessionId)) {
         gameState.introCutsceneCompleted = Boolean(progress.introCutsceneCompleted);
     }
 
-    /* ── Cutscene gate: must play before ANY game screen shows ── */
+    /* â”€â”€ Cutscene gate: must play before ANY game screen shows â”€â”€ */
     if (!gameState.introCutsceneCompleted) {
         await playIntroCutscene();
         return;
     }
 
-    /* ── No usable progress → drop straight into Level 0 ── */
+    /* â”€â”€ No usable progress â†’ drop straight into Level 0 â”€â”€ */
     if (!progress || progress.username !== gameState.username || Number(progress.sessionId) !== Number(gameState.sessionId)) {
         enterArenaLevel(0);
         return;
@@ -4636,7 +4490,7 @@ function nextQuestion() {
         return;
     }
 
-    /* ── Outro dialogue: show NPC's closing lines, THEN unlock ── */
+    /* â”€â”€ Outro dialogue: show NPC's closing lines, THEN unlock â”€â”€ */
     const levelData = ARENA_LEVELS[gameState.arena.currentLevel];
     const outroEntries = levelData?.npc?.outro;
 
@@ -4652,7 +4506,7 @@ function nextQuestion() {
             persistProgress();
         });
     } else {
-        /* No outro defined — unlock immediately (fallback) */
+        /* No outro defined â€” unlock immediately (fallback) */
         gameState.arena.challengeCleared[gameState.level] = true;
         setHudStatus('Challenge cleared. Portal unlocked (press E near portal).');
         enterArenaLevel(gameState.level, { preservePlayerPosition: true });
@@ -4663,7 +4517,7 @@ async function submitCode() {
     const code = document.getElementById('code-editor').value;
     const button = document.querySelector('#coding-screen button');
 
-    /* ── One-shot finale: disable button permanently ── */
+    /* â”€â”€ One-shot finale: disable button permanently â”€â”€ */
     button.textContent = 'COMPILING...';
     button.disabled = true;
 
@@ -4689,7 +4543,7 @@ async function submitCode() {
         persistProgress();
         closeArenaModals();
 
-        /* ── Launch the appropriate outro cutscene ── */
+        /* â”€â”€ Launch the appropriate outro cutscene â”€â”€ */
         const allScreens = getAvailableScreens();
         allScreens.forEach((s) => { s.classList.add('hidden'); s.classList.remove('active'); });
         hud.classList.add('hidden');
@@ -4699,12 +4553,12 @@ async function submitCode() {
 
         CutsceneManager.show();
         await CutsceneManager.run(isCorrect ? SUCCESS_OUTRO : FAILURE_OUTRO);
-        /* Sequence ends faded-to-black — hand off to manual post-credit work */
+        /* Sequence ends faded-to-black â€” hand off to manual post-credit work */
 
         CutsceneManager.hide();
         if (bgContainer) bgContainer.style.display = '';
 
-        /* ── Launch cinematic credits (replaces old endGame) ── */
+        /* â”€â”€ Launch cinematic credits (replaces old endGame) â”€â”€ */
         launchCinematicCredits();
     } catch (err) {
         console.error(err);
