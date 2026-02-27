@@ -45,5 +45,10 @@ class FreezeLeaderboardRequest(BaseModel):
     frozen: bool
 
 
+class SyncStateRequest(BaseModel):
+    score: int = Field(ge=0)
+    current_level: int = Field(ge=0, le=10)
+
+
 class TimeAdjustRequest(BaseModel):
     minutes: int = Field(ge=1, le=60)

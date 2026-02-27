@@ -1695,6 +1695,12 @@ ARENA_LEVELS.forEach((level, index) => {
     applyLargeWorldLayout(level, size.width, size.height);
 });
 
+/**
+ * Permanent difficulty path chosen at Level 3.
+ * Persisted across sessions so Levels 3 & 4 always use the same branch.
+ */
+window.playerDifficultyPath = null;
+
 let gameState = {
     username: "",
     token: "",
@@ -1785,6 +1791,8 @@ const CutsceneManager = (() => {
 
     let activeBg = 'a';        // which <img> is currently "on top"
     let _typewriterAbort = null; // AbortController for current typewriter
+    let _interactiveResolve = null; // resolver for interactive_question step
+    let _interactiveAnswer  = null; // correct answer for active interactive question
 
     /* ---- helpers ---- */
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -1933,19 +1941,44 @@ const CutsceneManager = (() => {
                     if (bgContainer) bgContainer.style.display = '';
                     break;
                 }
+                case 'interactive_question': {
+                    /* Pause the runner — show question overlay and wait */
+                    hideDialogue();
+                    _interactiveAnswer = (step.answer || '').trim().toLowerCase();
+                    const qBox   = document.getElementById('interactive-question-box');
+                    const qText  = document.getElementById('cutscene-question-text');
+                    const qInput = document.getElementById('cutscene-answer-input');
+                    qText.textContent = step.question;
+                    qInput.value = '';
+                    qBox.classList.remove('hidden');
+                    qInput.focus();
+
+                    /* The runner awaits this promise; submitInteractiveAnswer resolves it */
+                    const result = await new Promise((resolve) => {
+                        _interactiveResolve = resolve;
+                    });
+                    _interactiveResolve = null;
+
+                    /* result is true (correct) or false (wrong) — stored for caller */
+                    return result;
+                }
                 default:
                     console.warn('CutsceneManager: unknown step type', step.type);
             }
         }
     }
 
-    return { show, hide, fade, setBg, crossfadeBg, showDialogue, hideDialogue, run };
+    return {
+        show, hide, fade, setBg, crossfadeBg, showDialogue, hideDialogue, run,
+        resolveInteractive(isCorrect) { if (_interactiveResolve) _interactiveResolve(isCorrect); },
+        getInteractiveAnswer() { return _interactiveAnswer; },
+    };
 })();
 
 /* ---- Intro Sequence Data ---- */
 const INTRO_SEQUENCE = [
     // -- Shot 1: Opening --
-    { type: 'set_bg',   src: '/assets/intro/shot1.png' },
+    { type: 'set_bg',   src: '/assets/intro/shot1.jpeg' },
     { type: 'fade',     direction: 'in',  speed: 1600 },
 
     { type: 'dialogue', speaker: 'Bhairava',
@@ -1954,12 +1987,12 @@ const INTRO_SEQUENCE = [
     { type: 'hide_dialogue' },
 
     // -- Shot 2: Crossfade --
-    { type: 'crossfade_bg', src: '/assets/intro/shot2.png', duration: 1000 },
+    { type: 'crossfade_bg', src: '/assets/intro/shot2.jpeg', duration: 1000 },
     { type: 'wait', duration: 1500 },
 
     // -- Shot 3: Valentine's scene --
     { type: 'fade', direction: 'out', speed: 600 },
-    { type: 'set_bg', src: '/assets/intro/shot3.png' },
+    { type: 'set_bg', src: '/assets/intro/shot3.jpeg' },
     { type: 'fade', direction: 'in',  speed: 600 },
 
     { type: 'dialogue', speaker: 'Bhairava',
@@ -1985,7 +2018,7 @@ const INTRO_SEQUENCE = [
 
     // -- Shot 4: Classroom --
     { type: 'fade', direction: 'out', speed: 600 },
-    { type: 'set_bg', src: '/assets/intro/shot4.png' },
+    { type: 'set_bg', src: '/assets/intro/shot4.jpeg' },
     { type: 'fade', direction: 'in',  speed: 600 },
 
     { type: 'dialogue', speaker: 'Bhairava',
@@ -2015,7 +2048,7 @@ const INTRO_SEQUENCE = [
 
     // -- Shot 5: Principal entrance --
     // { type: 'fade', direction: 'out', speed: 600 },
-    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+    { type: 'set_bg', src: '/assets/intro/shot5.jpeg' },
     // { type: 'fade', direction: 'in',  speed: 300 },
 
     { type: 'dialogue', speaker: 'Principal',
@@ -2024,7 +2057,7 @@ const INTRO_SEQUENCE = [
     { type: 'hide_dialogue' },
 
     // -- Shot 6: Mithravindha reaction --
-    { type: 'set_bg', src: '/assets/intro/shot6.png' },
+    { type: 'set_bg', src: '/assets/intro/shot6.jpeg' },
 
     { type: 'dialogue', speaker: 'Mithravindha',
       text: 'Sir\u2026.',
@@ -2032,7 +2065,7 @@ const INTRO_SEQUENCE = [
     { type: 'hide_dialogue' },
 
     // -- Shot 5 again: Principal angry --
-    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+    { type: 'set_bg', src: '/assets/intro/shot5.jpeg' },
 
     { type: 'dialogue', speaker: 'Principal',
       text: 'Shut up. I overheard your conversation. Is this why you are coming to college?',
@@ -2040,14 +2073,14 @@ const INTRO_SEQUENCE = [
     { type: 'hide_dialogue' },
 
     // -- Shot 7: Bhairava close-up + narration --
-    { type: 'set_bg', src: '/assets/intro/shot7.png' },
+    { type: 'set_bg', src: '/assets/intro/shot7.jpeg' },
 
     { type: 'narration', text: 'Bhairava stares at principal', hold: 1500, charDelay: 40 },
     { type: 'hide_dialogue' },
     { type: 'wait', duration: 1000 },
 
     // -- Shot 5: Principal final lines --
-    { type: 'set_bg', src: '/assets/intro/shot5.png' },
+    { type: 'set_bg', src: '/assets/intro/shot5.jpeg' },
 
     { type: 'dialogue', speaker: 'Principal',
       text: '2 hours\u2026? Eternity\u2026? What if I separate you for eternity\u2026?',
@@ -2072,7 +2105,7 @@ const LEVEL_0_START_SEQUENCE = [
     { type: 'fade', direction: 'in', speed: 1000 },
 
     { type: 'dialogue', speaker: 'Bhairava',
-      text: 'How dare this moron separate me from my Mithrabindha. He truly doesn\u2019t know the depth of hell.',
+      text: 'How dare this moron separate me from my Mithravindha. He truly doesn\u2019t know the depth of hell.',
       hold: 2000 },
     { type: 'hide_dialogue' },
 
@@ -2098,16 +2131,16 @@ const LEVEL_0_START_SEQUENCE = [
 
 const SUCCESS_OUTRO = [
     // --- Shot 1: Mithravindha in cage ---
-    { type: 'set_bg',  src: '/assets/outro/sucess/Sucess_shot1.png' },
+    { type: 'set_bg',  src: '/assets/outro/sucess/Sucess_shot1.jpeg' },
     { type: 'fade',    direction: 'in', speed: 800 },
     { type: 'wait',    duration: 500 },
 
     // --- Shot 2: Mithravindha outside ---
-    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot2.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot2.jpeg', duration: 800 },
     { type: 'wait',    duration: 600 },
 
     // --- Shot 3: Bhairava & Mithravindha close ---
-    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot3.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot3.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Bhairava',
       text: 'Oh my love\u2026 I finally found you. No one can separate us.',
@@ -2125,7 +2158,7 @@ const SUCCESS_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot 4: Unknown Silhouette ---
-    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot4.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot4.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Unknown',
       text: 'Valentine surprise!?',
@@ -2133,7 +2166,7 @@ const SUCCESS_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot 2 again: Mithravindha reaction ---
-    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot2.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/sucess/Sucess_shot2.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Mithravindha',
       text: 'Brother!?',
@@ -2146,7 +2179,7 @@ const SUCCESS_OUTRO = [
 
 const FAILURE_OUTRO = [
     // --- Shot: Principal ---
-    { type: 'set_bg',  src: '/assets/outro/fail/Fail_shot2.png' },
+    { type: 'set_bg',  src: '/assets/outro/fail/Fail_shot2.jpeg' },
     { type: 'fade',    direction: 'in', speed: 800 },
 
     { type: 'dialogue', speaker: 'Principal',
@@ -2155,11 +2188,11 @@ const FAILURE_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot: Both in cage (no dialogue) ---
-    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.jpeg', duration: 800 },
     { type: 'wait',    duration: 1200 },
 
     // --- Shot: Principal ---
-    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Principal',
       text: 'Now, I\u2019m gonna call your parents and tell them about you.',
@@ -2167,7 +2200,7 @@ const FAILURE_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot: Both in cage ---
-    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Mithravindha',
       text: 'No sir please\u2026\u2026 my brother will kill us!',
@@ -2180,7 +2213,7 @@ const FAILURE_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot: Principal ---
-    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Phone',
       text: 'Ringing\u2026. Ringing\u2026\u2026',
@@ -2193,7 +2226,7 @@ const FAILURE_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot: Unknown Silhouette ---
-    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot3.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot3.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Brother',
       text: 'Hello, this is her brother speaking. Is there any problem?',
@@ -2201,7 +2234,7 @@ const FAILURE_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot: Mithravindha ---
-    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot1.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Mithravindha',
       text: '(Completely terrified) No, no, no...!',
@@ -2209,7 +2242,7 @@ const FAILURE_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot: Principal ---
-    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot2.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Principal',
       text: 'Your sister is playing around with her boyfriend in college instead of studying.',
@@ -2217,7 +2250,7 @@ const FAILURE_OUTRO = [
     { type: 'hide_dialogue' },
 
     // --- Shot: Unknown Silhouette ---
-    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot3.png', duration: 800 },
+    { type: 'crossfade_bg', src: '/assets/outro/fail/Fail_shot3.jpeg', duration: 800 },
 
     { type: 'dialogue', speaker: 'Brother',
       text: '(Low, scary voice) I\u2019m coming... (Hangs Up)',
@@ -2226,6 +2259,96 @@ const FAILURE_OUTRO = [
 
     // --- Fade out to black ---
     { type: 'fade', direction: 'out', speed: 1600 },
+];
+
+/* ══════════════════════════════════════════════════════════════
+   Backlog King Lift Scene — Interactive Branching Cutscene
+   ══════════════════════════════════════════════════════════════ */
+
+const LIFT_INTRO_SCENE = [
+    { type: 'set_bg',  src: '/assets/lift/lift_shot0.jpeg' },
+    { type: 'fade',    direction: 'in', speed: 800 },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Who are you? How do you know Mithravindha?',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Backlog King',
+      text: 'People call me Backlog King. That doesn\u2019t matter right now. Answer this question to know where Mithravindha is.',
+      hold: 2200 },
+    { type: 'hide_dialogue' },
+
+    /* Pause cutscene — show interactive question overlay */
+    { type: 'interactive_question',
+      question: 'Which data structure uses LIFO order?',
+      answer: 'Stack' },
+];
+
+const LIFT_SUCCESS_BRANCH = [
+    { type: 'set_bg',  src: '/assets/lift/lift_shot0.jpeg' },
+
+    { type: 'dialogue', speaker: 'Backlog King',
+      text: 'Great! Principal captured Mithravindha and held captive on the roof top. And here\u2019s a little gift for you. This is a lift access card.',
+      hold: 2500 },
+    { type: 'hide_dialogue' },
+
+    { type: 'dialogue', speaker: 'Bhairava',
+      text: 'Thanks!',
+      hold: 1000 },
+    { type: 'hide_dialogue' },
+
+    /* Fast cuts through lift ride */
+    { type: 'set_bg', src: '/assets/lift/lift_shot2.jpeg' },
+    { type: 'wait', duration: 600 },
+
+    { type: 'set_bg', src: '/assets/lift/lift_shot3.jpeg' },
+    { type: 'wait', duration: 600 },
+
+    { type: 'set_bg', src: '/assets/lift/lift_shot4.jpeg' },
+    { type: 'wait', duration: 600 },
+
+    /* Fade in to lift exit */
+    { type: 'fade', direction: 'out', speed: 400 },
+    { type: 'set_bg', src: '/assets/lift/lift_shot5.jpeg' },
+    { type: 'fade', direction: 'in',  speed: 900 },
+
+    /* System Admin catches you */
+    { type: 'set_bg', src: '/assets/lift/lift_shot6.jpeg' },
+    { type: 'dialogue', speaker: 'System Admin',
+      text: 'A student using the lift!?',
+      hold: 1500 },
+    { type: 'hide_dialogue' },
+
+    { type: 'set_bg', src: '/assets/lift/lift_shot7.jpeg' },
+    { type: 'wait', duration: 800 },
+
+    { type: 'set_bg', src: '/assets/lift/lift_shot8.jpeg' },
+    { type: 'dialogue', speaker: 'System Admin',
+      text: 'Let me show him what happens when he breaks the rules.',
+      hold: 2000 },
+    { type: 'hide_dialogue' },
+
+    { type: 'set_bg', src: '/assets/lift/lift_shot9.jpeg' },
+    { type: 'dialogue', speaker: 'System',
+      text: 'The lift is broken! You need to get out.',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    /* End: Fade out, award 60 pts, load Level 3 */
+    { type: 'fade', direction: 'out', speed: 1200 },
+];
+
+const LIFT_FAILURE_BRANCH = [
+    { type: 'set_bg',  src: '/assets/lift/lift_shot0.jpeg' },
+
+    { type: 'dialogue', speaker: 'Backlog King',
+      text: 'Sorry bud, Go find your girl yourself.',
+      hold: 1800 },
+    { type: 'hide_dialogue' },
+
+    /* End: Fade out, resume current level */
+    { type: 'fade', direction: 'out', speed: 1200 },
 ];
 
 async function playIntroCutscene() {
@@ -2481,11 +2604,46 @@ function persistProgress() {
         arenaPortalOverride: gameState.arena.portalOverride,
         arenaModal: gameState.arena.activeModal,
         isCompleted: gameState.isCompleted,
+        playerDifficultyPath: window.playerDifficultyPath || null,
         endMessage: document.getElementById('end-message')?.textContent || "",
         codeDraft: document.getElementById('code-editor')?.value || "",
         savedAt: Date.now(),
     };
     localStorage.setItem(STORAGE.progress, JSON.stringify(payload));
+}
+
+/**
+ * Push the current client-side score and level to the backend so the
+ * leaderboard and database stay in sync.  This is fire-and-forget but
+ * we log failures so they are visible in the console.
+ */
+async function syncGameStateWithServer() {
+    if (!gameState.token || !gameState.sessionId) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/sync`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({
+                score: gameState.score,
+                current_level: gameState.level,
+            }),
+        });
+        if (!response.ok) {
+            console.warn('syncGameState: server returned', response.status);
+            return;
+        }
+        const data = await response.json();
+        /* Trust the server's canonical score/level after sync */
+        if (typeof data.score === 'number') {
+            gameState.score = data.score;
+            scoreDisplay.textContent = gameState.score;
+        }
+        if (typeof data.current_level === 'number') {
+            levelDisplay.textContent = data.current_level;
+        }
+    } catch (err) {
+        console.warn('syncGameState failed:', err);
+    }
 }
 
 function showLevelIntro(level) {
@@ -2550,7 +2708,7 @@ function handleHiddenRoute(choice) {
         gameState.hiddenRouteAttempted = true;
         gameState.hiddenRouteActive = true;
         gameState.hiddenRouteLiftReady = false;
-        loadLevel(1, 'backlog_king', null, { skipIntro: true });
+        playLiftCutscene();
         return;
     }
 
@@ -2559,6 +2717,86 @@ function handleHiddenRoute(choice) {
     gameState.hiddenRouteLiftReady = false;
     enterArenaLevel(1, { preservePlayerPosition: true });
 }
+
+/**
+ * Play the Backlog King Lift Scene — interactive branching cutscene.
+ * Intro → interactive question → success or failure branch.
+ */
+async function playLiftCutscene() {
+    /* Hide all game screens and show cutscene layer */
+    const allScreens = getAvailableScreens();
+    allScreens.forEach((s) => { s.classList.add('hidden'); s.classList.remove('active'); });
+    hud.classList.add('hidden');
+
+    const bgContainer = document.getElementById('cutscene-bg-container');
+    if (bgContainer) bgContainer.style.display = '';
+
+    CutsceneManager.show();
+
+    /* Phase 1: Play intro — runner pauses at interactive_question and returns result */
+    const isCorrect = await CutsceneManager.run(LIFT_INTRO_SCENE);
+
+    /* Phase 2: Branch based on the player's answer */
+    if (isCorrect) {
+        await CutsceneManager.run(LIFT_SUCCESS_BRANCH);
+        CutsceneManager.hide();
+        if (bgContainer) bgContainer.style.display = '';
+
+        /* Award 60 points */
+        gameState.score += 60;
+        scoreDisplay.textContent = gameState.score;
+
+        /* Mark hidden route complete and jump to Level 3 */
+        gameState.hiddenRouteActive = false;
+        gameState.hiddenRouteLiftReady = false;
+        gameState.arena.challengeCleared[1] = true;
+        gameState.arena.challengeCleared[2] = true; /* skip Level 2 */
+        hud.classList.remove('hidden');
+        persistProgress();
+        syncGameStateWithServer();
+        enterArenaLevel(3);
+        setHudStatus('The lift broke down — you landed on Level 3!');
+    } else {
+        await CutsceneManager.run(LIFT_FAILURE_BRANCH);
+        CutsceneManager.hide();
+        if (bgContainer) bgContainer.style.display = '';
+
+        /* No points — resume current arena level */
+        gameState.hiddenRouteActive = false;
+        gameState.hiddenRouteLiftReady = false;
+        hud.classList.remove('hidden');
+        persistProgress();
+        syncGameStateWithServer();
+        enterArenaLevel(1, { preservePlayerPosition: true });
+        setHudStatus('The Backlog King turned you away. Continue through the portal.');
+    }
+}
+
+/**
+ * Called by the interactive-question-box Submit button inside a cutscene.
+ * Evaluates the player's typed answer, hides the question box,
+ * and resolves the CutsceneManager runner with true/false.
+ */
+function submitInteractiveAnswer() {
+    const qBox   = document.getElementById('interactive-question-box');
+    const qInput = document.getElementById('cutscene-answer-input');
+    const userAnswer   = (qInput.value || '').trim().toLowerCase();
+    const correctAnswer = CutsceneManager.getInteractiveAnswer();
+
+    /* Hide the question overlay */
+    qBox.classList.add('hidden');
+    qInput.value = '';
+
+    /* Resolve the awaiting CutsceneManager runner */
+    const isCorrect = userAnswer === correctAnswer;
+    CutsceneManager.resolveInteractive(isCorrect);
+}
+
+/* Allow Enter key to submit interactive cutscene answer */
+document.getElementById('cutscene-answer-input')
+    .addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); submitInteractiveAnswer(); }
+    });
 
 function currentArenaLevel() {
     return ARENA_LEVELS[gameState.arena.currentLevel];
@@ -4281,6 +4519,7 @@ async function restorePlayerProgress(sessionStatus) {
     gameState.hiddenRouteAttempted = Boolean(progress.hiddenRouteAttempted);
     gameState.hiddenRouteActive = Boolean(progress.hiddenRouteActive);
     gameState.hiddenRouteLiftReady = Boolean(progress.hiddenRouteLiftReady);
+    window.playerDifficultyPath = progress.playerDifficultyPath || null;
     gameState.arena.companion.unlocked = Boolean(progress.companionUnlocked);
     gameState.arena.companion.visible = Boolean(progress.companionVisible) || gameState.arena.companion.unlocked;
     gameState.arena.companion.state = progress.companionState || (gameState.arena.companion.unlocked ? 'following' : 'idle');
@@ -4477,9 +4716,14 @@ async function loadLevel(level, path = null, restoreOptions = null, options = {}
         const data = await response.json();
 
         if (data.message === 'Choose path') {
-            gameState.pendingAfterIntro = { screen: 'path' };
-            document.getElementById('path-title').textContent = data.title;
-            openArenaModal('path');
+            /* If the player already chose a permanent difficulty path, use it */
+            if (window.playerDifficultyPath) {
+                loadLevel(level, window.playerDifficultyPath, restoreOptions, options);
+                return;
+            }
+            /* Show the new full-screen path selection overlay */
+            const psScreen = document.getElementById('path-selection-screen');
+            if (psScreen) psScreen.classList.remove('hidden');
             setHudStatus('Choose your path.');
             persistProgress();
             return;
@@ -4583,6 +4827,7 @@ async function submitAnswer() {
         const penalty = PENALTY_TABLE[penaltyKey] ?? 5;
         gameState.score = Math.max(0, gameState.score - penalty);
         scoreDisplay.textContent = gameState.score;
+        syncGameStateWithServer();
         setHudStatus(`Wrong answer. -${penalty} score.`);
         alert('Incorrect! Try again.');
     } catch (err) {
@@ -4611,6 +4856,7 @@ function nextQuestion() {
         gameState.arena.companion.visible = true;
         gameState.arena.companion.state = 'guiding';
         setHudStatus('BackLog King: follow me to the hidden lift.');
+        syncGameStateWithServer();
         enterArenaLevel(1, { preservePlayerPosition: true });
         startBacklogKingGuideToLift();
         openArenaDialogue('BackLog King', [
@@ -4650,12 +4896,27 @@ function nextQuestion() {
             gameState.arena.challengeCleared[gameState.level] = true;
             setHudStatus('Challenge cleared. Portal unlocked (press E near portal).');
             persistProgress();
+            syncGameStateWithServer();
+
+            /* Level 1: show the hidden-route choice right after outro */
+            if (gameState.level === 1 && !gameState.hiddenRouteAttempted) {
+                showScreen('hiddenRoute');
+                setHudStatus('A strange voice echoes from nearby...');
+                persistProgress();
+            }
         });
     } else {
         /* No outro defined — unlock immediately (fallback) */
         gameState.arena.challengeCleared[gameState.level] = true;
         setHudStatus('Challenge cleared. Portal unlocked (press E near portal).');
         enterArenaLevel(gameState.level, { preservePlayerPosition: true });
+
+        /* Level 1 fallback: show hidden-route choice */
+        if (gameState.level === 1 && !gameState.hiddenRouteAttempted) {
+            showScreen('hiddenRoute');
+            setHudStatus('A strange voice echoes from nearby...');
+            persistProgress();
+        }
     }
 }
 
@@ -4717,6 +4978,27 @@ async function submitCode() {
 function choosePath(path) {
     closeArenaModals();
     loadLevel(gameState.level, path, null, { skipIntro: true });
+}
+
+/**
+ * Called from the new #path-selection-screen overlay.
+ * Permanently sets the difficulty path for Levels 3 & 4,
+ * hides the overlay, and starts loading Level 3.
+ */
+function selectDifficultyPath(choice) {
+    window.playerDifficultyPath = choice;           // 'easy' or 'hard'
+    gameState.pathChoice = choice;
+
+    /* Hide the overlay */
+    const psScreen = document.getElementById('path-selection-screen');
+    if (psScreen) psScreen.classList.add('hidden');
+
+    /* Persist and sync with server */
+    persistProgress();
+    syncGameStateWithServer();
+
+    /* Kick off Level 3 with the chosen path */
+    loadLevel(gameState.level, choice, null, { skipIntro: true });
 }
 
 function parseTabLock(rawValue) {
@@ -4903,6 +5185,7 @@ window.startGame = startGame;
 window.submitAnswer = submitAnswer;
 window.submitCode = submitCode;
 window.choosePath = choosePath;
+window.selectDifficultyPath = selectDifficultyPath;
 window.handleHiddenRoute = handleHiddenRoute;
 window.continueArenaDialogue = continueArenaDialogue;
 
