@@ -1386,9 +1386,10 @@ function buildLevel4ServerRoomLayout(level) {
     // Fan left of doors
     t[1][6] = 'SV';
 
-    // Double steel doors (4 tiles wide, cols 7-10)
-    t[1][7] = 'SDD'; t[1][8] = 'SDD';
-    t[1][9] = 'SDD'; t[1][10] = 'SDD';
+    // Double steel doors (2 tiles wide, centered on portal)
+    t[1][7] = 'SN';                         // electrical panel (left of doors)
+    t[1][8] = 'SDD'; t[1][9] = 'SDD';      // single double-door pair
+    t[1][10] = 'SN';                        // electrical panel (right of doors)
 
     // Fan right of doors
     t[1][11] = 'SV';
