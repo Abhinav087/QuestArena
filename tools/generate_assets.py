@@ -200,132 +200,241 @@ def make_prop(base: str, accent: str, kind: str):
 #  NEW: Outdoor / campus tiles for Level 0
 # ---------------------------------------------------------------------------
 
-def _scatter_specks(d, color, alpha, seed=42):
+def _scatter_specks(d, color, alpha, seed=42, count=24):
     """Scatter subtle pixel specks for texture."""
     rng = random.Random(seed)
-    for _ in range(18):
+    for _ in range(count):
         x = rng.randint(1, BASE_TILE - 2)
         y = rng.randint(1, BASE_TILE - 2)
         d.point((x, y), fill=rgba(color, alpha))
 
 
 def make_grass():
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#4a8c3f"))
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#4a8f3c"))
     d = ImageDraw.Draw(img)
-    # subtle texture blades
     rng = random.Random(7)
-    for _ in range(30):
+    # layered base tones for depth
+    base_shades = ["#3d7a30", "#529e44", "#458a38", "#5aaa4c", "#3e8032"]
+    for _ in range(50):
         x = rng.randint(0, BASE_TILE - 1)
         y = rng.randint(0, BASE_TILE - 1)
-        shade = rng.choice(["#5a9e4e", "#3d7a34", "#61ad55", "#408438"])
-        d.point((x, y), fill=rgba(shade))
-    # occasional tiny flowers
-    for _ in range(3):
-        x = rng.randint(3, BASE_TILE - 4)
-        y = rng.randint(3, BASE_TILE - 4)
-        d.point((x, y), fill=rgba("#e8e85a", 140))
+        d.point((x, y), fill=rgba(rng.choice(base_shades), rng.randint(100, 200)))
+    # grass blade clusters (short 2-pixel vertical streaks)
+    blade_colors = ["#5cad50", "#47963a", "#63b858", "#3a8028"]
+    for _ in range(16):
+        bx = rng.randint(1, BASE_TILE - 2)
+        by = rng.randint(1, BASE_TILE - 3)
+        bc = rng.choice(blade_colors)
+        d.line([(bx, by), (bx, by + 1)], fill=rgba(bc, 160), width=1)
+    # tiny bright highlights to simulate sunlit tips
+    for _ in range(6):
+        hx = rng.randint(2, BASE_TILE - 3)
+        hy = rng.randint(1, BASE_TILE - 4)
+        d.point((hx, hy), fill=rgba("#7acc6a", 120))
+    # faint clover / wildflower touches
+    for _ in range(2):
+        cx = rng.randint(4, BASE_TILE - 5)
+        cy = rng.randint(4, BASE_TILE - 5)
+        d.point((cx, cy), fill=rgba("#e2e86a", 90))
     return img
 
 
 def make_road():
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#3a3a3a"))
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#383838"))
     d = ImageDraw.Draw(img)
-    _scatter_specks(d, "#4a4a4a", 80, seed=11)
-    _scatter_specks(d, "#2e2e2e", 60, seed=22)
+    rng = random.Random(11)
+    # aggregate / gravel texture (seamless - no edge darkening)
+    for _ in range(45):
+        x = rng.randint(0, BASE_TILE - 1)
+        y = rng.randint(0, BASE_TILE - 1)
+        shade = rng.choice(["#404040", "#333333", "#3b3b3b", "#434343", "#363636"])
+        d.point((x, y), fill=rgba(shade, rng.randint(50, 100)))
     return img
 
 
 def make_road_dash():
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#3a3a3a"))
+    # start with the same seamless road texture
+    img = make_road()
     d = ImageDraw.Draw(img)
-    _scatter_specks(d, "#4a4a4a", 80, seed=11)
-    # center dashed line
-    d.rectangle([14, 2, 17, 14], fill=rgba("#d4d4a0", 200))
-    d.rectangle([14, 20, 17, 30], fill=rgba("#d4d4a0", 200))
+    # horizontal dashed yellow center line (road runs left-right)
+    d.rectangle([1, 14, 13, 17], fill=rgba("#e0d060", 220))
+    d.rectangle([19, 14, 29, 17], fill=rgba("#e0d060", 220))
+    # inner bright core of the dashes
+    d.rectangle([2, 15, 12, 16], fill=rgba("#f0e878", 240))
+    d.rectangle([20, 15, 28, 16], fill=rgba("#f0e878", 240))
+    # faint glow around dashes
+    for seg in [(1, 13), (19, 29)]:
+        d.line([(seg[0], 13), (seg[1], 13)], fill=rgba("#c8b840", 40), width=1)
+        d.line([(seg[0], 18), (seg[1], 18)], fill=rgba("#c8b840", 40), width=1)
     return img
 
 
 def make_sidewalk():
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#b8b0a0"))
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0b8a8"))
     d = ImageDraw.Draw(img)
-    # paving stone grid
-    for x in range(0, BASE_TILE, 16):
-        d.line([(x, 0), (x, BASE_TILE)], fill=rgba("#9e9688", 120), width=1)
-    for y in range(0, BASE_TILE, 16):
-        d.line([(0, y), (BASE_TILE, y)], fill=rgba("#9e9688", 120), width=1)
-    _scatter_specks(d, "#a8a090", 50, seed=33)
+    rng = random.Random(33)
+    # varied stone base texture
+    for _ in range(30):
+        x = rng.randint(0, BASE_TILE - 1)
+        y = rng.randint(0, BASE_TILE - 1)
+        shade = rng.choice(["#b4ac9c", "#c8c0b0", "#bcb4a4", "#d0c8b8"])
+        d.point((x, y), fill=rgba(shade, rng.randint(80, 160)))
+    # paving stone grid (offset alternating rows for brick pattern)
+    for y in range(0, BASE_TILE, 8):
+        d.line([(0, y), (BASE_TILE, y)], fill=rgba("#a09888", 100), width=1)
+        offset = 0 if (y // 8) % 2 == 0 else 8
+        for x in range(offset, BASE_TILE + 16, 16):
+            d.line([(x, y), (x, y + 7)], fill=rgba("#a09888", 70), width=1)
+    # subtle light bevel on top/left edges of each stone
+    for y in range(0, BASE_TILE, 8):
+        offset = 0 if (y // 8) % 2 == 0 else 8
+        for x in range(offset, BASE_TILE, 16):
+            if x < BASE_TILE:
+                d.point((x + 1, y + 1), fill=rgba("#d8d0c0", 60))
     return img
 
 
 def make_fence():
-    """Stone campus boundary wall with iron railing top."""
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#6b6b6b"))
+    """Ornate stone campus boundary wall with iron railing top."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#706e66"))
     d = ImageDraw.Draw(img)
-    # stone base
-    d.rectangle([0, 12, BASE_TILE - 1, BASE_TILE - 1], fill=rgba("#5a5a5a"))
-    # mortar lines
-    d.line([(0, 16), (BASE_TILE, 16)], fill=rgba("#4a4a4a", 150), width=1)
-    d.line([(0, 24), (BASE_TILE, 24)], fill=rgba("#4a4a4a", 150), width=1)
-    d.line([(16, 12), (16, BASE_TILE)], fill=rgba("#4a4a4a", 100), width=1)
-    # iron top rail
-    d.rectangle([0, 0, BASE_TILE - 1, 4], fill=rgba("#2a2a2a"))
-    # iron bars
-    for x in range(4, BASE_TILE, 8):
-        d.line([(x, 0), (x, 11)], fill=rgba("#1e1e1e"), width=2)
-    # finial tips
-    for x in range(4, BASE_TILE, 8):
-        d.polygon([(x - 2, 1), (x, -2), (x + 2, 1)], fill=rgba("#3a3a3a"))
-    d.rectangle([0, 0, BASE_TILE - 1, BASE_TILE - 1], outline=rgba("#1a1a1a", 120), width=1)
+    # stone base wall with layered texture
+    d.rectangle([0, 13, BASE_TILE - 1, BASE_TILE - 1], fill=rgba("#5e5c56"))
+    # stone highlight layer (top face)
+    d.rectangle([0, 13, BASE_TILE - 1, 15], fill=rgba("#7a7870"))
+    # mortar lines between stone blocks
+    d.line([(0, 18), (BASE_TILE, 18)], fill=rgba("#4a4840", 140), width=1)
+    d.line([(0, 24), (BASE_TILE, 24)], fill=rgba("#4a4840", 140), width=1)
+    d.line([(0, 29), (BASE_TILE, 29)], fill=rgba("#4a4840", 100), width=1)
+    # vertical mortar (offset rows)
+    d.line([(10, 13), (10, 18)], fill=rgba("#4a4840", 80), width=1)
+    d.line([(22, 13), (22, 18)], fill=rgba("#4a4840", 80), width=1)
+    d.line([(16, 18), (16, 24)], fill=rgba("#4a4840", 80), width=1)
+    d.line([(6, 24), (6, 29)], fill=rgba("#4a4840", 80), width=1)
+    d.line([(20, 24), (20, 29)], fill=rgba("#4a4840", 80), width=1)
+    # iron top rail (double rail)
+    d.rectangle([0, 0, BASE_TILE - 1, 2], fill=rgba("#222222"))
+    d.rectangle([0, 4, BASE_TILE - 1, 5], fill=rgba("#1e1e1e"))
+    # rail highlight
+    d.line([(0, 0), (BASE_TILE - 1, 0)], fill=rgba("#3a3a3a", 180), width=1)
+    # iron bars between the rails
+    for x in range(3, BASE_TILE, 6):
+        d.line([(x, 0), (x, 12)], fill=rgba("#1a1a1a"), width=2)
+        # iron highlight on each bar
+        d.line([(x + 1, 2), (x + 1, 11)], fill=rgba("#3a3a3a", 80), width=1)
+    # pointed finials
+    for x in range(3, BASE_TILE, 6):
+        d.polygon([(x - 1, 1), (x, -2), (x + 1, 1)], fill=rgba("#2e2e2e"))
+        d.point((x, -1), fill=rgba("#4a4a4a", 200))  # finial tip highlight
+    # subtle stone texture specks
+    rng = random.Random(77)
+    for _ in range(10):
+        sx = rng.randint(1, BASE_TILE - 2)
+        sy = rng.randint(14, BASE_TILE - 2)
+        d.point((sx, sy), fill=rgba("#686660", rng.randint(40, 80)))
     return img
 
 
 def make_gate_pillar():
-    """Thick stone gate pillar."""
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#7a7a6a"))
+    """Grand stone gate pillar with decorative cap."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#7a786c"))
     d = ImageDraw.Draw(img)
+    # shadow/base ground contact
+    d.rectangle([3, BASE_TILE - 3, BASE_TILE - 4, BASE_TILE - 1], fill=rgba("#4a4a40"))
     # main pillar body
-    d.rectangle([4, 2, BASE_TILE - 5, BASE_TILE - 3], fill=rgba("#8a8878"))
-    # cap stone
-    d.rectangle([2, 0, BASE_TILE - 3, 5], fill=rgba("#9a9888"))
-    # base stone
-    d.rectangle([2, BASE_TILE - 5, BASE_TILE - 3, BASE_TILE - 1], fill=rgba("#6a6a5a"))
-    # mortar detail
-    d.line([(8, 8), (8, BASE_TILE - 6)], fill=rgba("#6a6858", 120), width=1)
-    d.line([(4, 14), (BASE_TILE - 5, 14)], fill=rgba("#6a6858", 120), width=1)
-    d.line([(4, 22), (BASE_TILE - 5, 22)], fill=rgba("#6a6858", 120), width=1)
-    d.rectangle([4, 2, BASE_TILE - 5, BASE_TILE - 3], outline=rgba("#3a3a2e", 160), width=1)
+    d.rectangle([5, 6, BASE_TILE - 6, BASE_TILE - 4], fill=rgba("#8a8878"))
+    # pillar light edge (left face highlight)
+    d.line([(5, 6), (5, BASE_TILE - 4)], fill=rgba("#9e9c8e", 160), width=1)
+    # pillar dark edge (right shadow)
+    d.line([(BASE_TILE - 6, 6), (BASE_TILE - 6, BASE_TILE - 4)], fill=rgba("#6a6858", 160), width=1)
+    # decorative cap (pyramidal top)
+    d.rectangle([3, 3, BASE_TILE - 4, 7], fill=rgba("#9a9888"))
+    d.rectangle([2, 0, BASE_TILE - 3, 4], fill=rgba("#a8a696"))
+    # cap highlight
+    d.line([(2, 0), (BASE_TILE - 3, 0)], fill=rgba("#b8b6a6", 180), width=1)
+    # cap shadow line
+    d.line([(3, 7), (BASE_TILE - 4, 7)], fill=rgba("#6a6858", 120), width=1)
+    # base plinth (wider)
+    d.rectangle([3, BASE_TILE - 6, BASE_TILE - 4, BASE_TILE - 3], fill=rgba("#7a7868"))
+    d.line([(3, BASE_TILE - 6), (BASE_TILE - 4, BASE_TILE - 6)], fill=rgba("#908e80", 140), width=1)
+    # mortar / joint lines on pillar body
+    d.line([(5, 12), (BASE_TILE - 6, 12)], fill=rgba("#6a6858", 100), width=1)
+    d.line([(5, 18), (BASE_TILE - 6, 18)], fill=rgba("#6a6858", 100), width=1)
+    d.line([(5, 24), (BASE_TILE - 6, 24)], fill=rgba("#6a6858", 100), width=1)
+    # subtle stone texture
+    rng = random.Random(88)
+    for _ in range(8):
+        sx = rng.randint(6, BASE_TILE - 7)
+        sy = rng.randint(8, BASE_TILE - 6)
+        d.point((sx, sy), fill=rgba("#807e70", rng.randint(40, 90)))
+    # outline
+    d.rectangle([5, 6, BASE_TILE - 6, BASE_TILE - 4], outline=rgba("#3a382e", 100), width=1)
     return img
 
 
 def make_tree():
-    """Large leafy tree with brown trunk - fills the tile."""
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    """Lush, richly detailed tree with layered canopy and textured trunk."""
+    img = make_grass().copy()
     d = ImageDraw.Draw(img)
-    # trunk
-    d.rectangle([12, 18, 19, 30], fill=rgba("#5e3b1e"))
-    d.rectangle([14, 20, 17, 30], fill=rgba("#6e4b2e"))
-    # canopy layers
-    d.ellipse([2, 2, 29, 22], fill=rgba("#2d7a2d"))
-    d.ellipse([5, 0, 26, 16], fill=rgba("#3d9a3d"))
-    d.ellipse([8, 3, 23, 14], fill=rgba("#4aaf4a"))
-    # highlight specks
+    # ground shadow beneath the tree
+    d.ellipse([4, 24, 27, 31], fill=rgba("#1a3a14", 60))
+    # trunk with bark texture
+    d.rectangle([13, 17, 18, 29], fill=rgba("#4e2e14"))
+    d.rectangle([14, 18, 17, 29], fill=rgba("#5e3b1e"))  # lighter bark center
+    # bark texture lines
+    d.line([(14, 20), (14, 22)], fill=rgba("#3e2810", 120), width=1)
+    d.line([(17, 23), (17, 26)], fill=rgba("#3e2810", 120), width=1)
+    d.line([(15, 25), (16, 27)], fill=rgba("#6e4e2e", 80), width=1)
+    # trunk highlight (left side catch-light)
+    d.line([(13, 18), (13, 28)], fill=rgba("#7a5a38", 80), width=1)
+    # deepest canopy layer (darkest, largest)
+    d.ellipse([1, 3, 30, 24], fill=rgba("#1e6620"))
+    # mid canopy layer
+    d.ellipse([3, 1, 28, 20], fill=rgba("#2a8228"))
+    # upper canopy bright layer
+    d.ellipse([5, 0, 26, 16], fill=rgba("#38a035"))
+    # top highlight cluster (sunlit crown)
+    d.ellipse([8, 2, 23, 12], fill=rgba("#48b845"))
+    d.ellipse([10, 3, 21, 10], fill=rgba("#55c852", 200))
+    # individual leaf highlights for richness
     rng = random.Random(55)
-    for _ in range(8):
-        x = rng.randint(5, 26)
-        y = rng.randint(2, 16)
-        d.point((x, y), fill=rgba("#5fc25f", 180))
+    for _ in range(14):
+        lx = rng.randint(4, 27)
+        ly = rng.randint(1, 18)
+        lc = rng.choice(["#5fd05c", "#4abc48", "#66d864", "#3ea03c"])
+        d.point((lx, ly), fill=rgba(lc, rng.randint(140, 220)))
+    # dark depth pockets in canopy
+    for _ in range(6):
+        dx = rng.randint(3, 28)
+        dy = rng.randint(4, 20)
+        d.point((dx, dy), fill=rgba("#1a5818", rng.randint(60, 120)))
+    # edge fringe detail
+    for _ in range(5):
+        fx = rng.randint(2, 29)
+        fy = rng.randint(14, 22)
+        d.point((fx, fy), fill=rgba("#2e7a2c", 100))
     return img
 
 
 def make_parking():
-    """Asphalt with white parking line markers."""
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#3a3a3a"))
+    """Asphalt with crisp white parking line markers and subtle details."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#353535"))
     d = ImageDraw.Draw(img)
-    _scatter_specks(d, "#4a4a4a", 70, seed=44)
-    # white line on left edge
-    d.rectangle([0, 0, 2, BASE_TILE - 1], fill=rgba("#d0d0d0", 200))
-    # white line on bottom
-    d.rectangle([0, BASE_TILE - 3, BASE_TILE - 1, BASE_TILE - 1], fill=rgba("#d0d0d0", 200))
+    rng = random.Random(44)
+    # asphalt aggregate texture
+    for _ in range(35):
+        x = rng.randint(0, BASE_TILE - 1)
+        y = rng.randint(0, BASE_TILE - 1)
+        shade = rng.choice(["#3e3e3e", "#2c2c2c", "#404040", "#383838"])
+        d.point((x, y), fill=rgba(shade, rng.randint(50, 100)))
+    # faint oil stain (subtle dark patch)
+    d.ellipse([12, 10, 20, 17], fill=rgba("#2a2a2a", 40))
+    # crisp white line on left edge
+    d.rectangle([0, 0, 2, BASE_TILE - 1], fill=rgba("#e0e0e0", 220))
+    d.line([(1, 0), (1, BASE_TILE - 1)], fill=rgba("#f0f0f0", 240), width=1)  # bright center
+    # crisp white line on bottom
+    d.rectangle([0, BASE_TILE - 3, BASE_TILE - 1, BASE_TILE - 1], fill=rgba("#e0e0e0", 220))
+    d.line([(0, BASE_TILE - 2), (BASE_TILE - 1, BASE_TILE - 2)], fill=rgba("#f0f0f0", 240), width=1)
     return img
 
 
@@ -375,47 +484,102 @@ def make_building_door():
 
 
 def make_kiosk():
-    """Watchman guard booth / kiosk."""
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), (0, 0, 0, 0))
+    """Detailed security guard booth / kiosk with striped barrier accents."""
+    img = make_grass().copy()
     d = ImageDraw.Draw(img)
-    # booth body
-    d.rectangle([4, 6, 27, 28], fill=rgba("#7a5a30"), outline=rgba("#3a2a10"), width=1)
-    # roof
-    d.rectangle([2, 3, 29, 7], fill=rgba("#4a3a20"))
-    d.rectangle([3, 4, 28, 6], fill=rgba("#5a4a2a"))
-    # window opening
-    d.rectangle([8, 10, 23, 18], fill=rgba("#2a4060"))
-    d.line([(16, 10), (16, 18)], fill=rgba("#5a4a2a"), width=1)
-    # counter
+    # ground shadow
+    d.rectangle([3, 27, 28, 30], fill=rgba("#2a2820", 60))
+    # booth body with slight wood grain
+    d.rectangle([5, 7, 26, 28], fill=rgba("#7a5a30"))
+    d.rectangle([6, 8, 25, 27], fill=rgba("#886838"))  # lighter inner face
+    # wood grain lines
+    for gy in range(9, 27, 3):
+        d.line([(6, gy), (25, gy)], fill=rgba("#6a4a22", 60), width=1)
+    # booth outline
+    d.rectangle([5, 7, 26, 28], outline=rgba("#3a2a10", 180), width=1)
+    # roof overhang
+    d.rectangle([2, 3, 29, 8], fill=rgba("#4a3a20"))
+    d.rectangle([3, 4, 28, 7], fill=rgba("#5a4a2a"))
+    # roof highlight
+    d.line([(2, 3), (29, 3)], fill=rgba("#6a5a3a", 140), width=1)
+    # roof shadow underneath
+    d.line([(5, 8), (26, 8)], fill=rgba("#3a2a10", 100), width=1)
+    # window opening with glass reflection
+    d.rectangle([8, 10, 23, 17], fill=rgba("#1e3a58"))
+    d.rectangle([9, 11, 22, 16], fill=rgba("#2a4a6a"))  # glass
+    # window reflection highlight
+    d.line([(9, 11), (14, 11)], fill=rgba("#4a7a9a", 100), width=1)
+    d.line([(9, 11), (9, 14)], fill=rgba("#4a7a9a", 70), width=1)
+    # window divider
+    d.line([(16, 10), (16, 17)], fill=rgba("#5a4a2a"), width=1)
+    # window frame
+    d.rectangle([8, 10, 23, 17], outline=rgba("#4a3a1a", 200), width=1)
+    # counter / ledge
     d.rectangle([6, 18, 25, 20], fill=rgba("#6a4a20"))
+    d.line([(6, 18), (25, 18)], fill=rgba("#7a5a30", 160), width=1)  # ledge highlight
+    # red-white striped security accent on bottom
+    for sx in range(6, 26, 4):
+        d.rectangle([sx, 23, sx + 1, 26], fill=rgba("#d03030", 180))
+        d.rectangle([sx + 2, 23, sx + 3, 26], fill=rgba("#e8e8e8", 180))
     return img
 
 
 def make_flower():
-    """Small decorative flower patch on grass."""
+    """Vibrant decorative flower patch on lush grass."""
     img = make_grass()
     d = ImageDraw.Draw(img)
     rng = random.Random(99)
-    colors = ["#e84040", "#e8e040", "#e060e0", "#e88040", "#40a0e8"]
-    for _ in range(5):
-        x = rng.randint(4, BASE_TILE - 5)
-        y = rng.randint(4, BASE_TILE - 5)
-        c = rng.choice(colors)
-        d.ellipse([x - 2, y - 2, x + 2, y + 2], fill=rgba(c, 200))
-        d.point((x, y), fill=rgba("#f8f880", 220))
+    # leaf / stem layer first
+    for _ in range(4):
+        lx = rng.randint(5, BASE_TILE - 6)
+        ly = rng.randint(5, BASE_TILE - 6)
+        d.ellipse([lx - 2, ly - 1, lx + 2, ly + 1], fill=rgba("#3a8830", 160))
+    # flower petal clusters
+    petal_colors = ["#e84848", "#e8d840", "#d060d0", "#e88848", "#48a8e8", "#f07098"]
+    for _ in range(6):
+        fx = rng.randint(4, BASE_TILE - 5)
+        fy = rng.randint(4, BASE_TILE - 5)
+        c = rng.choice(petal_colors)
+        # 4-petal pattern
+        d.point((fx - 1, fy), fill=rgba(c, 200))
+        d.point((fx + 1, fy), fill=rgba(c, 200))
+        d.point((fx, fy - 1), fill=rgba(c, 200))
+        d.point((fx, fy + 1), fill=rgba(c, 200))
+        # bright center pistil
+        d.point((fx, fy), fill=rgba("#f8f070", 240))
+    # a couple of larger blooms
+    for _ in range(2):
+        bx = rng.randint(6, BASE_TILE - 7)
+        by = rng.randint(6, BASE_TILE - 7)
+        bc = rng.choice(petal_colors)
+        d.ellipse([bx - 2, by - 2, bx + 2, by + 2], fill=rgba(bc, 180))
+        d.point((bx, by), fill=rgba("#fff8a0", 230))
     return img
 
 
 def make_gate_open():
-    """Open iron gate segment (walkable)."""
-    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#b8b0a0"))  # sidewalk base
+    """Decorative open gate pathway with embedded iron tracks."""
+    img = Image.new("RGBA", (BASE_TILE, BASE_TILE), rgba("#c0b8a8"))  # stone pathway base
     d = ImageDraw.Draw(img)
-    # paving
-    for x in range(0, BASE_TILE, 16):
-        d.line([(x, 0), (x, BASE_TILE)], fill=rgba("#9e9688", 80), width=1)
-    # gate track grooves in ground
-    d.line([(2, 0), (2, BASE_TILE)], fill=rgba("#5a5a5a", 120), width=1)
-    d.line([(BASE_TILE - 3, 0), (BASE_TILE - 3, BASE_TILE)], fill=rgba("#5a5a5a", 120), width=1)
+    rng = random.Random(66)
+    # stone texture variation
+    for _ in range(20):
+        x = rng.randint(0, BASE_TILE - 1)
+        y = rng.randint(0, BASE_TILE - 1)
+        shade = rng.choice(["#b8b0a0", "#c8c0b0", "#b0a898", "#d0c8b8"])
+        d.point((x, y), fill=rgba(shade, rng.randint(60, 120)))
+    # paving grid pattern (finer detail)
+    for x in range(0, BASE_TILE, 8):
+        d.line([(x, 0), (x, BASE_TILE)], fill=rgba("#a09888", 60), width=1)
+    for y in range(0, BASE_TILE, 8):
+        d.line([(0, y), (BASE_TILE, y)], fill=rgba("#a09888", 60), width=1)
+    # iron gate track grooves (left and right, darker with shadow)
+    d.line([(2, 0), (2, BASE_TILE)], fill=rgba("#4a4a48", 160), width=2)
+    d.line([(1, 0), (1, BASE_TILE)], fill=rgba("#6a6a68", 60), width=1)  # track highlight
+    d.line([(BASE_TILE - 3, 0), (BASE_TILE - 3, BASE_TILE)], fill=rgba("#4a4a48", 160), width=2)
+    d.line([(BASE_TILE - 1, 0), (BASE_TILE - 1, BASE_TILE)], fill=rgba("#6a6a68", 60), width=1)
+    # decorative center stripe (subtle welcome mat feel)
+    d.rectangle([12, 0, 19, BASE_TILE - 1], fill=rgba("#b4ac9c", 40))
     return img
 
 
@@ -1891,50 +2055,72 @@ def generate_rooftop_tiles_from_image():
 # ---------------------------------------------------------------------------
 
 def make_car(body_color: str, roof_color: str, glass_color: str = "#4a7a9a"):
-    """Top-down view of a parked car (facing up) on parking asphalt."""
-    # Start with parking lot base
+    """Detailed top-down view of a parked car (facing up) on parking asphalt."""
     img = make_parking()
     d = ImageDraw.Draw(img)
+    # Car shadow underneath (offset slightly)
+    d.rounded_rectangle([8, 5, 25, 30], radius=4, fill=rgba("#1a1a1a", 50))
     # Car body (vertical rectangle, centered)
     d.rounded_rectangle([7, 3, 24, 28], radius=4, fill=rgba(body_color))
+    # Body panel line (horizontal crease between hood and cabin)
+    d.line([(8, 8), (23, 8)], fill=rgba("#000000", 30), width=1)
+    d.line([(8, 21), (23, 21)], fill=rgba("#000000", 30), width=1)
     # Roof / cabin area
     d.rounded_rectangle([9, 9, 22, 20], radius=3, fill=rgba(roof_color))
-    # Windshield (front)
-    d.rounded_rectangle([10, 6, 21, 10], radius=2, fill=rgba(glass_color, 180))
+    # Windshield (front) with reflection
+    d.rounded_rectangle([10, 5, 21, 10], radius=2, fill=rgba(glass_color, 190))
+    d.line([(11, 6), (16, 9)], fill=rgba("#8ab8d8", 70), width=1)  # reflection streak
     # Rear window
-    d.rounded_rectangle([10, 21, 21, 25], radius=2, fill=rgba(glass_color, 160))
+    d.rounded_rectangle([10, 21, 21, 25], radius=2, fill=rgba(glass_color, 170))
+    # Side windows
+    d.rectangle([8, 11, 9, 18], fill=rgba(glass_color, 130))
+    d.rectangle([22, 11, 23, 18], fill=rgba(glass_color, 130))
     # Side mirrors
     d.rectangle([5, 10, 7, 12], fill=rgba(body_color))
     d.rectangle([24, 10, 26, 12], fill=rgba(body_color))
-    # Headlights
-    d.ellipse([10, 3, 13, 5], fill=rgba("#f0e870", 220))
-    d.ellipse([18, 3, 21, 5], fill=rgba("#f0e870", 220))
-    # Tail lights
-    d.ellipse([10, 26, 13, 28], fill=rgba("#e03030", 200))
-    d.ellipse([18, 26, 21, 28], fill=rgba("#e03030", 200))
+    d.point((5, 11), fill=rgba(glass_color, 160))  # mirror glass
+    d.point((26, 11), fill=rgba(glass_color, 160))
+    # Wheel arches (dark recesses at corners)
+    d.rectangle([7, 4, 9, 6], fill=rgba("#1a1a1a", 120))   # front-left
+    d.rectangle([22, 4, 24, 6], fill=rgba("#1a1a1a", 120))  # front-right
+    d.rectangle([7, 25, 9, 27], fill=rgba("#1a1a1a", 120))  # rear-left
+    d.rectangle([22, 25, 24, 27], fill=rgba("#1a1a1a", 120)) # rear-right
+    # Headlights (brighter, with warm glow)
+    d.ellipse([10, 3, 14, 5], fill=rgba("#f8f080", 240))
+    d.ellipse([17, 3, 21, 5], fill=rgba("#f8f080", 240))
+    d.point((12, 3), fill=rgba("#fffff0", 200))  # headlight center
+    d.point((19, 3), fill=rgba("#fffff0", 200))
+    # Tail lights (vibrant red)
+    d.ellipse([10, 26, 14, 28], fill=rgba("#e02828", 220))
+    d.ellipse([17, 26, 21, 28], fill=rgba("#e02828", 220))
+    d.point((12, 27), fill=rgba("#ff5050", 200))  # tail light glow
+    d.point((19, 27), fill=rgba("#ff5050", 200))
+    # Body highlight (top-left specular)
+    d.line([(9, 4), (12, 4)], fill=rgba("#ffffff", 40), width=1)
+    d.line([(8, 10), (8, 14)], fill=rgba("#ffffff", 30), width=1)
     # Subtle outline
-    d.rounded_rectangle([7, 3, 24, 28], radius=4, outline=rgba("#1a1a1a", 140), width=1)
+    d.rounded_rectangle([7, 3, 24, 28], radius=4, outline=rgba("#1a1a1a", 150), width=1)
     return img
 
 
 def make_car_red():
-    return make_car("#c0392b", "#962d22")
+    return make_car("#cc3333", "#a02828")
 
 
 def make_car_blue():
-    return make_car("#2e6db4", "#235590")
+    return make_car("#3070b8", "#285a96")
 
 
 def make_car_white():
-    return make_car("#d8d8d8", "#b8b8b8", "#4a7a9a")
+    return make_car("#e4e4e4", "#c8c8c8", "#5088a8")
 
 
 def make_car_yellow():
-    return make_car("#d4a017", "#b08810")
+    return make_car("#daa820", "#b89018")
 
 
 def make_car_green():
-    return make_car("#27864a", "#1e6b3a")
+    return make_car("#2e8e50", "#227240")
 
 
 def generate_cars_only():
