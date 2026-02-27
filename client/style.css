@@ -903,6 +903,220 @@ p {
 }
 
 /* =============================================
+   CINEMATIC POST-CREDITS SEQUENCE
+   ============================================= */
+#cinematic-credits {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+#cinematic-credits.hidden {
+    display: none;
+}
+
+/* ---- End Logo (endtitle.png) — fade in at center, hold, fade out ---- */
+#end-logo {
+    position: absolute;
+    width: clamp(280px, 40vw, 520px);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+    z-index: 3;
+    animation: endLogoSequence 12s ease forwards;
+    pointer-events: none;
+}
+
+@keyframes endLogoSequence {
+    /* 0-4s   : Slow fade in */
+    0%    { opacity: 0; }
+    33.3% { opacity: 1; }   /* 4s */
+
+    /* 4-7s   : Hold (3s) */
+    58.3% { opacity: 1; }   /* 7s */
+
+    /* 7-11s  : Slow fade out */
+    91.7% { opacity: 0; }   /* 11s */
+    100%  { opacity: 0; }   /* 12s */
+}
+
+/* ---- Title Logo (title.png) — crossfade in at center, move to top ---- */
+#title-logo {
+    position: absolute;
+    width: clamp(280px, 40vw, 520px);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+    z-index: 2;
+    animation: titleLogoSequence 65s ease forwards;
+    pointer-events: none;
+}
+
+@keyframes titleLogoSequence {
+    /* 0-7s   : Invisible while endtitle plays */
+    0%     { opacity: 0; top: 50%; transform: translate(-50%, -50%) scale(1); }
+    10.8%  { opacity: 0; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 7s */
+
+    /* 7-11s  : Crossfade in (overlaps endtitle fadeout) */
+    16.9%  { opacity: 1; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 11s */
+
+    /* 11-14s : Hold at center (3s) */
+    21.5%  { opacity: 1; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 14s */
+
+    /* 14-18s : Scale down + move to top-center */
+    27.7%  { opacity: 1; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 18s */
+
+    /* 18-62s : Hold at top while credits scroll + exit */
+    95.4%  { opacity: 1; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 62s */
+
+    /* 62-65s : Slow fade out (after all credits gone) */
+    100%   { opacity: 0; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 65s */
+}
+
+/* ---- Credits Wrapper ---- */
+#credits-wrapper {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 1;
+    /* Fade credits to transparent before they reach the title at the top */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 12%, black 24%, black 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, transparent 12%, black 24%, black 100%);
+}
+
+#credits-scroll {
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* Start completely below the viewport */
+    top: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3.5rem;
+    padding: 4rem 1rem;
+    /* Starts at 18s (immediately after title reaches top), 42s scroll duration */
+    animation: scrollCredits 42s linear 18s forwards;
+}
+
+@keyframes scrollCredits {
+    /* Scroll from below the screen to above the screen */
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(calc(-100% - 100vh)); }
+}
+
+/* ---- Credit Blocks ---- */
+.credit-block {
+    text-align: center;
+    max-width: 500px;
+}
+
+.credit-block h2 {
+    font-family: var(--font-pixel), monospace;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #888;
+    margin: 0 0 0.6rem 0;
+    text-shadow: none;
+}
+
+.credit-block p {
+    font-family: var(--font-pixel), monospace;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #fff;
+    line-height: 2.4;
+    margin: 0;
+    text-shadow: none;
+}
+
+.final-block {
+    /* Extra bottom space so it can scroll fully off-screen
+       before the logo begins fading out */
+    margin-bottom: 100vh;
+}
+
+/* ---- Game Over Summary (after credits) ---- */
+#game-over-summary {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    background: var(--panel-bg);
+    border: 4px solid var(--border-color);
+    box-shadow:
+        inset 0 0 0 2px var(--panel-bg),
+        inset 0 0 0 4px var(--border-dark),
+        0 0 0 2px var(--border-dark),
+        0 0 0 4px #000,
+        0 8px 24px rgba(0,0,0,0.5);
+    padding: 40px 56px;
+    text-align: center;
+    opacity: 0;
+    animation: summaryFadeIn 2s ease 67s forwards;
+    image-rendering: pixelated;
+}
+
+#game-over-summary.hidden {
+    display: none !important;
+}
+
+#game-over-summary h1 {
+    font-family: var(--font-pixel), monospace;
+    color: var(--primary-color);
+    font-size: clamp(0.9rem, 2.5vw, 1.6rem);
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000;
+    margin: 0 0 2rem 0;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 2rem;
+    padding: 0.6rem 0;
+    border-bottom: 2px solid var(--border-dark);
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-label {
+    font-family: var(--font-pixel), monospace;
+    font-size: 0.55rem;
+    color: var(--text-color);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.summary-value {
+    font-family: var(--font-pixel), monospace;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    text-shadow: 2px 2px 0 #000;
+}
+
+@keyframes summaryFadeIn {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* =============================================
    RESPONSIVE - Pixel scaling for smaller screens
    ============================================= */
 @media (max-width: 600px) {
