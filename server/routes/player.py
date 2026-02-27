@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Log, Player, PlayerQuestionClear, SessionModel
-from schemas import PlayerEventRequest, SubmitAnswerRequest, SubmitCodeRequest
+from schemas import PlayerEventRequest, SubmitAnswerRequest, SubmitCodeRequest, SyncStateRequest
 from services.ollama_judge import judge_code
 from services.security import get_current_player
 
@@ -214,3 +214,50 @@ async def submit_code(
 
     db.commit()
     return {"status": "CORRECT" if correct else "WRONG", "new_score": player.score}
+
+
+@router.post("/sync")
+async def sync_state(
+    body: SyncStateRequest,
+    player: Player = Depends(get_current_player),
+    db: Session = Depends(get_db),
+):
+    """Accept client-side score/level updates (e.g. cutscene bonuses) and
+    persist them to the database so the leaderboard stays in sync."""
+    session = _ensure_session_running(db, player)
+    if session.status != "running":
+        raise HTTPException(status_code=403, detail="Session is not currently running")
+
+    changed = False
+
+    if body.score != player.score:
+        old_score = player.score
+        player.score = body.score
+        db.add(
+            Log(
+                session_id=player.session_id,
+                player_id=player.id,
+                action_type="sync_score",
+                details=f"Score synced from {old_score} to {body.score}",
+            )
+        )
+        changed = True
+
+    if body.current_level > player.current_level:
+        old_level = player.current_level
+        player.current_level = body.current_level
+        db.add(
+            Log(
+                session_id=player.session_id,
+                player_id=player.id,
+                action_type="sync_level",
+                details=f"Level synced from {old_level} to {body.current_level}",
+            )
+        )
+        changed = True
+
+    if changed:
+        player.last_active = datetime.utcnow()
+        db.commit()
+
+    return {"ok": True, "score": player.score, "current_level": player.current_level}

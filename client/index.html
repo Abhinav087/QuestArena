@@ -24,7 +24,7 @@
             <section id="login-screen" class="active">
                 <h1>QUEST ARENA</h1>
                 <p>Target: Save the Partner</p>
-                <input type="text" id="team-name" placeholder="Enter Team Name">
+                <input type="text" id="team-name" placeholder="Enter PLayer Name">
                 <button onclick="startGame()">ENTER THE ARENA</button>
             </section>
 
@@ -121,6 +121,35 @@
         </main>
     </div>
 
+    <!-- Level 3 Path Selection Overlay -->
+    <div id="path-selection-screen" class="hidden">
+        <div class="ps-container">
+            <div class="ps-header-box">
+                <h2>From this point you can choose your path</h2>
+            </div>
+            <div class="ps-choices">
+                <div class="ps-card ps-easy" tabindex="0">
+                    <h3>Easy Path</h3>
+                    <ul>
+                        <li>More questions</li>
+                        <li>Less difficulty</li>
+                        <li>More time</li>
+                    </ul>
+                    <button onclick="selectDifficultyPath('easy')">Choose</button>
+                </div>
+                <div class="ps-card ps-hard" tabindex="0">
+                    <h3>Hard Path</h3>
+                    <ul>
+                        <li>Less questions</li>
+                        <li>More difficulty</li>
+                        <li>Less time</li>
+                    </ul>
+                    <button onclick="selectDifficultyPath('hard')">Choose</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="fade-overlay"></div>
 
     <!-- Cutscene Visual Novel Layer -->
@@ -133,6 +162,15 @@
         <div id="cutscene-dialogue-box">
             <h3 id="cutscene-speaker"></h3>
             <p id="cutscene-text"></p>
+        </div>
+
+        <!-- Interactive question overlay (used by branching cutscenes) -->
+        <div id="interactive-question-box" class="hidden">
+            <h3 id="cutscene-question-text"></h3>
+            <input type="text" id="cutscene-answer-input" placeholder="Type your answer..."
+                   autocomplete="off" spellcheck="false">
+            <br>
+            <button onclick="submitInteractiveAnswer()">Submit Answer</button>
         </div>
     </div>
 
