@@ -24,7 +24,18 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+def _migrate_schema() -> None:
+    """Add any columns that were introduced after the initial schema."""
+    with engine.begin() as conn:
+        # Fetch existing column names for the players table
+        result = conn.execute(text("PRAGMA table_info(players)"))
+        existing_cols = {row[1] for row in result}
+        if "code_attempted" not in existing_cols:
+            conn.execute(text("ALTER TABLE players ADD COLUMN code_attempted BOOLEAN NOT NULL DEFAULT 0"))
+
+
 def ensure_performance_indexes() -> None:
+    _migrate_schema()
     with engine.begin() as conn:
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_status_created_at ON sessions (status, created_at DESC)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_players_session_banned ON players (session_id, is_banned)"))
