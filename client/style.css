@@ -1016,21 +1016,21 @@ p {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0;
     z-index: 3;
-    animation: endLogoSequence 12s ease forwards;
+    animation: endLogoSequence 6s ease forwards;
     pointer-events: none;
 }
 
 @keyframes endLogoSequence {
-    /* 0-4s   : Slow fade in */
+    /* 0-2s   : Fade in */
     0%    { opacity: 0; }
-    33.3% { opacity: 1; }   /* 4s */
+    33.3% { opacity: 1; }   /* 2s */
 
-    /* 4-7s   : Hold (3s) */
-    58.3% { opacity: 1; }   /* 7s */
+    /* 2-3.5s : Hold (1.5s) */
+    58.3% { opacity: 1; }   /* 3.5s */
 
-    /* 7-11s  : Slow fade out */
-    91.7% { opacity: 0; }   /* 11s */
-    100%  { opacity: 0; }   /* 12s */
+    /* 3.5-5.5s : Fade out */
+    91.7% { opacity: 0; }   /* 5.5s */
+    100%  { opacity: 0; }   /* 6s */
 }
 
 /* ---- Title Logo (title.png) — crossfade in at center, move to top ---- */
@@ -1042,29 +1042,29 @@ p {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0;
     z-index: 2;
-    animation: titleLogoSequence 65s ease forwards;
+    animation: titleLogoSequence 51.5s ease forwards;
     pointer-events: none;
 }
 
 @keyframes titleLogoSequence {
-    /* 0-7s   : Invisible while endtitle plays */
-    0%     { opacity: 0; top: 50%; transform: translate(-50%, -50%) scale(1); }
-    10.8%  { opacity: 0; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 7s */
+    /* 0-3.5s : Invisible while endtitle plays */
+    0%      { opacity: 0; top: 50%; transform: translate(-50%, -50%) scale(1); }
+    6.80%   { opacity: 0; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 3.5s */
 
-    /* 7-11s  : Crossfade in (overlaps endtitle fadeout) */
-    16.9%  { opacity: 1; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 11s */
+    /* 3.5-5.5s : Crossfade in (overlaps endtitle fadeout) */
+    10.68%  { opacity: 1; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 5.5s */
 
-    /* 11-14s : Hold at center (3s) */
-    21.5%  { opacity: 1; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 14s */
+    /* 5.5-7s : Hold at center (1.5s) */
+    13.59%  { opacity: 1; top: 50%; transform: translate(-50%, -50%) scale(1); }  /* 7s */
 
-    /* 14-18s : Scale down + move to top-center */
-    27.7%  { opacity: 1; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 18s */
+    /* 7-9s : Scale down + move to top-center */
+    17.48%  { opacity: 1; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 9s */
 
-    /* 18-62s : Hold at top while credits scroll + exit */
-    95.4%  { opacity: 1; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 62s */
+    /* 9-51s : Hold at top while credits scroll */
+    99.03%  { opacity: 1; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 51s */
 
-    /* 62-65s : Slow fade out (after all credits gone) */
-    100%   { opacity: 0; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 65s */
+    /* 51-51.5s : Quick fade out right after credits end */
+    100%    { opacity: 0; top: 4%;  transform: translate(-50%, 0%) scale(0.65); } /* 51.5s */
 }
 
 /* ---- Credits Wrapper ---- */
@@ -1089,8 +1089,8 @@ p {
     align-items: center;
     gap: 3.5rem;
     padding: 4rem 1rem;
-    /* Starts at 18s (immediately after title reaches top), 42s scroll duration */
-    animation: scrollCredits 42s linear 18s forwards;
+    /* Starts at 9s (immediately after title reaches top), 42s scroll duration */
+    animation: scrollCredits 42s linear 9s forwards;
 }
 
 @keyframes scrollCredits {
@@ -1149,7 +1149,7 @@ p {
     padding: 40px 56px;
     text-align: center;
     opacity: 0;
-    animation: summaryFadeIn 2s ease 67s forwards;
+    animation: summaryFadeIn 2s ease 58.5s forwards;
     image-rendering: pixelated;
 }
 
@@ -1199,6 +1199,25 @@ p {
 @keyframes summaryFadeIn {
     0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
     100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ---- End Image (end.png) — full-screen, 7s hold after title fades out ---- */
+#end-final-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    z-index: 5;
+    animation: endFinalShow 10s linear 51.5s forwards;
+    pointer-events: none;
+}
+
+@keyframes endFinalShow {
+    0%   { opacity: 1; }
+    99%  { opacity: 1; }
+    100% { opacity: 0; }
 }
 
 /* =============================================

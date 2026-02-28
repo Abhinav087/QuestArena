@@ -1589,6 +1589,7 @@ let gameState = {
     hiddenRouteActive: false,
     hiddenRouteLiftReady: false,
     gameStartedAt: null,
+    gameCompletedAt: null,
     arena: {
         currentLevel: 0,
         playerX: 0,
@@ -2217,6 +2218,36 @@ async function playIntroCutscene() {
     allScreens.forEach((s) => { s.classList.add('hidden'); s.classList.remove('active'); });
     hud.classList.add('hidden');
 
+    /* ── Startup disclaimer overlay ── */
+    await new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.id = 'disclaimer-overlay';
+        Object.assign(overlay.style, {
+            position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+            background: '#000', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', zIndex: '99999',
+            cursor: 'pointer', color: '#fff', fontFamily: 'sans-serif',
+            textAlign: 'center',
+        });
+        const line1 = document.createElement('p');
+        Object.assign(line1.style, { fontSize: '1.6rem', marginBottom: '18px', letterSpacing: '1px' });
+        line1.textContent = 'Press F11 for a better experience';
+        const line2 = document.createElement('p');
+        Object.assign(line2.style, { fontSize: '1rem', opacity: '0.7', marginBottom: '36px' });
+        line2.textContent = 'Disclaimer: This story and the characters are fictional';
+        const hint = document.createElement('p');
+        Object.assign(hint.style, { fontSize: '0.85rem', opacity: '0.4' });
+        hint.textContent = 'Click anywhere to continue';
+        overlay.appendChild(line1);
+        overlay.appendChild(line2);
+        overlay.appendChild(hint);
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', () => {
+            overlay.remove();
+            resolve();
+        }, { once: true });
+    });
+
     /* ── Phase 1: Play the main intro cinematic ── */
     CutsceneManager.show();
     await CutsceneManager.run(INTRO_SEQUENCE);
@@ -2462,6 +2493,8 @@ function persistProgress() {
         arenaPortalOverride: gameState.arena.portalOverride,
         arenaModal: gameState.arena.activeModal,
         isCompleted: gameState.isCompleted,
+        gameStartedAt: gameState.gameStartedAt,
+        gameCompletedAt: gameState.gameCompletedAt,
         playerDifficultyPath: window.playerDifficultyPath || null,
         endMessage: document.getElementById('end-message')?.textContent || "",
         codeDraft: document.getElementById('code-editor')?.value || "",
@@ -4160,7 +4193,7 @@ async function pollGameStatus() {
             }
         } else if (data.status === 'ended' && gameState.gameActive) {
             if (gameState.introCutscenePlaying) return;
-            endGame('Session ended');
+            launchCinematicCredits();
         }
     } catch (err) {
         gameState.statusPollFailures += 1;
@@ -4247,7 +4280,7 @@ function connectLiveSocket() {
                 }
                 if (payload.status === 'ended' && gameState.gameActive) {
                     if (gameState.introCutscenePlaying) return;
-                    endGame('Session ended');
+                    launchCinematicCredits();
                 }
             }
         } catch (err) {
@@ -4334,6 +4367,8 @@ async function restorePlayerProgress(sessionStatus) {
     ) {
         gameState.isCompleted = true;
         gameState.gameActive = false;
+        gameState.gameStartedAt = progress.gameStartedAt || null;
+        gameState.gameCompletedAt = progress.gameCompletedAt || null;
         stopPolling();
         stopHeartbeat();
         hud.classList.add('hidden');
@@ -4488,12 +4523,24 @@ function endGame(message, lockCompleted = false) {
     gameState.gameActive = false;
     if (lockCompleted) {
         gameState.isCompleted = true;
+        if (!gameState.gameCompletedAt) {
+            gameState.gameCompletedAt = Date.now();
+        }
     }
     stopPolling();
     stopHeartbeat();
     showScreen('end');
     document.getElementById('end-message').textContent = message;
     document.getElementById('final-score').textContent = gameState.score;
+    /* Show frozen time on end screen */
+    const elapsed = gameState.gameCompletedAt && gameState.gameStartedAt
+        ? Math.round((gameState.gameCompletedAt - gameState.gameStartedAt) / 1000)
+        : (gameState.gameStartedAt ? Math.round((Date.now() - gameState.gameStartedAt) / 1000) : 0);
+    const endMins = Math.floor(elapsed / 60);
+    const endSecs = elapsed % 60;
+    const endTimeStr = `${endMins}:${endSecs < 10 ? '0' : ''}${endSecs}`;
+    const endTimeEl = document.getElementById('end-time');
+    if (endTimeEl) endTimeEl.textContent = endTimeStr;
     hud.classList.add('hidden');
     persistProgress();
 }
@@ -4506,6 +4553,9 @@ function launchCinematicCredits() {
     /* Terminate game state */
     gameState.gameActive = false;
     gameState.isCompleted = true;
+    if (!gameState.gameCompletedAt) {
+        gameState.gameCompletedAt = Date.now();
+    }
     stopPolling();
     stopHeartbeat();
 
@@ -4525,9 +4575,9 @@ function launchCinematicCredits() {
 
     /* Populate the Game-Over summary that appears after credits end */
     document.getElementById('summary-score').textContent = gameState.score;
-    const elapsed = gameState.gameStartedAt
-        ? Math.round((Date.now() - gameState.gameStartedAt) / 1000)
-        : 0;
+    const elapsed = gameState.gameCompletedAt && gameState.gameStartedAt
+        ? Math.round((gameState.gameCompletedAt - gameState.gameStartedAt) / 1000)
+        : (gameState.gameStartedAt ? Math.round((Date.now() - gameState.gameStartedAt) / 1000) : 0);
     const mins = Math.floor(elapsed / 60);
     const secs = elapsed % 60;
     document.getElementById('summary-time').textContent =
@@ -4641,9 +4691,58 @@ function selectOption(button, answer) {
     persistProgress();
 }
 
+/* ── Toast notification helper (anchored to question box) ── */
+function showToast(message, type) {
+    let toast = document.getElementById('qa-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'qa-toast';
+    }
+    /* Anchor inside the question-screen so it stays relative to the box */
+    const questionBox = document.getElementById('question-screen');
+    const parent = questionBox || document.body;
+    if (questionBox && !questionBox.style.position) {
+        questionBox.style.position = 'relative';
+    }
+    if (toast.parentNode !== parent) {
+        parent.appendChild(toast);
+    }
+
+    toast.textContent = message;
+    const isCorrect = type === 'correct';
+    Object.assign(toast.style, {
+        position: 'absolute',
+        bottom: '12px',
+        right: '12px',
+        padding: '8px 16px',
+        zIndex: '10000',
+        fontFamily: "'Press Start 2P', monospace",
+        fontSize: '0.65rem',
+        letterSpacing: '1px',
+        color: isCorrect ? '#0d0d1a' : '#fff',
+        background: isCorrect
+            ? 'linear-gradient(135deg, #00ff88, #ffd300)'
+            : 'linear-gradient(135deg, #ff3b3b, #ff4466)',
+        border: '3px solid ' + (isCorrect ? '#c7c7c7' : '#555555'),
+        boxShadow: isCorrect
+            ? 'inset 0 0 0 1px #0d0d1a, 0 0 8px rgba(0,255,136,0.5)'
+            : 'inset 0 0 0 1px #0d0d1a, 0 0 8px rgba(255,59,59,0.5)',
+        imageRendering: 'pixelated',
+        opacity: '1',
+        transition: 'opacity 0.4s ease',
+        display: 'block',
+        pointerEvents: 'none',
+    });
+    if (toast._timer) clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; }, 400);
+    }, 2000);
+}
+
 async function submitAnswer() {
     if (!currentSelection) {
-        alert('Select an option!');
+        showToast('Select an option!', 'wrong');
         return;
     }
 
@@ -4665,7 +4764,8 @@ async function submitAnswer() {
         }
         const data = await response.json();
         if (data.status === 'already_answered') {
-            alert('You already solved this question. No extra points awarded.');
+            showToast('Already solved — no extra points.', 'correct');
+            await sleep(1500);
             nextQuestion();
             return;
         }
@@ -4673,6 +4773,8 @@ async function submitAnswer() {
             gameState.score = data.new_score;
             scoreDisplay.textContent = gameState.score;
             persistProgress();
+            showToast('CORRECT!', 'correct');
+            await sleep(1500);
             nextQuestion();
             return;
         }
@@ -4689,7 +4791,7 @@ async function submitAnswer() {
         scoreDisplay.textContent = gameState.score;
         syncGameStateWithServer();
         setHudStatus(`Wrong answer. -${penalty} score.`);
-        alert('Incorrect! Try again.');
+        showToast('WRONG! Try again.', 'wrong');
     } catch (err) {
         console.error(err);
     }

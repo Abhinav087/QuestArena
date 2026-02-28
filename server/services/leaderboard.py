@@ -36,12 +36,19 @@ def compute_time_taken_seconds(player: Player, session: SessionModel) -> int:
         return 0
 
     if player.completed_at:
+        # Best case: we logged the remaining_seconds at completion time
         completion_remaining = _extract_completion_remaining_from_logs(player, session)
         if completion_remaining is not None:
             return max(0, total - _clamp_remaining(session, completion_remaining))
 
-    # Fallback for active players (and legacy completed rows without snapshot):
-    # Time spent = configured session total - current remaining.
+        # Fallback for completed players: use completed_at - join_time
+        # This freezes the timer at the exact completion moment instead of
+        # falling through to the live session countdown.
+        if player.join_time:
+            elapsed = int((player.completed_at - player.join_time).total_seconds())
+            return max(0, min(elapsed, total))
+
+    # Active (not-completed) players: time spent = total - current remaining.
     return max(0, total - _clamp_remaining(session, None))
 
 

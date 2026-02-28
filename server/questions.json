@@ -1,236 +1,107 @@
 {
     "0": {
-        "title": "Level 0 — College Gate (General Knowledge)",
+        "title": "Level 0 — College Gate (Player Confidence)",
         "questions": [
             {
                 "id": "q0_1",
-                "text": "You kids are always on your phones. Tell me this... What does the 'G' in ChatGPT stand for?",
-                "options": [
-                    "General",
-                    "Generative",
-                    "Global",
-                    "Generated"
-                ],
-                "answer": "Generative"
+                "text": "What is the primary brain of a computer where all the processing happens?",
+                "options": ["RAM", "Monitor", "CPU", "Hard Disk"],
+                "answer": "CPU"
             },
             {
                 "id": "q0_2",
-                "text": "I was watching the match on my phone yesterday. Who won the ICC Men's Cricket World Cup in 2023?",
-                "options": [
-                    "India",
-                    "Australia",
-                    "England",
-                    "South Africa"
-                ],
-                "answer": "Australia"
+                "text": "In the world of the internet, what does 'WWW' stand for?",
+                "options": ["World Wide Web", "World Wide Weapons", "Wild Wide Web", "World White Web"],
+                "answer": "World Wide Web"
             },
             {
                 "id": "q0_3",
-                "text": "Which Indian city is widely known as the 'Silicon Valley of India'?",
-                "options": [
-                    "Hyderabad",
-                    "Pune",
-                    "Bengaluru",
-                    "Chennai"
-                ],
-                "answer": "Bengaluru"
-            },
-            {
-                "id": "q0_4",
-                "text": "You say you study here, right? Let's see if you even know what your grades are called. What does 'CGPA' stand for?",
-                "options": [
-                    "College Grade Percentage Average",
-                    "Cumulative Grade Point Average",
-                    "Calculated General Performance Assessment",
-                    "Current Grade Point Aggregate"
-                ],
-                "answer": "Cumulative Grade Point Average"
-            },
-            {
-                "id": "q0_5",
-                "text": "If you roam around so much, you must go to the movies. In the blockbuster movie 'Pushpa: The Rise', what is the main item being smuggled by the protagonist?",
-                "options": [
-                    "Gold",
-                    "Red Sandalwood",
-                    "Diamonds",
-                    "Weapons"
-                ],
-                "answer": "Red Sandalwood"
+                "text": "Which of these is NOT a social media platform?",
+                "options": ["Instagram", "Excel", "WhatsApp", "Snapchat"],
+                "answer": "Excel"
             }
         ]
     },
     "1": {
-        "title": "Level 1 — Lobby (English)",
+        "title": "Level 1 — Lobby (Easy to Moderate)",
         "questions": [
-           {
-            "id": "q1_1",
-            "text": "Identify the correctly spelled word often used in corporate emails:",
-            "options": ["Occurred", "Ocurred", "Occured", "Occurede"],
-            "answer": "Occurred"
-        },
-        {
-            "id": "q1_2",
-            "text": "Complete the professional idiom: 'In the corporate world, you must be able to hit the ground _______.'",
-            "options": ["Walking", "Running", "Jumping", "Working"],
-            "answer": "Running"
-        },
-        {
-            "id": "q1_3",
-            "text": "Which of these is a synonym for 'Meticulous', a trait every engineer should have?",
-            "options": ["Careless", "Thorough", "Fast", "Humble"],
-            "answer": "Thorough"
-        },
-        {
-            "id": "q1_4",
-            "text": "Choose the correct preposition: 'The team will comply ____ the new security protocols.'",
-            "options": ["with", "by", "to", "for"],
-            "answer": "with"
-        },
-        {
-            "id": "q1_5",
-            "text": "What does the phrase 'To touch base' mean in a business context?",
-            "options": ["To play baseball", "To briefly connect/contact", "To quit a job", "To build a foundation"],
-            "answer": "To briefly connect/contact"
-        }
-        ],
-        "hidden_route": {
-            "trigger": "backlog_king",
-            "questions": [
-                {
-                    "id": "q1_hidden",
-                    "text": "BackLog King asks: Which data structure uses LIFO order?",
-                    "options": [
-                        "Queue",
-                        "Array",
-                        "Stack",
-                        "Tree"
-                    ],
-                    "answer": "Stack"
-                }
-            ]
-        }
+            {
+                "id": "q1_1",
+                "text": "Which of the following is a correctly spelled professional word?",
+                "options": ["Committment", "Comitment", "Committement", "Commitment"],
+                "answer": "Commitment"
+            },
+            {
+                "id": "q1_2",
+                "text": "Choose the synonym for 'Incredible':",
+                "options": ["Unbelievable", "Ordinary", "Typical", "Simple"],
+                "answer": "Unbelievable"
+            },
+            {
+                "id": "q1_3",
+                "text": "Complete the phrase: 'Actions speak louder than _______.'",
+                "options": ["Voices", "Emails", "Words", "Thoughts"],
+                "answer": "Words"
+            }
+        ]
     },
     "2": {
-        "title": "Level 2 — Classroom (Aptitude)",
-        "questions" :[
-           {
-            "id": "q2_1",
-            "text": "You kids can never finish your assignments on time. If Student A can complete a project in 10 days, and Student B takes 15 days, how many days will it take if they work together?",
-            "options": ["5 days", "6 days", "8 days", "12 days"],
-            "answer": "6 days"
-        },
-        {
-            "id": "q2_2",
-            "text": "You all act like you are 5 years old. The ratio of the present ages of two students is 3:4. After 4 years, the ratio will become 4:5. What is the present age of the younger student?",
-            "options": ["12 years", "15 years", "16 years", "20 years"],
-            "answer": "12 years"
-        },
-        {
-            "id": "q2_3",
-            "text": "Let's see if you have any business sense. You bought a used textbook for ₹500 and sold it to a junior for ₹600. What is your profit percentage?",
-            "options": ["10%", "15%", "20%", "25%"],
-            "answer": "20%"
-        },
-        {
-            "id": "q2_4",
-            "text": "Your class average is dragging the whole college down. The average weight of 10 students is 60 kg. When a new student joins, the average becomes 62 kg. What is the weight of the new student?",
-            "options": ["62 kg", "70 kg", "80 kg", "82 kg"],
-            "answer": "82 kg"
-        },
-        {
-            "id": "q2_5",
-            "text": "What is the probability that you actually study tonight? Zero. But try this: Two dice are thrown simultaneously. What is the probability of getting a sum of 9?",
-            "options": ["1/6", "1/9", "1/12", "1/8"],
-            "answer": "1/9"
-        }
+        "title": "Level 2 — Classroom (Moderate Aptitude)",
+        "questions": [
+            {
+                "id": "q2_1",
+                "text": "A shopkeeper gives a 'Buy 2 Get 1 Free' offer. What is the effective discount percentage?",
+                "options": ["50%", "33.33%", "25%", "20%"],
+                "answer": "33.33%"
+            },
+            {
+                "id": "q2_2",
+                "text": "If a train 100m long passes a pole in 5 seconds, what is its speed?",
+                "options": ["50 m/s", "10 m/s", "25 m/s", "20 m/s"],
+                "answer": "20 m/s"
+            },
+            {
+                "id": "q2_3",
+                "text": "The sum of three consecutive integers is 45. What is the smallest integer?",
+                "options": ["14", "13", "15", "16"],
+                "answer": "14"
+            }
         ]
     },
     "3": {
         "title": "Level 3 — Lab (Reasoning)",
         "easy": [
-            {
-                "id": "q3_e1",
-                "text": "Find the next number: 2, 6, 12, 20, ?",
-                "options": [
-                    "28",
-                    "30",
-                    "32",
-                    "36"
-                ],
-                "answer": "30"
-            },
-            {
-                "id": "q3_e2",
-                "text": "If all roses are flowers and some flowers fade quickly, which statement is definitely true?",
-                "options": [
-                    "All roses fade quickly",
-                    "Some roses are flowers",
-                    "No flower is a rose",
-                    "All flowers are roses"
-                ],
-                "answer": "Some roses are flowers"
-            }
+            { "id": "q3_e1", "text": "Find the next number: 5, 10, 20, 40, ?", "options": ["60", "50", "100", "80"], "answer": "80" },
+            { "id": "q3_e2", "text": "Finger is to Hand as Leaf is to:", "options": ["Branch", "Tree", "Root", "Flower"], "answer": "Branch" },
+            { "id": "q3_e3", "text": "Which number is the odd one out: 27, 64, 81, 125?", "options": ["27", "64", "125", "81"], "answer": "81" },
+            { "id": "q3_e4", "text": "If WATER is written as XBUFS, how is BLOOD written?", "options": ["CMPPE", "CPMPF", "CMOPE", "CNQQF"], "answer": "CMPPE" },
+            { "id": "q3_e5", "text": "Light : Sun :: Heat : ?", "options": ["Electricity", "Fire", "Moon", "Stars"], "answer": "Fire" }
         ],
         "hard": [
-            {
-                "id": "q3_h1",
-                "text": "Statement: All coders are gamers. Some gamers are designers. Conclusion: Some coders are designers.",
-                "options": [
-                    "Definitely true",
-                    "Definitely false",
-                    "Cannot be determined",
-                    "Both true and false"
-                ],
-                "answer": "Cannot be determined"
-            }
+            { "id": "q3_h1", "text": "If 7th March of a year is Monday, what was 14th February of the same year?", "options": ["Sunday", "Monday", "Saturday", "Tuesday"], "answer": "Monday" },
+            { "id": "q3_h2", "text": "Point A is 10m North of B. C is 10m East of B. D is 10m South of C. What is the direction of D from B?", "options": ["South-East", "North", "South", "West"], "answer": "South-East" }
         ]
     },
     "4": {
         "title": "Level 4 — Server Room (Technical MCQs)",
         "easy": [
-            {
-                "id": "q4_e1",
-                "text": "Find the next number: 2, 6, 12, 20, ?",
-                "options": [
-                    "28",
-                    "30",
-                    "32",
-                    "36"
-                ],
-                "answer": "30"
-            },
-            {
-                "id": "q4_e2",
-                "text": "If all roses are flowers and some flowers fade quickly, which statement is definitely true?",
-                "options": [
-                    "All roses fade quickly",
-                    "Some roses are flowers",
-                    "No flower is a rose",
-                    "All flowers are roses"
-                ],
-                "answer": "Some roses are flowers"
-            }
+            { "id": "q4_e1", "text": "Which of the following is the 'brain' of the OS?", "options": ["Shell", "Compiler", "Kernel", "Driver"], "answer": "Kernel" },
+            { "id": "q4_e2", "text": "What does HTML stand for?", "options": ["HyperLink Markup Language", "HyperText Markup Language", "HighText Machine Language", "HyperText Marking Links"], "answer": "HyperText Markup Language" },
+            { "id": "q4_e3", "text": "Which protocol is used for sending emails?", "options": ["SMTP", "HTTP", "FTP", "SSH"], "answer": "SMTP" },
+            { "id": "q4_e4", "text": "Which of these is a NoSQL database?", "options": ["MySQL", "MongoDB", "PostgreSQL", "Oracle"], "answer": "MongoDB" },
+            { "id": "q4_e5", "text": "What is the standard port for HTTPS?", "options": ["80", "21", "22", "443"], "answer": "443" }
         ],
         "hard": [
-            {
-                "id": "q4_h1",
-                "text": "Statement: All coders are gamers. Some gamers are designers. Conclusion: Some coders are designers.",
-                "options": [
-                    "Definitely true",
-                    "Definitely false",
-                    "Cannot be determined",
-                    "Both true and false"
-                ],
-                "answer": "Cannot be determined"
-            }
+            { "id": "q4_h1", "text": "Search time complexity in a balanced Binary Search Tree?", "options": ["O(n)", "O(n log n)", "O(log n)", "O(1)"], "answer": "O(log n)" },
+            { "id": "q4_h2", "text": "Which layer of the OSI model is responsible for IP addressing?", "options": ["Network", "Data Link", "Transport", "Session"], "answer": "Network" }
         ]
     },
     "5": {
         "title": "Level 5 — Principal's Final Coding Trial",
         "question": {
             "id": "q5_code",
-            "text": "Write a function solve(a, b) that returns the sum of two integers.",
-            "template": "def solve(a, b):\n    # return sum of a and b\n    return"
+            "text": "Write a program to find and print all the prime numbers between 1 to 100.",
+            "template": "# Find and print all prime numbers between 1 and 100\n"
         }
     }
 }
