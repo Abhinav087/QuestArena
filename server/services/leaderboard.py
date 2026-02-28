@@ -17,11 +17,13 @@ def _clamp_remaining(session: SessionModel, remaining_seconds: int | None) -> in
 
 
 def _extract_completion_remaining_from_logs(player: Player, session: SessionModel) -> int | None:
-    # Expected details format (new): "Coding challenge solved; remaining_seconds=1234"
+    # Expected details format: "…; remaining_seconds=1234"
+    # Matches both "final_challenge_complete" and "game_complete" log types.
+    completion_actions = {"final_challenge_complete", "game_complete"}
     for log in sorted(player.logs or [], key=lambda row: row.timestamp or datetime.min, reverse=True):
         if log.session_id != session.id:
             continue
-        if log.action_type != "final_challenge_complete":
+        if log.action_type not in completion_actions:
             continue
         details = log.details or ""
         match = re.search(r"remaining_seconds\s*=\s*(\d+)", details)

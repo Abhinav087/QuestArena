@@ -261,3 +261,33 @@ async def sync_state(
         db.commit()
 
     return {"ok": True, "score": player.score, "current_level": player.current_level}
+
+
+@router.post("/player/complete")
+async def mark_complete(
+    player: Player = Depends(get_current_player),
+    db: Session = Depends(get_db),
+):
+    """Mark the player as having completed the game.  Freezes timer and
+    ensures current_level reflects the final level (5)."""
+    session = db.query(SessionModel).filter(SessionModel.id == player.session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if player.completed_at is not None:
+        return {"ok": True, "already_completed": True}
+
+    player.completed_at = datetime.utcnow()
+    player.current_level = max(player.current_level, 5)
+    player.last_active = datetime.utcnow()
+
+    db.add(
+        Log(
+            session_id=player.session_id,
+            player_id=player.id,
+            action_type="game_complete",
+            details=f"Player marked game complete; remaining_seconds={session.remaining_seconds}",
+        )
+    )
+    db.commit()
+    return {"ok": True, "score": player.score, "current_level": player.current_level}

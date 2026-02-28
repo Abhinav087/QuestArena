@@ -3647,6 +3647,7 @@ async function transitionToLevel(targetLevel) {
     }
 
     enterArenaLevel(targetLevel);
+    syncGameStateWithServer();
     await fadeTo(0);
     gameState.arena.transitioning = false;
 }
@@ -3664,6 +3665,7 @@ async function transitionToLevelWithOptions(targetLevel, options = {}) {
     }
 
     enterArenaLevel(targetLevel, options);
+    syncGameStateWithServer();
     await fadeTo(0);
     gameState.arena.transitioning = false;
 }
@@ -4526,6 +4528,13 @@ function endGame(message, lockCompleted = false) {
         if (!gameState.gameCompletedAt) {
             gameState.gameCompletedAt = Date.now();
         }
+        /* Notify server so completed_at is set and timer freezes */
+        if (gameState.token) {
+            fetch(`${API_BASE_URL}/api/player/complete`, {
+                method: 'POST',
+                headers: authHeaders(),
+            }).catch(() => {});
+        }
     }
     stopPolling();
     stopHeartbeat();
@@ -4558,6 +4567,14 @@ function launchCinematicCredits() {
     }
     stopPolling();
     stopHeartbeat();
+
+    /* Notify server so completed_at is set and timer freezes */
+    if (gameState.token) {
+        fetch(`${API_BASE_URL}/api/player/complete`, {
+            method: 'POST',
+            headers: authHeaders(),
+        }).catch(() => {});
+    }
 
     /* Stop the arena render loop */
     if (gameState.arena.loopId) {
